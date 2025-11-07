@@ -1,0 +1,459 @@
+<resources>
+    <string name="app_name">Bacoor Connect</string>
+    <string name="username" />
+    <string name="email" />
+
+    <string-array name="occupation">
+        <item>Student</item>
+        <item>Employed</item>
+    </string-array>
+
+    <string-array name="report_categories">
+        <item>Accident</item>
+        <item>Criminal Activity</item>
+        <item>Traffic</item>
+    </string-array>
+
+    <string name="title_activity_dashboard">dashboard</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="lorem_ipsum">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
+        volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
+        dui nec risus. Maecenas non sodales nisi, vel dictum dolor. Class aptent taciti sociosqu ad
+        litora torquent per conubia nostra, per inceptos himenaeos. Suspendisse blandit eleifend
+        diam, vel rutrum tellus vulputate quis. Aliquam eget libero aliquet, imperdiet nisl a,
+        ornare ex. Sed rhoncus est ut libero porta lobortis. Fusce in dictum tellus.\n\n
+        Suspendisse interdum ornare ante. Aliquam nec cursus lorem. Morbi id magna felis. Vivamus
+        egestas, est a condimentum egestas, turpis nisl iaculis ipsum, in dictum tellus dolor sed
+        neque. Morbi tellus erat, dapibus ut sem a, iaculis tincidunt dui. Interdum et malesuada
+        fames ac ante ipsum primis in faucibus. Curabitur et eros porttitor, ultricies urna vitae,
+        molestie nibh. Phasellus at commodo eros, non aliquet metus. Sed maximus nisl nec dolor
+        bibendum, vel congue leo egestas.\n\n
+        Sed interdum tortor nibh, in sagittis risus mollis quis. Curabitur mi odio, condimentum sit
+        amet auctor at, mollis non turpis. Nullam pretium libero vestibulum, finibus orci vel,
+        molestie quam. Fusce blandit tincidunt nulla, quis sollicitudin libero facilisis et. Integer
+        interdum nunc ligula, et fermentum metus hendrerit id. Vestibulum lectus felis, dictum at
+        lacinia sit amet, tristique id quam. Cras eu consequat dui. Suspendisse sodales nunc ligula,
+        in lobortis sem porta sed. Integer id ultrices magna, in luctus elit. Sed a pellentesque
+        est.\n\n
+        Aenean nunc velit, lacinia sed dolor sed, ultrices viverra nulla. Etiam a venenatis nibh.
+        Morbi laoreet, tortor sed facilisis varius, nibh orci rhoncus nulla, id elementum leo dui
+        non lorem. Nam mollis ipsum quis auctor varius. Quisque elementum eu libero sed commodo. In
+        eros nisl, imperdiet vel imperdiet et, scelerisque a mauris. Pellentesque varius ex nunc,
+        quis imperdiet eros placerat ac. Duis finibus orci et est auctor tincidunt. Sed non viverra
+        ipsum. Nunc quis augue egestas, cursus lorem at, molestie sem. Morbi a consectetur ipsum, a
+        placerat diam. Etiam vulputate dignissim convallis. Integer faucibus mauris sit amet finibus
+        convallis.\n\n
+        Phasellus in aliquet mi. Pellentesque habitant morbi tristique senectus et netus et
+        malesuada fames ac turpis egestas. In volutpat arcu ut felis sagittis, in finibus massa
+        gravida. Pellentesque id tellus orci. Integer dictum, lorem sed efficitur ullamcorper,
+        libero justo consectetur ipsum, in mollis nisl ex sed nisl. Donec maximus ullamcorper
+        sodales. Praesent bibendum rhoncus tellus nec feugiat. In a ornare nulla. Donec rhoncus
+        libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
+        vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
+    </string>
+    <string name="large_text">
+        "Material is the metaphor.\n\n"
+
+        "A material metaphor is the unifying theory of a rationalized space and a system of motion."
+        "The material is grounded in tactile reality, inspired by the study of paper and ink, yet "
+        "technologically advanced and open to imagination and magic.\n"
+        "Surfaces and edges of the material provide visual cues that are grounded in reality. The "
+        "use of familiar tactile attributes helps users quickly understand affordances. Yet the "
+        "flexibility of the material creates new affordances that supercede those in the physical "
+        "world, without breaking the rules of physics.\n"
+        "The fundamentals of light, surface, and movement are key to conveying how objects move, "
+        "interact, and exist in space and in relation to each other. Realistic lighting shows "
+        "seams, divides space, and indicates moving parts.\n\n"
+
+        "Bold, graphic, intentional.\n\n"
+
+        "The foundational elements of print based design typography, grids, space, scale, color, "
+        "and use of imagery guide visual treatments. These elements do far more than please the "
+        "eye. They create hierarchy, meaning, and focus. Deliberate color choices, edge to edge "
+        "imagery, large scale typography, and intentional white space create a bold and graphic "
+        "interface that immerse the user in the experience.\n"
+        "An emphasis on user actions makes core functionality immediately apparent and provides "
+        "waypoints for the user.\n\n"
+
+        "Motion provides meaning.\n\n"
+
+        "Motion respects and reinforces the user as the prime mover. Primary user actions are "
+        "inflection points that initiate motion, transforming the whole design.\n"
+        "All action takes place in a single environment. Objects are presented to the user without "
+        "breaking the continuity of experience even as they transform and reorganize.\n"
+        "Motion is meaningful and appropriate, serving to focus attention and maintain continuity. "
+        "Feedback is subtle yet clear. Transitions are efﬁcient yet coherent.\n\n"
+
+        "3D world.\n\n"
+
+        "The material environment is a 3D space, which means all objects have x, y, and z "
+        "dimensions. The z-axis is perpendicularly aligned to the plane of the display, with the "
+        "positive z-axis extending towards the viewer. Every sheet of material occupies a single "
+        "position along the z-axis and has a standard 1dp thickness.\n"
+        "On the web, the z-axis is used for layering and not for perspective. The 3D world is "
+        "emulated by manipulating the y-axis.\n\n"
+
+        "Light and shadow.\n\n"
+
+        "Within the material environment, virtual lights illuminate the scene. Key lights create "
+        "directional shadows, while ambient light creates soft shadows from all angles.\n"
+        "Shadows in the material environment are cast by these two light sources. In Android "
+        "development, shadows occur when light sources are blocked by sheets of material at "
+        "various positions along the z-axis. On the web, shadows are depicted by manipulating the "
+        "y-axis only. The following example shows the card with a height of 6dp.\n\n"
+
+        "Resting elevation.\n\n"
+
+        "All material objects, regardless of size, have a resting elevation, or default elevation "
+        "that does not change. If an object changes elevation, it should return to its resting "
+        "elevation as soon as possible.\n\n"
+
+        "Component elevations.\n\n"
+
+        "The resting elevation for a component type is consistent across apps (e.g., FAB elevation "
+        "does not vary from 6dp in one app to 16dp in another app).\n"
+        "Components may have different resting elevations across platforms, depending on the depth "
+        "of the environment (e.g., TV has a greater depth than mobile or desktop).\n\n"
+
+        "Responsive elevation and dynamic elevation offsets.\n\n"
+
+        "Some component types have responsive elevation, meaning they change elevation in response "
+        "to user input (e.g., normal, focused, and pressed) or system events. These elevation "
+        "changes are consistently implemented using dynamic elevation offsets.\n"
+        "Dynamic elevation offsets are the goal elevation that a component moves towards, relative "
+        "to the component’s resting state. They ensure that elevation changes are consistent "
+        "across actions and component types. For example, all components that lift on press have "
+        "the same elevation change relative to their resting elevation.\n"
+        "Once the input event is completed or cancelled, the component will return to its resting "
+        "elevation.\n\n"
+
+        "Avoiding elevation interference.\n\n"
+
+        "Components with responsive elevations may encounter other components as they move between "
+        "their resting elevations and dynamic elevation offsets. Because material cannot pass "
+        "through other material, components avoid interfering with one another any number of ways, "
+        "whether on a per component basis or using the entire app layout.\n"
+        "On a component level, components can move or be removed before they cause interference. "
+        "For example, a floating action button (FAB) can disappear or move off screen before a "
+        "user picks up a card, or it can move if a snackbar appears.\n"
+        "On the layout level, design your app layout to minimize opportunities for interference. "
+        "For example, position the FAB to one side of stream of a cards so the FAB won’t interfere "
+        "when a user tries to pick up one of cards.\n\n"
+    </string>
+
+    <string name="toc">
+"TERMS AND CONDITIONS FOR BACOOR CONNECT\n"
+"Last Updated: April 2, 2025\n\n"
+"1. INTRODUCTION\n"
+"Welcome to Bacoor Connect (\"the Service\"). These Terms and Conditions (\"Terms\") govern your access to and use of Bacoor Connect, including any associated website, mobile application, and services provided by FourSight (\"we,\" \"us,\" or \"our\"), a non-government group operating under the laws of the Republic of the Philippines.\n"
+"By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the Terms, you may not access the Service.\n\n"
+"2. DEFINITIONS\n"
+"\"User,\" \"You,\" or \"Your\" refers to any individual or entity that accesses or uses the Service.\n"
+"\"Content\" refers to any information, text, graphics, photos, videos, or other materials uploaded, downloaded, or appearing on the Service.\n"
+"\"Account\" refers to a registered user profile on the Service.\n"
+"\"Personal Data\" refers to any information relating to an identified or identifiable natural person as defined under the Republic Act No. 10173 (Data Privacy Act of 2012).\n\n"
+"3. ELIGIBILITY\n"
+"To use the Service, you must be at least 18 years of age, or the age of legal majority in your jurisdiction, whichever is greater. By using the Service, you represent and warrant that you meet these eligibility requirements.\n\n"
+"4. ACCOUNT REGISTRATION\n"
+"4.1 Registration Information\n"
+"To access certain features of the Service, you may log in as a guest user. But, to fully access its features, you may be required to create an account. You agree to provide accurate, current, and complete information during the registration process and to update such information to keep it accurate, current, and complete.\n"
+"4.2 Account Security\n"
+"You are responsible for safeguarding your account password and for any activities or actions under your account. You agree not to disclose your password to any third party. You must notify us immediately upon becoming aware of any breach of security or unauthorized use of your account.\n\n"
+"5. USER RESPONSIBILITIES\n"
+"5.1 Acceptable Use\n"
+"You agree to use the Service only for lawful purposes and in accordance with these Terms. You agree not to use the Service:\n"
+"- In any way that violates any applicable national, provincial, or local law or regulation.\n"
+"- To transmit, or procure the sending of, any advertising or promotional material, including any \"junk mail,\" \"chain letter,\" \"spam,\" or any other similar solicitation.\n"
+"- To falsely report or post about a disaster, incident, and road traffic.\n"
+"- To impersonate or attempt to impersonate FourSight, a City Government of Bacoor employee, another user, or any other person or entity.\n"
+"- To engage in any other conduct that restricts or inhibits anyone's use of the Service.\n"
+"5.2 Content Guidelines\n"
+"You are solely responsible for any Content that you post, upload, or otherwise make available via the Service. You represent and warrant that:\n"
+"- You have all necessary rights, licenses, consents, and permissions to share such Content.\n"
+"- The Content does not violate the privacy rights, publicity rights, copyrights, contract rights, intellectual property rights, or any other rights of any person or entity.\n"
+"- The Content does not contain material that is defamatory, obscene, offensive, hateful, or otherwise objectionable.\n\n"
+"6. INTELLECTUAL PROPERTY\n"
+"6.1 Service Ownership\n"
+"The Service and its original content (excluding Content provided by users), features, and functionality are and will remain the exclusive property of Bacoor Connect and its licensors. The Service is protected by copyright, trademark, and other laws of both the Philippines and foreign countries.\n"
+"6.2 User Content License\n"
+"By posting Content on the Service, you grant us a non-exclusive, transferable, sub-licensable, royalty-free, worldwide license to use, modify, publicly perform, publicly display, reproduce, and distribute such Content on and through the Service, subject to your privacy settings.\n\n"
+"7. PRIVACY POLICY\n"
+"Your use of the Service is also governed by our Privacy Policy, which is incorporated by reference into these Terms. Please review our Privacy Policy, which explains how we collect, use, and disclose information about you.\n\n"
+"8. THIRD-PARTY LINKS AND CONTENT\n"
+"The Service may contain links to third-party websites or services that are not owned or controlled by Bacoor Connect. Bacoor Connect has no control over, and assumes no responsibility for, the content, privacy policies, or practices of any third-party websites or services. You acknowledge and agree that Bacoor Connect shall not be responsible or liable for any damage or loss caused or alleged to be caused by or in connection with the use of any such content, goods, or services available on or through any such websites or services.\n\n"
+"9. TERMINATION\n"
+"9.1 Termination by You\n"
+"You may terminate your account at any time by following the instructions on the Service or by contacting us directly.\n"
+"9.2 Termination by Us\n"
+"We may terminate or suspend your account and bar access to the Service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever, including but not limited to a breach of the Terms.\n"
+"9.3 Effect of Termination\n"
+"Upon termination, your right to use the Service will immediately cease. If your account is terminated for any reason, you may no longer have access to your account and all information and content associated with your account.\n\n"
+"10. LIMITATION OF LIABILITY\n"
+"10.1 Disclaimer of Warranties\n"
+"The Service is provided on an \"AS IS\" and \"AS AVAILABLE\" basis. FourSight and its affiliates, service providers, and licensors expressly disclaim all warranties of any kind, whether express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement.\n"
+"10.2 Limitation of Liability\n"
+"To the maximum extent permitted by applicable law, in no event shall FourSight, its affiliates, directors, employees, agents, licensors, or service providers be liable for any indirect, punitive, incidental, special, consequential, or exemplary damages, including without limitation damages for loss of profits, goodwill, use, data, or other intangible losses, that result from the use of, or inability to use, the Service.\n\n"
+"11. INDEMNIFICATION\n"
+"You agree to defend, indemnify, and hold harmless FourSight, its affiliates, licensors, and service providers, and its and their respective officers, directors, employees, contractors, agents, licensors, suppliers, successors, and assigns from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to your violation of these Terms or your use of the Service.\n\n"
+"12. CHANGES TO TERMS\n"
+"We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion. By continuing to access or use our Service after any revisions become effective, you agree to be bound by the revised terms.\n\n"
+"13. GOVERNING LAW AND JURISDICTION\n"
+"These Terms shall be governed by and construed in accordance with the laws of the Republic of the Philippines, without regard to its conflict of law provisions. Any legal action or proceeding arising under these Terms shall be brought exclusively in the courts located in Bacoor City, Cavite, Philippines, and you hereby consent to the personal jurisdiction and venue therein.\n\n"
+"14. DISPUTE RESOLUTION\n"
+"14.1 Informal Resolution\n"
+"Prior to filing a claim, you agree to attempt to resolve the dispute informally by contacting us. We will attempt to resolve the dispute informally by contacting you via email.\n"
+"14.2 Arbitration\n"
+"If a dispute cannot be resolved informally, you and FourSight agree to resolve any dispute arising from these Terms through final and binding arbitration, except as set forth below. The arbitration shall be conducted in Bacoor City, Cavite, Philippines, in accordance with the rules of the Philippine Dispute Resolution Center, Inc. (PDRCI).\n\n"
+"15. SEVERABILITY\n"
+"If any provision of these Terms is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law, and the remaining provisions will continue in full force and effect.\n\n"
+"16. WAIVER\n"
+"Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. The waiver of any such right or provision will be effective only if in writing and signed by a duly authorized representative of FourSight.\n\n"
+"17. ENTIRE AGREEMENT\n"
+"These Terms, together with the Privacy Policy and any other legal notices published by FourSight on the Service, shall constitute the entire agreement between you and FourSight concerning the Service.\n\n"
+"18. CONTACT INFORMATION\n"
+"If you have any questions about these Terms, please contact us at:\n"
+"FourSight\n"
+"Email: bacoorconnect@gmail.com\n"
+</string>
+
+
+    <string name="privacypolicy">
+"PRIVACY POLICY FOR BACOOR CONNECT\n",
+"Last Updated: April 2, 2025\n\n",
+"1. INTRODUCTION\n",
+"Bacoor Connect (“we,” “us,” or “our”) respects your privacy. This Privacy Policy outlines how we collect, use, disclose, and protect your personal information when you use our mobile application, website, and associated services (collectively, the “Service”).\n\n",
+"2. INFORMATION WE COLLECT\n",
+"2.1 Information You Provide to Us:\n",
+"- Personal Data: Includes your name, email address, contact number, and any other information you voluntarily provide when creating an account or using the Service.\n",
+"- Content: Any text, images, or media you submit or post.\n",
+"2.2 Automatically Collected Information:\n",
+"- Device Information: IP address, device model, OS type and version, unique device identifiers.\n",
+"- Usage Data: Pages visited, actions taken, time spent within the app, crash logs.\n\n",
+"3. HOW WE USE YOUR INFORMATION\n",
+"We use the collected information to:\n",
+"- Provide, maintain, and improve the Service.\n",
+"- Personalize user experience.\n",
+"- Monitor and analyze usage and trends.\n",
+"- Respond to user inquiries and support requests.\n",
+"- Enforce our Terms and Conditions.\n\n",
+"4. SHARING OF INFORMATION\n",
+"We do not sell or rent your personal information to third parties. We may share information with:\n",
+"- Service Providers: For hosting, analytics, customer support, and security.\n",
+"- Legal Compliance: To comply with laws or legal obligations, including requests from law enforcement.\n",
+"- Protection: To protect the rights, property, or safety of Bacoor Connect, users, or the public.\n\n",
+"5. DATA SECURITY\n",
+"We implement appropriate technical and organizational measures to protect your personal information. However, no method of transmission over the internet or method of electronic storage is 100% secure.\n\n",
+"6. DATA RETENTION\n",
+"We retain your information only as long as necessary to fulfill the purposes for which it was collected, or as required by applicable law.\n\n",
+"7. YOUR RIGHTS\n",
+"Depending on your location, you may have the right to:\n",
+"- Access, correct, or delete your personal information.\n",
+"- Withdraw consent for data processing.\n",
+"- File a complaint with a data protection authority.\n",
+"Requests can be submitted by contacting us at bacoorconnect@gmail.com.\n\n",
+"8. CHILDREN’S PRIVACY\n",
+"Our Service is not intended for individuals under the age of 13. We do not knowingly collect personal data from children. If we become aware of such data, we will delete it.\n\n",
+"9. THIRD-PARTY LINKS\n",
+"The Service may contain links to third-party websites or services. We are not responsible for their privacy practices. We encourage you to review their privacy policies.\n\n",
+"10. CHANGES TO THIS PRIVACY POLICY\n",
+"We may update this Privacy Policy from time to time. We will notify you of material changes by posting the new policy and updating the “Last Updated” date.\n\n",
+"11. CONTACT US\n",
+"If you have any questions about this Privacy Policy, please contact us at:\n",
+"FourSight\n",
+"Email: bacoorconnect@gmail.com\n"
+</string>
+
+    <string name="before_earthquake">
+    "• <b>KNOW THE HAZARDS.</b> Familiarize yourself with your surroundings.&#10;"
+    "• <b>KNOW THE EVACUATION AREAS.</b> Be reminded of the available evacuation areas around your area.&#10;"
+    "• <b>BE PREPARED.</b> Prepare a first-aid kit, an emergency supply kit, and safeguard important documents. Make them accessible at all times. Learn how to do first-aid and participate during earthquake drills.&#10;"
+    </string>
+
+    <string name="during_earthquake">
+    "• <b>DUCK.</b> Go underneath a sturdy surface. &#10;""• <b>COVER.</b> Make sure your whole body, especially the head, covered under a table or a sturdy surface. &#10;"
+    "• <b>HOLD.</b> Hold onto something for leverage. &#10;"
+    "• <b>STAY CALM AND ALERT</b>. Stay in the safest part of the room. Be wary of falling objects, fragile objects, and any other heavy objects that may cause injuries.&#10;"
+        "• <b>IF OUTSIDE</b>, move to an open area.&#10;"
+        "• <b>IF NEAR A SHORE</b>, move quickly to higher grounds as a tsunami may be possible.&#10;"
+        "• <b>MOVE AWAY FROM STEEP SLOPES.</b>&#10;"
+        "• <b>IF INSIDE A MOVING VEHICLE</b>, STOP IMMEDIATELY. Avoid crossing bridges, overpasses, flyovers, and tunnels.&#10;"</string>
+
+
+    <string name="after_earthquake">
+    "• <b>EVACUATE</b> to the nearest and most accessible evacuation area.&#10;"
+        "• <b>EXPECT AFTERSHOCKS</b>.&#10;"
+    "• <b>STAY UPDATED</b> by tuning in to the radio, television, and any other form of media to get the latest updates about the situation.&#10;"
+    "• <b>SEEK MEDICAL ATTENTION</b> if anyone or you are injured.&#10;&#10;"
+
+        "<i>Source: Philippine Institute of Volcanology and Seismology (PHIVOLCS)</i>&#10;"</string>
+
+
+    <string name="before_flood">
+    "• Find out how often your location is likely to be flooded.&#10;"
+    "• Know the flood warning system in your community and be sure your family knows it.&#10;"
+    "• Keep informed of daily weather condition.&#10;"
+    "• Designate an evacuation area for the family and livestock.&#10;"
+    "• Assign family members instructions and responsibilities according to an evacuation plan.&#10;"
+    "• Keep a stock of food which requires little cooking and refrigeration; electric power may be interrupted.&#10;"
+    "• Keep a transistorized radio and flashlight with spare batteries, emergency cooking equipment, candies, matches and first aid kit handy in case of emergency.&#10;"
+    "• Store supplies and other household effects above expected flood water level.&#10;"
+        "• Securely anchor weak dwellings and items.&#10;"</string>
+
+    <string name="when_flood">
+    "• Watch for rapidly rising flood waters.&#10;"
+    "• Listen to your radio for emergency instructions.&#10;"
+    "• If you find it necessary to evacuate, move to a safe area before access is cut off by flood waters.&#10;"
+    "• Store drinking water in containers, water service may be interrupted.&#10;"
+    "• Move household belongings to upper levels.&#10;"
+    "• Get livestock to higher ground.&#10;"
+        "• Turn off electricity at the main switch in the building before evacuating and also lock your house.&#10;"</string>
+
+    <string name="during_flood">
+    "• Avoid flood-prone areas.&#10;"
+    "• Do not cross rivers of flowing streams where water is above the knee.&#10;"
+    "• Beware of water-covered roads and bridges.&#10;"
+    "• Avoid unnecessary exposure to the elements.&#10;"
+    "• Do not go swimming or boating in swollen rivers.&#10;"
+    "• Eat only well-cooked food. Protect leftovers against contamination.&#10;"
+    "• Drink clean or preferably boiled water ONLY.&#10;"</string>
+
+    <string name="after_flood">
+    "• Re-enter the dwellings with caution using flashlights, not lanterns or torchers. Flammables may be inside.&#10;"
+    "• Be alert for fire hazards like broken wires.&#10;"
+    "• Do not eat food and drink water until they have been checked for flood water contamination.&#10;"
+    "• Report broken utility lines (electricity, water, gas and telephone) to appropriate agencies authorities.&#10;"
+    "• Do not turn on the main switch or use appliances and other equipment until they have been checked by a competent electrician.&#10;"
+    "• Consult health authorities for immunization requirements.&#10;"
+    "• Do not go in disaster areas. Your presence might hamper rescue and other emergency operations.&#10;&#10;"
+
+        "Source: Philippine Atmospheric, Geophysical and Astronomical Services Administration (PAGASA)"
+</string>
+
+
+    <string name="firstaid4">
+"1. ASSESS safety at the scene and the condition of the person&#10;"
+"2. PLAN first aid interventions based on assessment&#10;"
+"3. IMPLEMENT first aid and psychological support&#10;"
+        "4. EVALUATE the effect of the first aid and monitor the person&#10;"</string>
+
+    <string name="bleeding">
+"1. Ask the injured person to sit or lie down&#10;"
+"2. Make sure no foreign body embedded in the wound&#10;"
+"3. Apply direct pressure over the wound; use cloth or cotton pad or your own hand&#10;"
+"4. Maintain the pressure on dressing for few minutes until the bleeding stops&#10;"
+"5. Cover the wound with bandage&#10;"
+"6. For head injuries use same procedure:&#10;"
+"6a. place absorbing cotton pad directly on bleeding wound&#10;"
+"6b. apply gentle pressure&#10;"
+"6c. place triangular bandage tightly around head&#10;"
+        "7. Seek immediate medical assistance&#10;"</string>
+
+    <string name="fracture">
+"1. Advice the casualty to keep still&#10;"
+"2. Prevent further movement of the fractured limb&#10;"
+"3. Immobilize the injured part with padding, bandages and slings&#10;"
+"4. If bleeding carefully place padding over the wound to control bleeding&#10;"
+        "5. Seek immediate medical assistance&#10;"</string>
+
+    <string name="minorburns">
+"1. Cool the burned area quickly with cool clean and running water for 15 to 20 minutes until the pain is reduced.&#10;"
+"2. Remove any clothing or jewellery if they are NOT stuck to the skin.&#10;"
+"3. Do NOT open blisters that are unbroken.&#10;"
+"4. Do NOT apply any cream or ointments.&#10;"
+    </string>
+
+    <string name="severeburns">
+"1. Do NOT remove any burnt clothing.&#10;"
+"2. Do NOT immerse large and severe burns in cold water. This could cause shock.&#10;"
+"3. Cover the area of the burn. Use a moist cloth or moist towels.&#10;"
+        "4. Check the person, and make sure he does not become too cold. Cover with a blanket but do NOT overheat.&#10;"</string>
+
+    <string name="fever">
+"If the person or child can drink, eat and move about:&#10;"
+"1. Give more fluids to drink than usual&#10;"
+"2. Remove any covering if the person is too hot.&#10;"
+    "3. Add covering if the person becomes cold.&#10;"</string>
+
+    <string name="convulsing">
+"1. Help the person to the ground and protect head from injury&#10;"
+"2. Remove any objects nearby to prevent injury&#10;"
+"3. Let the convulsion end. Do NOT try to stop the shaking.&#10;"
+"4. Do NOT place anything in the person’s mouth&#10;"
+"5. Do NOT give any drinks, medicine or food.&#10;"
+        "6. When the shaking stops, the person may sleep. Put person in recovery position and stay with them until they wake up.&#10;"</string>
+
+    <string name="chestpain">
+"• Uncomfortable pressure or squeezing pain in the centre of the chest&#10;"
+"• Pain spreads to shoulders, neck or arms&#10;"
+"• Difficulty breathing or shortness of breath&#10;"
+"• Heavy sweating&#10;"
+"• Feeling dizzy or fainting&#10;"
+        "• Nausea (feeling sick)&#10;"</string>
+
+    <string name="stroke">
+"• Sudden and severe headache&#10;"
+"• Sudden weakness or numbness in the face, arms or legs&#10;"
+"• Dizziness, confusion or blurring vision&#10;"
+"• Loss of speech, trouble talking or understanding others talking&#10;"
+"• Difficulty walking or keeping balance&#10;"
+        "• Sudden unconsciousness&#10;"</string>
+
+    <string name="assist">
+"• The person is most likely to be frightened. Give psychological first aid by reassuring the person and explaining what is happening.&#10;"
+"• Help the person to a comfortable position, half-sitting or lying down&#10;"
+        "• Ask person to rest and try not to move.&#10;&#10;"
+
+"Source: Community-Based Health and First-Aid Flipchart by the Philippine Red Cross"
+</string>
+
+
+    <string name="before_landslide">
+"1. BE AWARE OF YOUR SURROUNDINGS. You can’t predict big rainfall or earthquake, but you can learn about your area’s risk for landslides. Landslides are more likely to happen in places where they’ve happened before. If your area has experienced landslides in the past, you should be prepared since it’s likely to happen again.&#10;"
+"2. PREPARE A LANDSLIDE PREPAREDNESS PLAN. When a landslide happens, you need to evacuate quickly. Having an evacuation plan that you’ve practiced with your family will help you act fast when every minute counts, providing priority assistance to the PWD, pregnant, elderly and children family members. You should also be familiar with your area’s evacuation routes to help your evacuation go smoothly.&#10;"
+"3. HAVE AN EMERGENCY SUPPLY KIT READY. This kit should be easy to grab quickly or should stay in your car’s trunk. Your kit may include:&#10;"
+"   3a. First aid kit&#10;"
+"   3b. Flashlights and batteries&#10;"
+"   3c. Non-perishable food&#10;"
+"   3d. Water&#10;"
+"4. Update your supplies every year to ensure they’re working and ready if and when you need them.&#10;"
+    </string>
+
+    <string name="during_landslide">
+"1. KNOW THE WARNING SIGNS. If you’re having a major or heavy, pounding rain, you may be at risk for a landslide. Keep an eye on steep areas that are more likely to fall, as well as any streams or creeks near you. If the water increases suddenly or goes from clear to muddy, a landslide may be on its way. You can also listen for sounds of a landslide, including cracking trees, rushing water, rumbling or the sounds of rocks hitting each other. Listen to the radio or news to stay on top of the latest weather.&#10;"
+"2. EVACUATE IMMEDIATELY. If you know a landslide is happening, evacuate immediately. After you’re on the road, another family member can call and warn neighbors and friends.&#10;"
+"3. BE CAREFUL WHEN DRIVING. Landslides can block roadways or sweep away pavement. Keep your eyes on the road and watch for debris and falling rocks.&#10;"
+        "4. If you’re stuck in the path of a landslide, move uphill as quickly as possible.&#10;"</string>
+
+    <string name="after_landslide">
+"1. Wait for everything to be cleared up first&#10;"
+"2. Don’t return to the area where a landslide happened until authorities tell you it’s safe. These areas are more likely to experience a slide again immediately after an event.&#10;"
+"3. Flooding is also more likely, so seek shelter on higher ground.&#10;"
+"4. Listen to emergency broadcasts and pay attention to authorities. Focus on helping your neighbors and family as much as you can, but don’t get in the way of emergency professionals. You can also help authorities by reporting any dangers you see, such as:&#10;"
+"   4a. Broken power lines&#10;"
+"   4b. People in need of rescue&#10;"
+"   4c. Ruptured gas lines&#10;"
+"5. When you can return home, replant the land that’s moved as quickly as possible to help prevent erosion and future events. A geotechnical expert can give you landscaping advice to reduce your land’s risk for landslides.&#10;"
+"6. Know Where to Get Emergency Care When You Need It. Always prioritize the needs of the PWD, pregnant, elderly and children as they are the vulnerable group.&#10;"
+"7. If you or a loved one are injured in a landslide, go to the nearest emergency department or call Bacoor City's Emergency Hotline (191) or the National Emergency Hotline (911)."
+</string>
+
+
+</resources>

@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_hotlines"
+        android:enabled="true"
+        android:iconTint="@color/white"
+        android:title="Home"/>
+    <item
+        android:id="@+id/nav_hospitals"
+        android:enabled="true"
+        android:iconTint="@color/white"
+        android:title="Emergency Resource"/>
+    <item
+        android:id="@+id/nav_guidelines"
+        android:enabled="true"
+        android:iconTint="@color/white"
+        android:title="Emergency Guidelines"/>
+</menu>

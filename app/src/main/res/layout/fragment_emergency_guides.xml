@@ -1,0 +1,901 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/frameLayout"
+    tools:context=".Emergency.EmergencyGuides">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Emergency Resources"
+                android:fontFamily="@font/montserrat_extrabold"
+                android:textStyle="bold"
+                android:textSize="24sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp" />
+
+            <!--EARTHQUAKE-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/EarthquakeGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="6dp"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:animateLayoutChanges="true">
+
+                    <FrameLayout
+                        android:id="@+id/earthquake_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#FFC107"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="241dp"
+                            android:layout_height="98dp"
+                            android:layout_gravity="right"
+                            android:adjustViewBounds="true"
+                            android:alpha="0.3"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/emergencycard_earthquake" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="16dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Earthquake"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="#352802"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="15dp"
+                                    android:text="Tips &amp; Guides"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:textColor="#352802"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/earthquake_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:background="#FFF8E1"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <FrameLayout
+                            android:id="@+id/videoContainer1"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <VideoView
+                            android:id="@+id/EarthquakeVideoView"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp"
+                            android:visibility="visible"
+                            android:layout_gravity="center"
+                            android:layout_centerInParent="true" />
+
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp">
+                        <ImageView
+                            android:id="@+id/earthquake_before"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/earthquake_before"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/earthquake_during"
+                            android:layout_marginTop="10dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="310dp"
+                            android:src="@drawable/earthquake_during"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/earthquake_after"
+                            android:layout_width="match_parent"
+                            android:layout_height="370dp"
+                            android:src="@drawable/earthquake_after"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--FLOOD-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/FloodGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="6dp"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:animateLayoutChanges="true">
+
+                    <FrameLayout
+                        android:id="@+id/flood_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#03A9F4"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="241dp"
+                            android:layout_height="98dp"
+                            android:layout_gravity="right"
+                            android:adjustViewBounds="true"
+                            android:alpha="0.3"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/emergencycard_flood" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="16dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Flash Floods"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="#002F42"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="15dp"
+                                    android:text="Tips &amp; Guides"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:textColor="#002F42"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/flood_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:background="#E1F5FE"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/flood_before"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/flood_before"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/flood_during"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/flood_during"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/flood_after"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/flood_after"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--FIRST AID-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/FirstAidGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="6dp"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:animateLayoutChanges="true">
+
+                    <FrameLayout
+                        android:id="@+id/firstaid_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#BC1206"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="241dp"
+                            android:layout_height="98dp"
+                            android:layout_gravity="right"
+                            android:adjustViewBounds="true"
+                            android:alpha="0.5"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/emergencycard_firstaid" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="16dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="First Aid"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="@color/white"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="15dp"
+                                    android:text="Tips &amp; Guides"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:textColor="@color/white"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/firstaid_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:background="#FFEBEE"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_foursteps"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_foursteps"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_bleeding"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_bleeding"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_fracture"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_fracture"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_minorburn"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_minorburn"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_severeburn"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_severeburn"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_convulsion"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_convulsion"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_heartattack"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_heartattack"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/firstaid_stroke"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/firstaid_stroke"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/LandslideGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="6dp"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:animateLayoutChanges="true">
+
+                    <FrameLayout
+                        android:id="@+id/landslide_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#77b255"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="241dp"
+                            android:layout_height="98dp"
+                            android:layout_gravity="right"
+                            android:adjustViewBounds="true"
+                            android:alpha="0.3"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/emergencycard_landslide" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="16dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Landslide"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="@color/white"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="15dp"
+                                    android:text="Tips &amp; Guides"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:textColor="@color/white"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/landslide_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:background="#D6E6BE"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <FrameLayout
+                            android:id="@+id/videoContainer2"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                        <VideoView
+                            android:id="@+id/LandslideVideoView"
+                            android:layout_width="match_parent"
+                            android:layout_height="200dp"
+                            android:layout_gravity="center"
+                            android:visibility="visible"
+                            android:layout_centerInParent="true" />
+
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp">
+                        <ImageView
+                            android:id="@+id/landslide_before"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/landslide_before"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/landslide_during"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/landslide_during"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/landslide_after"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/landslide_after"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/FireGuide"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="6dp"
+                android:layout_marginBottom="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:animateLayoutChanges="true">
+
+                    <FrameLayout
+                        android:id="@+id/fire_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#FF7600"
+                        android:foreground="?android:attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="241dp"
+                            android:layout_height="98dp"
+                            android:layout_gravity="right"
+                            android:adjustViewBounds="true"
+                            android:alpha="0.3"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/emergencycard_fire" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:padding="16dp"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Fire"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="@color/white"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="15dp"
+                                    android:text="Tips &amp; Guides"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:textColor="@color/white"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/fire_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp"
+                        android:background="#C0FFCEA0"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <FrameLayout
+                            android:id="@+id/videoContainer3"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <VideoView
+                                android:id="@+id/FireVideoView"
+                                android:layout_width="match_parent"
+                                android:layout_height="200dp"
+                                android:layout_gravity="center"
+                                android:visibility="visible"
+                                android:layout_centerInParent="true" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp">
+                        <ImageView
+                            android:id="@+id/fire_safety"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/fire_safety"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/fire_extinguisher"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/fire_extinguisher"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/fire_during"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/fire_during"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                        <ImageView
+                            android:id="@+id/fire_after"
+                            android:layout_width="match_parent"
+                            android:layout_height="360dp"
+                            android:src="@drawable/fire_after"/>
+                            <ImageView
+                                android:layout_width="56dp"
+                                android:layout_height="56dp"
+                                android:layout_gravity="bottom|end"
+                                android:layout_margin="8dp"
+                                android:src="@drawable/zoom_image"
+                                android:contentDescription="Zoom Icon"
+                                android:background="@drawable/zoom_bg"
+                                android:padding="4dp" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/scrollToTopBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="bottom|end"
+        android:src="@drawable/scrolltotop"
+        app:tint="@null"
+        android:visibility="gone"
+        app:backgroundTint="#B72B3381"
+        app:layout_anchorGravity="bottom|end"/>
+
+</FrameLayout>

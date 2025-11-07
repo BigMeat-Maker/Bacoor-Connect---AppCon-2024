@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:paddingHorizontal="18dp"
+    android:background="#2B3381"
+    android:gravity="center">
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"/>
+
+    <ImageView
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:src="@drawable/back_button"
+        android:layout_gravity="left"/>
+
+    <!-- OTP Input Fields in a Row -->
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"/>
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="25dp">
+
+            <TextView
+                android:id="@+id/otp_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:fontFamily="@font/montserrat_extrabold"
+                android:gravity="center"
+                android:text="One-Time Pin"
+                android:textColor="#2B3381"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/otp_description"
+                android:layout_width="279dp"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="20dp"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:text="Please type in the six (6) - digit one time pin sent to your email address."
+                android:textColor="#2B3381"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/otp_1"
+                    android:layout_width="42dp"
+                    android:layout_height="65dp"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/otp"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#2B3381"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/otp_2"
+                    android:layout_width="42dp"
+                    android:layout_height="65dp"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/otp"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#2B3381"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/otp_3"
+                    android:layout_width="42dp"
+                    android:layout_height="65dp"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/otp"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#2B3381"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/otp_4"
+                    android:layout_width="42dp"
+                    android:layout_height="65dp"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/otp"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#2B3381"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/otp_5"
+                    android:layout_width="42dp"
+                    android:layout_height="65dp"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/otp"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#2B3381"
+                    android:textSize="18sp" />
+
+                <EditText
+                    android:id="@+id/otp_6"
+                    android:layout_width="42dp"
+                    android:layout_height="65dp"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/otp"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="1"
+                    android:fontFamily="@font/poppins_bold"
+                    android:textColor="#2B3381"
+                    android:textSize="18sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/otp_error"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:textColor="#FF0000" />
+
+            <TextView
+                android:id="@+id/btn_resend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="@font/poppins_bold"
+                android:text="Resend OTP code"
+                android:textColor="#2B3381"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/timer_display"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:baselineAligned="false"
+                android:fontFamily="@font/poppins_regular"
+                android:text="00:00"
+                android:textColor="#2B3381"
+                android:textSize="16sp" />
+
+
+            <Button
+                android:id="@+id/btn_verify"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="#2B3381"
+                android:fontFamily="@font/poppins_bold"
+                android:padding="10dp"
+                android:text="REGISTER"
+                android:textColor="@color/white"
+                android:textSize="16dp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+    <ImageView
+        android:id="@+id/cityhall_image"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginBottom="0dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/cityhall_shadow" />
+
+</LinearLayout>

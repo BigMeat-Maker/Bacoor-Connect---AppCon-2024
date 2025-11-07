@@ -1,0 +1,21 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_weather"
+        android:enabled="true"
+        android:icon="@drawable/weathericon"
+        android:iconTint="@color/white"
+        android:title="Weather"/>
+    <item
+        android:id="@+id/nav_earthquake"
+        android:enabled="true"
+        android:icon="@drawable/earthquakeicon"
+        android:iconTint="@color/white"
+        android:title="Earthquakes"/>
+    <item
+        android:id="@+id/nav_RL"
+        android:enabled="true"
+        android:icon="@drawable/reportlisticon"
+        android:iconTint="@color/white"
+        android:title="Report List"/>
+</menu>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#212121</color>
+    <color name="white">#FFFFFF</color>
+    <color name="baconnect_blue">#2B3381</color>
+    <color name="darker_gray">#AAAAAAFF</color>
+
+    <!-- Blue Theme Colors -->
+    <color name="colorPrimary">#1976D2</color>
+    <color name="colorPrimaryDark">#0D47A1</color>
+    <color name="colorPrimaryLight">#64B5F6</color>
+    <color name="colorAccent">#29B6F6</color>
+
+    <color name="gray">#757575</color>
+    <color name="light_gray">#F5F5F5</color>
+
+    <color name="status_positive">#4CAF50</color> <!-- Green -->
+    <color name="status_negative">#F44336</color> <!-- Red -->
+
+    <!-- Earthquake Magnitude Circle -->
+    <color name="magnitude_low">#f5c12e</color> <!-- Yellow -->
+    <color name="magnitude_medium">#ff7300</color> <!-- Orange -->
+    <color name="magnitude_high">#ce0000</color> <!-- Red -->
+</resources>

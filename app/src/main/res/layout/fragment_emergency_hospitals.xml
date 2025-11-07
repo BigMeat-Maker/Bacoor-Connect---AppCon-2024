@@ -1,0 +1,1102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".Emergency.EmergencyHospitals">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScrollView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Hospital Directory"
+                android:fontFamily="@font/montserrat_extrabold"
+                android:textStyle="bold"
+                android:textSize="28sp"
+                android:textColor="@color/black"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp" />
+
+            <!--List of Hospitals-->
+
+            <!--Hospital 1-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/BDRMC_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="195dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital1" />
+
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Bacoor Doctors Medical Center"
+                                android:fontFamily="@font/montserrat_extrabold"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:textSize="20sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Bacoor Doctors Medical Center, Bacoor Boulevard"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/white"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/bdrmc_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 416 6275"
+                            android:fontFamily="@font/montserrat_extrabold"
+                            android:textColor="@color/white"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/BDMC_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/BDMC_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+
+            <!--Hospital 2-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/CGH_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="198dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital2" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Crisostomo General Hospital"
+                                android:fontFamily="@font/montserrat_extrabold"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"
+                                android:textSize="22sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="General Tirona Highway, Bacoor, 4102 Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/cgh_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 434 8239"
+                            android:fontFamily="@font/poppins_bold"
+                            android:textColor="@color/white"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/CGH_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/CGH_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 3-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/MSMC_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="172dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital3" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Metro South Medical Center"
+                                android:fontFamily="@font/montserrat_extrabold"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:textSize="22sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="1 Molino - Paliparan Rd, Molino IV, Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/white"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/msmc_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 477 3087"
+                            android:fontFamily="@font/montserrat_extrabold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/MSMC_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/MSMC_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 4-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/MDH_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="175dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital4" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Molino Doctors Hospital"
+                                android:fontFamily="@font/montserrat_extrabold"
+                                android:textStyle="bold"
+                                android:textColor="@color/white"
+                                android:textSize="22sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="201 Molino Rd, Bacoor, Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/white"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/mdh_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 477 0830"
+                            android:fontFamily="@font/poppins_bold"
+                            android:textColor="@color/white"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/MDH_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/MDH_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 5-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/PGCMCI_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital5" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Prime Global Care Medical Center, Inc."
+                                android:fontFamily="@font/poppins_bold"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:textSize="20sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Avenida Rizal, Molino, Bacoor, 4102 Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/white"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/pgcmci_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 970 5314"
+                            android:fontFamily="@font/montserrat_extrabold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/PGCMCI_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/PGCMCI_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 6-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/SCHMC_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="225dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital6" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="South City Hospital and Medical Center"
+                                android:fontFamily="@font/poppins_bold"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="20sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="115 Daang Hari Road, Molino, Bacoor, 4102 Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/schmc_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(02) 8249 9100"
+                            android:fontFamily="@font/poppins_bold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/SCHMC_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/SCHMC_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 7-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/SEAMC_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="196dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital7" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Cavite East Asia Medical Center, Inc."
+                                android:fontFamily="@font/poppins_bold"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:textSize="20sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Molino Road, Brgy, Bacoor, 4102 Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/seamc_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="09452259136"
+                            android:fontFamily="@font/poppins_bold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/SEAMC_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/SEAMC_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 8-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/STRH_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="400dp"
+                        android:layout_height="195dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital8" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Southern Tagalog Regional Hospital"
+                                android:fontFamily="@font/montserrat_extrabold"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="20sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Bacoor, Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/strh_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 418 3644"
+                            android:fontFamily="@font/montserrat_extrabold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/STRH_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/STRH_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 9-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/SDMC_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="172dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital9" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="St. Dominic Medical Center"
+                                android:fontFamily="@font/montserrat_extrabold"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:textSize="22sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAlignment="center"
+                            android:text="Emilio Aguinaldo Hwy, Bacoor, 4102 Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="@color/white"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/sdmc_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 417 2520"
+                            android:fontFamily="@font/montserrat_extrabold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/SDMC_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/SDMC_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!--Hospital 10-->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/SMMH_Card"
+                android:layout_width="360dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp"
+                android:padding="8dp"
+                app:cardBackgroundColor="#2B3381">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <!-- Background Image -->
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="178dp"
+                        android:scaleType="centerCrop"
+                        android:adjustViewBounds="true"
+                        android:alpha="0.3"
+                        android:src="@drawable/hospital10" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="St. Michael Medical Hospital"
+                                android:fontFamily="@font/poppins_bold"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFF"
+                                android:textSize="22sp"
+                                android:layout_weight="1"/>
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="212 Molino 2 Proper, Bacoor, 4102 Cavite"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16dp"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/smmh_contact"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="(046) 477 1707"
+                            android:fontFamily="@font/poppins_bold"
+                            android:textColor="#FFFFFF"
+                            android:textSize="20dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/SMMH_Call"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_call"
+                                app:iconSize="24dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Call"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <Button android:id="@+id/SMMH_Location"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                app:icon="@android:drawable/ic_menu_compass"
+                                app:iconSize="28dp"
+                                app:iconTint="@color/baconnect_blue"
+                                android:text="Location"
+                                android:backgroundTint="#95FFFFFF"
+                                android:textColor="@color/black"
+                                android:fontFamily="@font/poppins_bold"
+                                android:includeFontPadding="false"/>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/scrollToTopBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_gravity="bottom|end"
+        android:src="@drawable/scrolltotop"
+        app:tint="@null"
+        android:visibility="gone"
+        app:backgroundTint="#B72B3381"
+        app:layout_anchorGravity="bottom|end"/>
+
+</FrameLayout>

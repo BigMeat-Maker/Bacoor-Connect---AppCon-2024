@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/top_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:background="#2B3381"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="3dp"
+            android:src="@drawable/back_button"
+            android:contentDescription="Back"
+            android:gravity="center_horizontal"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ID Verification"
+            android:textSize="22dp"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:fontFamily="@font/montserrat_extrabold"
+            android:includeFontPadding="false"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+
+    <!-- User info from Register activity -->
+    <TextView
+        android:id="@+id/userDetailsText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Make sure the ID is within the frame."
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:layout_gravity="center"
+        android:fontFamily="@font/poppins_bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- ImageView for displaying ID -->
+        <ImageView
+            android:id="@+id/idImageView"
+            android:layout_width="match_parent"
+            android:layout_height="488dp"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="Uploaded ID Image"
+            android:src="@android:drawable/ic_menu_camera"
+
+            app:layout_constraintBottom_toTopOf="@+id/uploadIdButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+    <!-- Button for uploading ID -->
+        <Button
+            android:id="@+id/uploadIdButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TAKE PHOTO"
+            android:textSize="18dp"
+            android:fontFamily="@font/montserrat_extrabold"
+            android:backgroundTint="@color/baconnect_blue"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Submit button -->
+    <Button
+        android:id="@+id/submitButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SUBMIT PHOTO"
+        android:textSize="18dp"
+        android:fontFamily="@font/montserrat_extrabold"
+        android:backgroundTint="@color/baconnect_blue"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+        </LinearLayout>
+</LinearLayout>
+</LinearLayout>

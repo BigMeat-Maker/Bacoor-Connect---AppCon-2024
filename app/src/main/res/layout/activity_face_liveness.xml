@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/top_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:background="#2B3381"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/backButton"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="3dp"
+            android:src="@drawable/back_button"
+            android:contentDescription="Back"
+            android:gravity="center_horizontal"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Facial Verification"
+            android:textSize="22dp"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:fontFamily="@font/montserrat_extrabold"
+            android:includeFontPadding="false"/>
+
+    </LinearLayout>
+
+        <!-- User info from Register activity -->
+        <TextView
+            android:id="@+id/userDetailsText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/poppins_bold"
+            android:text="Move your head around slowly."
+            android:textColor="@color/black"
+            android:textSize="18sp" />
+
+    <FrameLayout
+        android:layout_width="400dp"
+        android:layout_height="400dp"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_gravity="center">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Dotted background frame -->
+        <View
+            android:layout_width="330dp"
+            android:layout_height="330dp"
+            android:background="@drawable/dottedline_square"
+            android:layout_gravity="center"/>
+
+        <!-- CardView with Image -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:layout_gravity="center"
+            app:cardCornerRadius="16dp">
+
+            <ImageView
+                android:id="@+id/idImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="Uploaded ID Image"
+                android:src="@android:drawable/ic_menu_camera"
+                android:scaleType="centerCrop" />
+        </androidx.cardview.widget.CardView>
+
+    </FrameLayout>
+    </FrameLayout>
+
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginVertical="16dp"
+            android:fontFamily="@font/poppins_bold"
+            android:gravity="center"
+            android:text="Position your face within the frame."
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="257dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/poppins_regular"
+            android:gravity="center"
+            android:text="Make sure you are in a well-lit environment and the photo is not blurry."
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+
+        <!-- Button for uploading ID -->
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="307dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:backgroundTint="@color/baconnect_blue"
+            android:fontFamily="@font/montserrat_extrabold"
+            android:text="NEXT"
+            android:textSize="18dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    </LinearLayout>

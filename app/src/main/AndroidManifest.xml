@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <application
+        android:label="@string/app_name"
+        android:name=".General.MyApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.BacoorVisual"
+        tools:targetApi="31">
+        <activity
+            android:name=".General.FrontpageActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.advisories_adapter"
+            android:exported="false" />
+        <activity
+            android:name=".Report.ReportHistoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Report.ReportDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.PdfPreviewActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.id_guideline"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.face_liveness"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.upload_face"
+            android:exported="false" />
+        <activity
+            android:name=".General.PrivacyPolicy"
+            android:exported="false" />
+        <activity
+            android:name=".General.TOC"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.FaceVerification"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.UploadID"
+            android:exported="false" />
+        <activity
+            android:name=".General.AboutUs"
+            android:exported="false"
+            android:theme="@style/Theme.BacoorVisual" />
+        <activity
+            android:name=".General.advisories"
+            android:exported="false" />
+        <activity
+            android:name=".General.contactus"
+            android:exported="false" />
+        <activity
+            android:name=".General.services"
+            android:exported="false" />
+        <activity
+            android:name=".Report.ReportFeedActivity"
+            android:exported="false" />
+        <activity
+            android:name=".Weather.weatherDash"
+            android:exported="false" />
+        <activity
+            android:name=".Emergency.EarthquakeView"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.bacoorconnect.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".UserProfile"
+            android:exported="false" />
+
+
+
+
+        <meta-data
+            android:name="androidx.work.WorkManagerInitializer"
+            android:value="false" /> <!-- Activities -->
+        <activity
+            android:name=".Report.ReportDetailsFrag"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+        <activity
+            android:name=".Report.ReportActivity"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+        <activity
+            android:name=".Emergency.EmergencyResources"
+            android:exported="false" />
+        <activity
+            android:name=".General.MapDash"
+            android:exported="false" />
+        <activity
+            android:name=".Report.ReportIncident"
+            android:exported="false" />
+        <activity
+            android:name=".General.NotificationCenter"
+            android:exported="false"
+            android:theme="@style/Theme.BacoorVisual" />
+        <activity
+            android:name=".General.Register"
+            android:exported="false" />
+        <activity
+            android:name=".General.Login"
+            android:exported="false" />
+        <activity
+            android:name=".Helpers.Otpverification"
+            android:exported="false" />
+        <activity
+            android:name=".Report.EditReport"
+            android:exported="false" />
+        <activity
+            android:name=".General.Dashboard"
+            android:exported="false"
+            android:label="@string/title_activity_dashboard"
+            android:theme="@style/Theme.BacoorVisual.NoActionBar" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            tools:replace="android:exported">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".Helpers.LocationTrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+    </application>
+
+</manifest>

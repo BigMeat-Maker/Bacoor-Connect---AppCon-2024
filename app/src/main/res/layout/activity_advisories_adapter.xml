@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
+
+    <!-- Timeline vertical line -->
+    <View
+        android:id="@+id/timeline_line"
+        android:layout_width="5dp"
+        android:layout_height="match_parent"
+        android:background="#4383d8"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="24dp" />
+
+    <!-- Timeline circle (dot) -->
+    <View
+        android:id="@+id/timeline_dot"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@drawable/timeline_circle"
+        app:layout_constraintStart_toStartOf="@id/timeline_line"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="-7dp" />
+
+    <!-- Date Label -->
+    <TextView
+        android:id="@+id/advisoryDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Today"
+        android:textColor="@color/baconnect_blue"
+        android:textSize="28sp"
+        android:fontFamily="@font/montserrat_extrabold"
+        app:layout_constraintStart_toEndOf="@id/timeline_line"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginStart="16dp"
+        android:includeFontPadding="false"/>
+
+    <!-- Card View -->
+    <LinearLayout
+        android:id="@+id/advisoryCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_margin="15dp"
+        android:background="@drawable/card_background_white"
+        android:elevation="2dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintStart_toEndOf="@id/timeline_line"
+        app:layout_constraintTop_toBottomOf="@id/advisoryDate"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!--TEST IMAGE-->
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="placeholder test image"/>
+
+        <ImageView
+            android:layout_width="296dp"
+            android:layout_height="289dp"
+            android:src="@drawable/weather" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

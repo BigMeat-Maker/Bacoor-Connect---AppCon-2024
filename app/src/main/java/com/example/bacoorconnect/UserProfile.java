@@ -1,0 +1,520 @@
+package com.example.bacoorconnect;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.util.Patterns;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.PopupMenu;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import com.bumptech.glide.Glide;
+import com.example.bacoorconnect.General.Login;
+import com.example.bacoorconnect.General.NavigationHandler;
+import com.example.bacoorconnect.General.NavigationHeader;
+import com.example.bacoorconnect.General.NotificationCenter;
+import com.example.bacoorconnect.Helpers.AccountDeleter;
+import com.google.android.material.navigation.NavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class UserProfile extends AppCompatActivity {
+
+    private EditText fname, lname, email, contactno;
+    private TextView EditPFP;
+    private ImageView UserPFP;
+    private NavigationView navigationView;
+    private static final int PICK_IMAGE_REQUEST = 1;
+    private Uri imageUri;
+    private ImageView menuIcon, editDetailsBtn;
+    private DrawerLayout drawerLayout;
+    private Button saveChangesBtn, cancelEditBtn;
+    public boolean isEditing = false;
+    private ImageView DashNotif;
+    private String originalEmail, originalPhone, originalImageUrl;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.userprofile);
+
+        EditPFP = findViewById(R.id.editpfp);
+        UserPFP = findViewById(R.id.userpfp);
+        fname = findViewById(R.id.fname);
+        lname = findViewById(R.id.lname);
+        email = findViewById(R.id.email);
+        contactno = findViewById(R.id.contactno);
+
+        drawerLayout = findViewById(R.id.drawer_layout);
+        menuIcon = findViewById(R.id.menu_icon);
+
+        menuIcon = findViewById(R.id.menu_icon);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+        NavigationHeader.setupNavigationHeader(this, navigationView);
+
+        menuIcon.setOnClickListener(v -> {
+            if (drawerLayout.isDrawerOpen(navigationView)) {
+                drawerLayout.closeDrawer(navigationView);
+            } else {
+                drawerLayout.openDrawer(navigationView);
+            }
+        });
+        navigationView.setNavigationItemSelectedListener(item -> {
+            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
+            navigationHandler.handleMenuSelection(item);
+            drawerLayout.closeDrawer(navigationView);
+            return true;
+        });
+
+        DashNotif = findViewById(R.id.notification);
+
+        DashNotif.setOnClickListener(v -> {
+            Intent intent = new Intent(UserProfile.this, NotificationCenter.class);
+            startActivity(intent);
+        });
+
+        loadProfileImage();
+        loadUserDetails();
+
+        if (!canEditProfile()) {
+            Toast.makeText(this, "You can only edit your profile once a week", Toast.LENGTH_SHORT).show();
+        }
+
+        editDetailsBtn = findViewById(R.id.edituserdetails);
+        saveChangesBtn = findViewById(R.id.save_changes_btn);
+        cancelEditBtn = findViewById(R.id.cancel_editing_btn);
+
+        editDetailsBtn.setOnClickListener(v -> {
+            PopupMenu popupMenu = new PopupMenu(UserProfile.this, v);
+            popupMenu.getMenuInflater().inflate(R.menu.account_more_popup, popupMenu.getMenu());
+
+            popupMenu.setOnMenuItemClickListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.action_edit) {
+                    enableEditing();
+                    return true;
+                } else if (id == R.id.action_delete) {
+                    showDeleteConfirmationDialog();
+                    return true;
+                }
+                return false;
+            });
+
+            popupMenu.show();
+        });
+
+    }
+
+    private void showDeleteConfirmationDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Account")
+                .setMessage("Are you sure you want to delete your account? This action cannot be undone.")
+                .setPositiveButton("Delete", (dialog, which) -> deleteAccount())
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteAccount() {
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Deleting account...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
+        AccountDeleter.deleteUserAccount(this, new AccountDeleter.DeletionCallback() {
+            @Override
+            public void onSuccess() {
+                progressDialog.dismiss();
+                Toast.makeText(UserProfile.this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(UserProfile.this, Login.class));
+                finish();
+            }
+            @Override
+            public void onFailure(String errorMessage) {
+                progressDialog.dismiss();
+                Toast.makeText(UserProfile.this, "Failed to delete account: " + errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void validateEmailAndPhone() {
+        String newEmail = email.getText().toString().trim();
+        String newPhone = contactno.getText().toString().trim();
+
+        // Check for valid email
+        if (!isValidEmail(newEmail)) {
+            Toast.makeText(this, "Please enter a valid email address.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check for valid phone number
+        if (!isValidPhone(newPhone)) {
+            Toast.makeText(this, "Please enter a valid phone number (10–15 digits).", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String combinedText = newEmail + " " + newPhone;
+
+        Log.d("validateEmailAndPhone", "Combined Text: " + combinedText);
+
+        proceedWithProfileUpdate(newEmail, newPhone);
+    }
+
+    private void loadProfileImage() {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(FirebaseAuth.getInstance().getUid());
+
+        userRef.child("profileImage").get().addOnSuccessListener(dataSnapshot -> {
+            if (dataSnapshot.exists()) {
+                String imageUrl = dataSnapshot.getValue(String.class);
+                if (imageUrl != null) {
+                    originalImageUrl = imageUrl;
+                    Glide.with(this).load(imageUrl).circleCrop().into(UserPFP);
+                }
+            }
+        });
+    }
+
+    private void loadUserDetails() {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(FirebaseAuth.getInstance().getUid());
+
+        userRef.get().addOnSuccessListener(dataSnapshot -> {
+            if (dataSnapshot.exists()) {
+                String firstName = dataSnapshot.child("firstName").getValue(String.class);
+                String lastName = dataSnapshot.child("lastName").getValue(String.class);
+                String userEmail = dataSnapshot.child("email").getValue(String.class);
+                String phone = dataSnapshot.child("phone").getValue(String.class);
+
+                if (firstName != null) fname.setText(firstName);
+                if (lastName != null) lname.setText(lastName);
+                if (userEmail != null) email.setText(userEmail);
+                if (phone != null) contactno.setText(phone);
+            }
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Failed to load user details.", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void openImageChooser() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Profile Picture"), PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+            imageUri = data.getData();
+            UserPFP.setImageURI(imageUri);
+            checkForChanges();
+        }
+    }
+
+    private void uploadImageToFirebase(Uri filePath) {
+        if (filePath != null) {
+            StorageReference storageRef = FirebaseStorage.getInstance().getReference()
+                    .child("profile_images/" + FirebaseAuth.getInstance().getUid());
+
+            storageRef.putFile(filePath)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(uri -> {
+                            saveImageUrlToRealtimeDatabase(uri.toString());
+                            saveLastProfileEditTime();
+                            finishSave();
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
+    }
+
+    private void saveImageUrlToRealtimeDatabase(String imageUrl) {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(FirebaseAuth.getInstance().getUid());
+
+        userRef.child("profileImage").setValue(imageUrl)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Profile picture has been updated.", Toast.LENGTH_SHORT).show();
+                    logActivity("UserID", "Profile Edit", "Edited Profile", "User Profile", "Success",
+                            "User updated profile picture", "Profile Picture");
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to update image, please try again.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private boolean canEditProfile() {
+        SharedPreferences prefs = getSharedPreferences("UserProfilePrefs", MODE_PRIVATE);
+        long lastEditTime = prefs.getLong("lastProfileEditTime", 0);
+
+        long currentTimeMillis = System.currentTimeMillis();
+        long weekInMillis = 7 * 24 * 60 * 60 * 1000;
+
+        return (currentTimeMillis - lastEditTime) >= weekInMillis;
+    }
+
+    private void saveLastProfileEditTime() {
+        SharedPreferences prefs = getSharedPreferences("UserProfilePrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong("lastProfileEditTime", System.currentTimeMillis());
+        editor.apply();
+    }
+
+    private void enableEditing() {
+        isEditing = true;
+
+        EditPFP.setVisibility(View.VISIBLE);
+        saveChangesBtn.setVisibility(View.VISIBLE);
+        cancelEditBtn.setVisibility(View.VISIBLE);
+
+        originalEmail = email.getText().toString();
+        originalPhone = contactno.getText().toString();
+
+        EditText[] fields = { email, contactno };
+
+        for (EditText field : fields) {
+            field.setEnabled(true);
+            field.setFocusableInTouchMode(true);
+            setupSelectAllOnFocus(field);
+        }
+
+        EditPFP.setOnClickListener(v -> openImageChooser());
+        saveChangesBtn.setOnClickListener(v -> validateEmailAndPhone());
+        cancelEditBtn.setOnClickListener(v -> disableEditing());
+        Toast.makeText(this, "You can now edit your details", Toast.LENGTH_SHORT).show();
+
+        setupChangeWatcher();
+    }
+
+    private void setupSelectAllOnFocus(EditText editText) {
+        editText.setSelectAllOnFocus(true);
+        editText.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) ((EditText)v).selectAll();
+        });
+    }
+
+    private void setupChangeWatcher() {
+        EditText[] fields = { email, fname, lname, contactno };
+        for (EditText field : fields) {
+            field.addTextChangedListener(new android.text.TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    checkForChanges();
+                }
+                @Override
+                public void afterTextChanged(android.text.Editable s) { }
+            });
+        }
+    }
+
+    private void scanImageWithAzure(Uri imageUri, Runnable onSafe, Runnable onUnsafe) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[16384];
+            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+            buffer.flush();
+            byte[] imageBytes = buffer.toByteArray();
+
+            OkHttpClient client = new OkHttpClient();
+            RequestBody requestBody = RequestBody.create(imageBytes, MediaType.parse("application/octet-stream"));
+
+            Request request = new Request.Builder()
+                    .url("https://japaneast.api.cognitive.microsoft.com/contentsafety/image:analyze?api-version=2023-10-01")
+                    .addHeader("Ocp-Apim-Subscription-Key", "CbSF1NDTzzTa1ZAUAHxfOBM7VW3QNwWiE6gLheiXeUdUlrQ8xoKQJQQJ99BDACi0881XJ3w3AAAHACOGLPIj")
+                    .addHeader("Content-Type", "application/octet-stream")
+                    .post(requestBody)
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    runOnUiThread(() -> Toast.makeText(UserProfile.this, "Failed to scan image.", Toast.LENGTH_SHORT).show());
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        try {
+                            JSONObject result = new JSONObject(response.body().string());
+                            double severity = result.getJSONArray("categoriesAnalysis").getJSONObject(0).getDouble("severity");
+                            runOnUiThread(() -> {
+                                if (severity >= 0.5) {
+                                    Log.d("AzureCheck", "Unsafe content detected");
+                                    onUnsafe.run();
+                                } else {
+                                    Log.d("AzureCheck", "Safe content detected");
+                                    onSafe.run();
+                                }
+                            });
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        runOnUiThread(() -> Toast.makeText(UserProfile.this, "Image scan failed. Try again.", Toast.LENGTH_SHORT).show());
+                    }
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Unable to read image data", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void checkForChanges() {
+        boolean textChanged =
+                !email.getText().toString().equals(originalEmail) ||
+                        !contactno.getText().toString().equals(originalPhone);
+
+        boolean imageChanged = imageUri != null;
+
+        saveChangesBtn.setVisibility((textChanged || imageChanged) ? View.VISIBLE : View.GONE);
+    }
+
+    private void proceedWithProfileUpdate(String newEmail, String newPhone) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        currentUser.updateEmail(newEmail)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users")
+                                .child(currentUser.getUid());
+
+                        userRef.child("email").setValue(newEmail);
+                        userRef.child("phone").setValue(newPhone);
+
+                        saveLastProfileEditTime();
+
+                        if (imageUri != null) {
+                            scanImageWithAzure(imageUri, () -> {
+                                uploadImageToFirebase(imageUri);
+                            }, () -> {
+                                Toast.makeText(this, "Inappropriate content detected in your profile image. Update blocked.", Toast.LENGTH_LONG).show();
+                                addStrikeToUser("Inappropriate image content", imageUri.toString());
+                            });
+                        } else {
+                            finishSave();
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to update email in Auth.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void addStrikeToUser(String reason, String textInQuestion) {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users")
+                .child(FirebaseAuth.getInstance().getUid()).child("strikes");
+
+        String strikeId = userRef.push().getKey();
+        long currentTime = System.currentTimeMillis();
+
+        Map<String, Object> strikeData = new HashMap<>();
+        strikeData.put("reason", reason);
+        strikeData.put("textInQuestion", textInQuestion);
+        strikeData.put("time", currentTime);
+
+        if (strikeId != null) {
+            userRef.child(strikeId).setValue(strikeData)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Log.d("ProfileEdit", "Strike added successfully with reason: " + reason);
+                        } else {
+                            Log.e("ProfileEdit", "Failed to add strike.");
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to add strike data.", Toast.LENGTH_SHORT).show();
+                    });
+        }
+    }
+
+    private void finishSave() {
+        Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show();
+        saveChangesBtn.setVisibility(View.GONE);
+        disableEditing();
+        saveLastProfileEditTime();
+    }
+
+    private void disableEditing() {
+        fname.setEnabled(false);
+        lname.setEnabled(false);
+        contactno.setEnabled(false);
+
+        EditPFP.setVisibility(View.GONE);
+        saveChangesBtn.setVisibility(View.GONE);
+        cancelEditBtn.setVisibility(View.GONE);
+    }
+
+    private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {
+        DatabaseReference auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
+        String logId = auditRef.push().getKey();
+        String dateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+
+        HashMap<String, Object> logData = new HashMap<>();
+        logData.put("dateTime", dateTime);
+        logData.put("userId", userId);
+        logData.put("type", type);
+        logData.put("action", action);
+        logData.put("target", target);
+        logData.put("status", status);
+        logData.put("notes", notes);
+        logData.put("changes", changes);
+
+        if (logId != null) {
+            auditRef.child(logId).setValue(logData);
+        }
+    }
+
+    private boolean isValidEmail(String email) {
+        return email != null && Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
+
+    private boolean isValidPhone(String phone) {
+        return phone != null && phone.matches("^\\+?\\d{10,15}$");
+    }
+
+}

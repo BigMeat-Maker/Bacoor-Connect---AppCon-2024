@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "642584206400",
+    "firebase_url": "https://baconek-5517b-default-rtdb.firebaseio.com",
+    "project_id": "baconek-5517b",
+    "storage_bucket": "baconek-5517b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642584206400:android:ce33e84f51c1e68f6853a5",
+        "android_client_info": {
+          "package_name": "com.example.bacoorconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5gFydIrtklQtGSN6JhaXWMIiJ2sfRyR8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

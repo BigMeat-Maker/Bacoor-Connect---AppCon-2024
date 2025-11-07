@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="12dp"
+    android:gravity="center_vertical"
+    android:layout_marginBottom="4dp">
+
+    <TextView
+        android:id="@+id/textDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:gravity="center"
+        android:text="Monday"
+        android:textSize="16sp"
+        android:textColor="@color/baconnect_blue"
+        android:fontFamily="@font/poppins_bold" />
+
+    <ImageView
+        android:id="@+id/imageWeatherIconDay"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weather_sunny"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+
+    <ImageView
+        android:id="@+id/imageWeatherIconthunderstorm"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weather_thunderstorm"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+    <ImageView
+        android:id="@+id/imageWeatherIconExtHot"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weatersupersunny"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+    <ImageView
+        android:id="@+id/imageWeatherIconCloudy"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weathersunny"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+
+    <ImageView
+        android:id="@+id/imageWeatherIconrainy"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weather_rainy"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+
+    <ImageView
+        android:id="@+id/imageWeatherIconwindy"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weather_windy"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+    <ImageView
+        android:id="@+id/imageWeatherIconpartlycloudy"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/weather_partlycloudy"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="Weather Icon" />
+
+    <TextView
+        android:id="@+id/textTemperatureRange"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:layout_gravity="center"
+        android:fontFamily="@font/poppins_bold"
+        android:gravity="end"
+        android:text="30° / 24         "
+        android:textColor="@color/baconnect_blue"
+        android:textSize="16sp" />
+
+</LinearLayout>
