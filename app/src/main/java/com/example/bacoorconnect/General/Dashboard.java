@@ -79,13 +79,8 @@ public class Dashboard extends Fragment {
                 "(046) 481-4120",
                 "Ground Floor, New City Hall Building, Brgy. San Nicolas I, Bacoor City, Cavite");
 
-        // Setup emergency resources cards
         setupEmergencyResourcesCards(view);
-
-        // Setup quick access click listeners
         setupQuickAccessListeners(view);
-
-        // Setup bottom navigation
         setupBottomNavigation(view);
 
         return view;
@@ -96,14 +91,12 @@ public class Dashboard extends Fragment {
                 view.findViewById(R.id.bottom_navigation);
 
         if (bottomNav != null) {
-            // Set Home as selected by default
             bottomNav.setSelectedItemId(R.id.Nav_Home);
 
             bottomNav.setOnItemSelectedListener(item -> {
                 int itemId = item.getItemId();
 
                 if (itemId == R.id.Nav_Home) {
-                    // Already on home, just scroll to top
                     NestedScrollView scrollView = view.findViewById(R.id.nestedScrollView);
                     if (scrollView != null) {
                         scrollView.smoothScrollTo(0, 0);
@@ -111,13 +104,11 @@ public class Dashboard extends Fragment {
                     return true;
 
                 } else if (itemId == R.id.Nav_Service) {
-                    // Navigate to MapDash (Service/Map)
                     Intent intent = new Intent(getActivity(), MapDash.class);
                     startActivity(intent);
                     return true;
 
                 } else if (itemId == R.id.Nav_RI) {
-                    // Navigate to Report Incident
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                         Intent intent = new Intent(getActivity(), com.example.bacoorconnect.Report.ReportActivity.class);
                         startActivity(intent);
@@ -127,7 +118,6 @@ public class Dashboard extends Fragment {
                     return true;
 
                 } else if (itemId == R.id.Nav_History) {
-                    // Navigate to Report History
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                         Intent intent = new Intent(getActivity(), ReportIncident.class);
                         startActivity(intent);
@@ -137,7 +127,6 @@ public class Dashboard extends Fragment {
                     return true;
 
                 } else if (itemId == R.id.Nav_Profile) {
-                    // Navigate to Profile
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                         Intent intent = new Intent(getActivity(), UserProfile.class);
                         startActivity(intent);

@@ -1,5 +1,7 @@
 package com.example.bacoorconnect;
 
+import static android.app.PendingIntent.getActivity;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -13,7 +15,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -58,23 +62,28 @@ import okhttp3.Response;
 public class UserProfile extends AppCompatActivity {
 
     private EditText fname, lname, email, contactno;
-    private TextView EditPFP;
+    private TextView EditPFP, editProfileTitle, UserProfileName, UserProfileEmail;
     private ImageView UserPFP;
     private NavigationView navigationView;
     private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
     private ImageView menuIcon, editDetailsBtn;
     private DrawerLayout drawerLayout;
-    private Button saveChangesBtn, cancelEditBtn;
+    private Button saveChangesBtn, cancelEditBtn, logoutBtn;
     public boolean isEditing = false;
     private ImageView DashNotif;
     private String originalEmail, originalPhone, originalImageUrl;
+    private LinearLayout editProfileImageLayout, EditContainer;
+    private TableLayout userDetailsTable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.userprofile);
 
+        EditContainer = findViewById(R.id.editcontainer);
+        UserProfileEmail = findViewById(R.id.email_profile);
+        UserProfileName = findViewById(R.id.fname_profile);
         EditPFP = findViewById(R.id.editpfp);
         UserPFP = findViewById(R.id.userpfp);
         fname = findViewById(R.id.fname);
@@ -89,6 +98,18 @@ public class UserProfile extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         NavigationHeader.setupNavigationHeader(this, navigationView);
+
+        editProfileTitle = findViewById(R.id.edit_profile_title);
+        editProfileImageLayout = findViewById(R.id.edit_profile_image_layout);
+        userDetailsTable = findViewById(R.id.user_details_table);
+
+        logoutBtn = findViewById(R.id.logout_btn);
+        logoutBtn.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            Intent intent = new Intent(this, Login.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+        });
 
         menuIcon.setOnClickListener(v -> {
             if (drawerLayout.isDrawerOpen(navigationView)) {
@@ -178,13 +199,11 @@ public class UserProfile extends AppCompatActivity {
         String newEmail = email.getText().toString().trim();
         String newPhone = contactno.getText().toString().trim();
 
-        // Check for valid email
         if (!isValidEmail(newEmail)) {
             Toast.makeText(this, "Please enter a valid email address.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Check for valid phone number
         if (!isValidPhone(newPhone)) {
             Toast.makeText(this, "Please enter a valid phone number (10–15 digits).", Toast.LENGTH_SHORT).show();
             return;
@@ -225,6 +244,10 @@ public class UserProfile extends AppCompatActivity {
                 if (lastName != null) lname.setText(lastName);
                 if (userEmail != null) email.setText(userEmail);
                 if (phone != null) contactno.setText(phone);
+
+                if (firstName != null) UserProfileName.setText(firstName + " " + lastName);
+                if (userEmail != null) UserProfileEmail.setText(userEmail);
+
             }
         }).addOnFailureListener(e -> {
             Toast.makeText(this, "Failed to load user details.", Toast.LENGTH_SHORT).show();
@@ -302,6 +325,10 @@ public class UserProfile extends AppCompatActivity {
     private void enableEditing() {
         isEditing = true;
 
+        EditContainer.setVisibility(View.VISIBLE);
+        editProfileTitle.setVisibility(View.VISIBLE);
+        editProfileImageLayout.setVisibility(View.VISIBLE);
+        userDetailsTable.setVisibility(View.VISIBLE);
         EditPFP.setVisibility(View.VISIBLE);
         saveChangesBtn.setVisibility(View.VISIBLE);
         cancelEditBtn.setVisibility(View.VISIBLE);
@@ -480,14 +507,27 @@ public class UserProfile extends AppCompatActivity {
     }
 
     private void disableEditing() {
-        fname.setEnabled(false);
-        lname.setEnabled(false);
+        isEditing = false;
+
+        email.setEnabled(false);
         contactno.setEnabled(false);
 
+        editProfileTitle.setVisibility(View.GONE);
+        editProfileImageLayout.setVisibility(View.GONE);
+        userDetailsTable.setVisibility(View.GONE);
         EditPFP.setVisibility(View.GONE);
         saveChangesBtn.setVisibility(View.GONE);
         cancelEditBtn.setVisibility(View.GONE);
+
+        if (imageUri != null) {
+            imageUri = null;
+            if (originalImageUrl != null) {
+                Glide.with(this).load(originalImageUrl).circleCrop().into(UserPFP);
+            }
+        }
     }
+
+
 
     private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {
         DatabaseReference auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");

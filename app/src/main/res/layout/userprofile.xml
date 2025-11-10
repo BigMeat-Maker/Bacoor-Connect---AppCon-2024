@@ -12,300 +12,464 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-<LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        tools:ignore="MissingConstraints">
-
-    <!-- Top Nav -->
-    <LinearLayout
-        android:id="@+id/top_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="center"
-        android:background="@color/baconnect_blue"
-        android:padding="12dp"
-        tools:ignore="MissingConstraints">
-
-        <ImageView
-            android:id="@+id/menu_icon"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginTop="10dp"
-            android:src="@drawable/menu_white"
-            android:contentDescription="Menu"
-            android:gravity="center_horizontal"/>
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1" />
-
-        <ImageView
-            android:layout_width="65dp"
-            android:layout_height="40dp"
-            android:src="@drawable/logo_baconnect_nobg"
-            android:contentDescription="App Logo" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1" />
-
-        <ImageView
-            android:id="@+id/notification"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:layout_marginTop="7dp"
-            android:src="@drawable/notification_white"
-            android:contentDescription="Notification"
-            android:gravity="center_horizontal"/>
-    </LinearLayout>
-    <!--Page Content-->
-
-    <ScrollView
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent">
-
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingLeft="30dp"
-            android:paddingRight="30dp">
-
-            <TextView
-                android:layout_marginTop="20dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="User Profile"
-                android:fontFamily="@font/montserrat_extrabold"
-                android:textStyle="bold"
-                android:textSize="26sp"
-                android:textColor="@color/black"/>
-
-        <View
-            android:layout_width="wrap_content"
-            android:layout_height="25dp"/>
-
-        <ImageView
-            android:id="@+id/userpfp"
-            android:layout_width="150dp"
-            android:layout_height="150dp"
-            android:src="@drawable/profile"
-            android:layout_gravity="center"/>
-
-        <View
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"/>
-
-        <TextView
-            android:visibility="gone"
-            android:id="@+id/editpfp"
-            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="Edit Profile Picture"
-            android:fontFamily="@font/poppins_bold"
-            android:textSize="14dp"
-            android:textColor="#616468"
-            android:layout_gravity="center"/>
-        <!-- maybe a fragment that asks if the profile pic will be imported from camera or gallery?
-        profile details too (address, phone num)-->
+            android:orientation="vertical"
+            tools:ignore="MissingConstraints">
 
-        <View
-            android:layout_width="wrap_content"
-            android:layout_height="20dp"/>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <androidx.cardview.widget.CardView
-                android:layout_width="wrap_content"
+            <!-- Top Nav -->
+            <LinearLayout
+                android:id="@+id/top_navigation"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
                 android:layout_gravity="center"
-                android:layout_margin="4dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                android:padding="8dp"
-                app:cardBackgroundColor="#2B3381">
+                android:background="@color/baconnect_blue"
+                android:padding="12dp">
+
+                <ImageView
+                    android:id="@+id/menu_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginTop="10dp"
+                    android:src="@drawable/menu_white"
+                    android:contentDescription="Menu"
+                    android:gravity="center_horizontal"/>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:layout_width="65dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/logo_baconnect_nobg"
+                    android:contentDescription="App Logo" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/notification"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:layout_marginTop="7dp"
+                    android:src="@drawable/notification_white"
+                    android:contentDescription="Notification"
+                    android:gravity="center_horizontal"/>
+            </LinearLayout>
+
+            <!--Page Content-->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginEnd="12dp"
-                    android:layout_gravity="end"
-                    android:padding="2dp">
-                    <ImageView
-                        android:id="@+id/edituserdetails"
-                        android:layout_marginLeft="18dp"
-                        android:layout_width="30dp"
-                        android:layout_height="30dp"
-                        android:src="@drawable/moreee"/>
+                    android:orientation="vertical"
+                    android:paddingLeft="14dp"
+                    android:paddingRight="14dp"
+                    android:paddingBottom="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="20dp"
+                        android:fontFamily="@font/montserrat_extrabold"
+                        android:text="My Profile"
+                        android:textColor="@color/black"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="wrap_content"
+                        android:layout_height="25dp" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="4dp"
+                        android:padding="8dp"
+                        app:cardBackgroundColor="#2B3381"
+                        app:cardCornerRadius="16dp"
+                        app:cardElevation="4dp"
+                        app:contentPadding="24dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:id="@+id/userpfp"
+                                android:layout_width="80dp"
+                                android:layout_height="80dp"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="16dp"
+                                android:src="@drawable/profile" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/fname_profile"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="User Name"
+                                    android:fontFamily="@font/montserrat_extrabold"
+                                    android:textColor="@color/white"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:fontFamily="@font/poppins_light"
+                                    android:id="@+id/email_profile"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="User Email"
+                                    android:textColor="@color/white"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:visibility="gone"
+                                    android:layout_marginTop="6dp"
+                                    android:id="@+id/editpfp"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="left"
+                                    android:background="@drawable/bg_white_btn"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:padding="4.6dp"
+                                    android:text="Edit Profile Picture"
+                                    android:textColor="@color/baconnect_blue"
+                                    android:textSize="12dp" />
+
+                            </LinearLayout>
+
+                            <ImageView
+                                android:id="@+id/edituserdetails"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="top"
+                                android:src="@drawable/moreee" />
+
+                        </LinearLayout>
+                    </androidx.cardview.widget.CardView>
+
+                    <View
+                        android:layout_width="wrap_content"
+                        android:layout_height="20dp" />
+
+                    <!-- edit -->
+                    <LinearLayout
+                        android:id="@+id/editcontainer"
+                        android:visibility="gone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="left"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/edit_profile_title"
+                            android:visibility="gone"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="left"
+                            android:fontFamily="@font/montserrat_extrabold"
+                            android:text="Edit Profile"
+                            android:textColor="@color/black"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginBottom="12dp" />
+
+                        <LinearLayout
+                            android:id="@+id/edit_profile_image_layout"
+                            android:visibility="gone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="left"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="16dp">
+                        </LinearLayout>
+
+                        <TableLayout
+                            android:id="@+id/user_details_table"
+                            android:visibility="gone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:stretchColumns="1">
+
+                            <TableRow>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:padding="8dp"
+                                    android:text="First Name"
+                                    android:textColor="@color/black"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <EditText
+                                    android:id="@+id/fname"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:enabled="false"
+                                    android:background="@null"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:gravity="end"
+                                    android:padding="8dp"
+                                    android:text="John"
+                                    android:textColor="@color/black"
+                                    android:textSize="16sp" />
+                            </TableRow>
+
+                            <TableRow>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:padding="8dp"
+                                    android:text="Last Name"
+                                    android:textColor="@color/black"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <EditText
+                                    android:id="@+id/lname"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:enabled="false"
+                                    android:background="@null"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:gravity="end"
+                                    android:padding="8dp"
+                                    android:text="Doe"
+                                    android:textColor="@color/black"
+                                    android:textSize="16sp" />
+                            </TableRow>
+
+                            <TableRow>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Email"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/white"
+                                    android:textSize="18sp"
+                                    android:padding="8dp" />
+
+                                <EditText
+                                    android:id="@+id/email"
+                                    android:background="@null"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="end"
+                                    android:text="johndoe@gmail.com"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:textColor="@color/white"
+                                    android:textSize="16sp"
+                                    android:padding="8dp" />
+                            </TableRow>
+
+                            <TableRow>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:padding="8dp"
+                                    android:text="Phone"
+                                    android:textColor="@color/black"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <EditText
+                                    android:id="@+id/contactno"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:enabled="false"
+                                    android:background="@null"
+                                    android:fontFamily="@font/poppins_light"
+                                    android:gravity="end"
+                                    android:padding="8dp"
+                                    android:text="0917-123-4567"
+                                    android:textColor="@color/black"
+                                    android:textSize="16sp" />
+                            </TableRow>
+                        </TableLayout>
+
+                        <View
+                            android:layout_width="wrap_content"
+                            android:layout_height="10dp" />
+
+                        <Button
+                            android:visibility="gone"
+                            android:id="@+id/save_changes_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:backgroundTint="#2B3381"
+                            android:fontFamily="@font/poppins_bold"
+                            android:padding="10dp"
+                            android:text="SAVE CHANGES"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:visibility="gone"
+                            android:id="@+id/cancel_editing_btn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:backgroundTint="#BC1206"
+                            android:fontFamily="@font/poppins_bold"
+                            android:padding="10dp"
+                            android:text="CANCEL EDITING"
+                            android:textColor="@color/white"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="wrap_content"
+                            android:layout_height="40dp" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- phone -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:src="@drawable/phone_vector"
+                                android:layout_marginEnd="6dp"/>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Contact Number"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="@color/black"
+                                    />
+                                <TextView
+                                    android:id="@+id/contactNumberInfo"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="666"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_regular"
+                                    android:textColor="@color/black"
+                                    />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="wrap_content"
+                            android:layout_height="20dp" />
+
+                        <!-- loc -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:src="@drawable/locpin_vector"
+                                android:layout_marginEnd="6dp"/>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Location"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_bold"
+                                    android:textColor="@color/black"
+                                    />
+                                <TextView
+                                    android:id="@+id/locationInfo"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Molino II, Bacoor City, Cavite"
+                                    android:textSize="14sp"
+                                    android:fontFamily="@font/poppins_regular"
+                                    android:textColor="@color/black"
+                                    />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
                 </LinearLayout>
-
-
-                <TableLayout
-                    android:layout_marginTop="48dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:stretchColumns="1"
-                    android:padding="20dp">
-
-                    <TableRow>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="First Name"
-                            android:fontFamily="@font/poppins_bold"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"
-                            android:textSize="18dp"
-                            android:padding="8dp" />
-
-                        <EditText
-                            android:id="@+id/fname"
-                            android:background="@null"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="end"
-                            android:text="John"
-                            android:fontFamily="@font/poppins_light"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:padding="8dp" />
-                    </TableRow>
-
-                    <TableRow>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Last Name"
-                            android:fontFamily="@font/poppins_bold"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"
-                            android:textSize="18dp"
-                            android:padding="8dp" />
-
-                        <EditText
-                            android:id="@+id/lname"
-                            android:background="@null"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="end"
-                            android:text="Doe"
-                            android:fontFamily="@font/poppins_light"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:padding="8dp" />
-                    </TableRow>
-
-                    <TableRow>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Email"
-                            android:fontFamily="@font/poppins_bold"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"
-                            android:textSize="18sp"
-                            android:padding="8dp" />
-
-                        <EditText
-                            android:id="@+id/email"
-                            android:background="@null"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="end"
-                            android:text="johndoe@gmail.com"
-                            android:fontFamily="@font/poppins_light"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:padding="8dp" />
-                    </TableRow>
-
-                    <TableRow>
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Phone"
-                            android:fontFamily="@font/poppins_bold"
-                            android:textStyle="bold"
-                            android:textColor="@color/white"
-                            android:textSize="18sp"
-                            android:padding="8dp" />
-
-                        <EditText
-                            android:id="@+id/contactno"
-                            android:background="@null"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="end"
-                            android:text="0917-123-4567"
-                            android:fontFamily="@font/poppins_light"
-                            android:textColor="@color/white"
-                            android:textSize="16sp"
-                            android:padding="8dp" />
-                    </TableRow>
-
-                </TableLayout>
-
-            </androidx.cardview.widget.CardView>
-
-            <View
-                android:layout_width="wrap_content"
-                android:layout_height="10dp"/>
+            </ScrollView>
 
             <Button
-                android:visibility="gone"
-                android:id="@+id/save_changes_btn"
+                android:id="@+id/logout_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="SAVE CHANGES"
-                android:fontFamily="@font/poppins_bold"
-                android:padding="10dp"
-                android:layout_gravity="center"
-                android:backgroundTint="#2B3381"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold"/>
-
-            <Button
-                android:visibility="gone"
-                android:id="@+id/cancel_editing_btn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="CANCEL EDITING"
-                android:fontFamily="@font/poppins_bold"
-                android:padding="10dp"
-                android:layout_gravity="center"
+                android:layout_margin="14dp"
                 android:backgroundTint="#BC1206"
+                android:fontFamily="@font/poppins_bold"
+                android:padding="10dp"
+                android:text="LOG OUT"
                 android:textColor="@color/white"
                 android:textSize="16sp"
-                android:textStyle="bold"/>
-
-
-            <View
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"/>
+                android:textStyle="bold" />
 
         </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
-    </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
