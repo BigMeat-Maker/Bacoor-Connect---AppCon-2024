@@ -69,7 +69,7 @@ public class contactus extends AppCompatActivity {
         toggle.syncState();
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.Nav_Service);
+        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);
 
         DashNotif = findViewById(R.id.notification);
         DashNotif.setOnClickListener(v -> {
@@ -123,8 +123,8 @@ public class contactus extends AppCompatActivity {
         menu.findItem(R.id.nav_history).setVisible(false);
         menu.findItem(R.id.nav_profile).setVisible(false);
 
-        bottomNavigationView.getMenu().findItem(R.id.Nav_RI).setEnabled(false);
-        bottomNavigationView.getMenu().findItem(R.id.Nav_RI).setVisible(false);
+        bottomNavigationView.getMenu().findItem(R.id.nav_ri).setEnabled(false);
+        bottomNavigationView.getMenu().findItem(R.id.nav_ri).setVisible(false);
 
         Toast.makeText(this, "Guest mode: Limited access", Toast.LENGTH_SHORT).show();
     }

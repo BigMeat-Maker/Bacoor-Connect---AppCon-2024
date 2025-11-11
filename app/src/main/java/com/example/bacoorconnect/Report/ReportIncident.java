@@ -126,7 +126,7 @@ public class ReportIncident extends AppCompatActivity {
         });
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.Nav_RI);
+        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_ri);
     }
 
     private void setupCategorySelection() {
@@ -657,7 +657,7 @@ public class ReportIncident extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.Nav_RI);
+            bottomNavigationView.setSelectedItemId(R.id.nav_ri);
         }
     }
 

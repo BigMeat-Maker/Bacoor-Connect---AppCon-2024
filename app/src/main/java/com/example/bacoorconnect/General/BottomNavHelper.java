@@ -26,23 +26,23 @@ public class BottomNavHelper {
             Class<?> targetActivity = null;
             boolean isGuest = FirebaseAuth.getInstance().getCurrentUser() == null;
 
-            if (isGuest && (itemId == R.id.Nav_RI || itemId == R.id.nav_map)) {
-                String featureName = (itemId == R.id.Nav_RI) ? "Report Incident" : "Map";
+            if (isGuest && (itemId == R.id.nav_ri || itemId == R.id.nav_map)) {
+                String featureName = (itemId == R.id.nav_ri) ? "Report Incident" : "Map";
                 Toast.makeText(activity, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
                 AuditLogger.log(activity, "Guest", "Access Attempt", "Blocked", featureName, "Denied",
                         "Guest tried to access " + featureName, "N/A");
                 return false;
             }
 
-            if (itemId == R.id.Nav_Home) {
+            if (itemId == R.id.nav_home) {
                 targetActivity = Dashboard.class;
-            } else if (itemId == R.id.Nav_Service) {
+            } else if (itemId == R.id.nav_service) {
                 targetActivity = services.class;
-            } else if (itemId == R.id.Nav_RI) {
+            } else if (itemId == R.id.nav_ri) {
                 targetActivity = ReportIncident.class;
-            } else if (itemId == R.id.Nav_History) {
+            } else if (itemId == R.id.nav_history) {
                 targetActivity = ReportHistoryActivity.class;
-            } else if (itemId == R.id.Nav_Profile) {
+            } else if (itemId == R.id.nav_profile) {
                 targetActivity = UserProfile.class;
             }
 

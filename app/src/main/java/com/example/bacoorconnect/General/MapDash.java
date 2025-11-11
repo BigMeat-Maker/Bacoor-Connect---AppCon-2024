@@ -103,7 +103,7 @@ public class MapDash extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 intent = new Intent(this, Dashboard.class);
-            } else if (id == R.id.Nav_Service) {
+            } else if (id == R.id.nav_service) {
                 intent = new Intent(this, services.class);
             } else if (id == R.id.nav_service) {
                 intent = new Intent(this, weatherDash.class);

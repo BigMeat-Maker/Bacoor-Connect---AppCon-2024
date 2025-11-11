@@ -234,4 +234,5 @@ public class FrontpageActivity extends AppCompatActivity {
 
         greetingText.setText(greeting);
     }
+
 }

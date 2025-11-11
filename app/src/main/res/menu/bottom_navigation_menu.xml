@@ -1,29 +1,29 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/Nav_Home"
+        android:id="@+id/nav_home"
         android:enabled="true"
         android:icon="@drawable/tab_bottom_home"
         android:iconTint="@color/white"
         android:title="Home"/>
     <item
-        android:id="@+id/Nav_Service"
+        android:id="@+id/nav_service"
         android:enabled="true"
         android:icon="@drawable/tab_bottom_service"
         android:iconTint="@color/white"
         android:title="Service"/>
     <item
-        android:id="@+id/Nav_RI"
+        android:id="@+id/nav_ri"
         android:enabled="true"
         android:icon="@drawable/ic_report_cta"
         android:title="Report"/>
     <item
-        android:id="@+id/Nav_History"
+        android:id="@+id/nav_history"
         android:enabled="true"
         android:icon="@drawable/tab_bottom_history"
         android:iconTint="@color/white"
         android:title="History"/>
     <item
-        android:id="@+id/Nav_Profile"
+        android:id="@+id/nav_profile"
         android:enabled="true"
         android:icon="@drawable/tab_bottom_profile"
         android:iconTint="@color/white"

@@ -51,7 +51,7 @@ public class NotificationCenter extends AppCompatActivity {
             return true;
         });
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.Nav_Home);
+        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_home);
     }
 
     private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {

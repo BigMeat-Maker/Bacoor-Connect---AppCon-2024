@@ -84,7 +84,7 @@ public class EmergencyResources extends AppCompatActivity {
         });
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.Nav_Service);
+        BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);
 
         DashNotif = findViewById(R.id.notification);
         DashNotif.setOnClickListener(v -> {
@@ -101,8 +101,8 @@ public class EmergencyResources extends AppCompatActivity {
 
     private void disableGuestFeatures() {
         // Guest mode restrictions now handled in Emergency Hotlines fragment
-        bottomNavigationView.getMenu().findItem(R.id.Nav_RI).setEnabled(false);
-        bottomNavigationView.getMenu().findItem(R.id.Nav_RI).setVisible(false);
+        bottomNavigationView.getMenu().findItem(R.id.nav_ri).setEnabled(false);
+        bottomNavigationView.getMenu().findItem(R.id.nav_ri).setVisible(false);
 
         Toast.makeText(this, "Guest mode: Limited access", Toast.LENGTH_SHORT).show();
     }
@@ -118,7 +118,7 @@ public class EmergencyResources extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.Nav_Service);
+            bottomNavigationView.setSelectedItemId(R.id.nav_service);
         }
     }
 

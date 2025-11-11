@@ -27,6 +27,7 @@ import com.example.bacoorconnect.General.Dashboard;
 import com.example.bacoorconnect.General.Login;
 import com.example.bacoorconnect.General.MapDash;
 import com.example.bacoorconnect.R;
+import com.example.bacoorconnect.Report.ReportHistoryActivity;
 import com.example.bacoorconnect.Report.ReportIncident;
 import com.example.bacoorconnect.UserProfile;
 import com.google.firebase.auth.FirebaseAuth;
@@ -91,33 +92,33 @@ public class Dashboard extends Fragment {
                 view.findViewById(R.id.bottom_navigation);
 
         if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.Nav_Home);
+            bottomNav.setSelectedItemId(R.id.nav_home);
 
             bottomNav.setOnItemSelectedListener(item -> {
                 int itemId = item.getItemId();
 
-                if (itemId == R.id.Nav_Home) {
-                    NestedScrollView scrollView = view.findViewById(R.id.nestedScrollView);
-                    if (scrollView != null) {
-                        scrollView.smoothScrollTo(0, 0);
-                    }
+                if (itemId == R.id.nav_home) {
+                    // Stay on the Dashboard (Home)
                     return true;
 
-                } else if (itemId == R.id.Nav_Service) {
+                } else if (itemId == R.id.nav_service) {
+                    // Navigate to Service Activity
                     Intent intent = new Intent(getActivity(), MapDash.class);
                     startActivity(intent);
                     return true;
 
-                } else if (itemId == R.id.Nav_RI) {
+                } else if (itemId == R.id.nav_ri) {
+                    // Navigate to Report Incident Activity
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                        Intent intent = new Intent(getActivity(), com.example.bacoorconnect.Report.ReportActivity.class);
+                        Intent intent = new Intent(getActivity(), ReportIncident.class);
                         startActivity(intent);
                     } else {
                         Toast.makeText(getContext(), "Please login to report incidents", Toast.LENGTH_SHORT).show();
                     }
                     return true;
 
-                } else if (itemId == R.id.Nav_History) {
+                } else if (itemId == R.id.nav_history) {
+                    // Navigate to Report History Activity
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                         Intent intent = new Intent(getActivity(), ReportIncident.class);
                         startActivity(intent);
@@ -126,7 +127,8 @@ public class Dashboard extends Fragment {
                     }
                     return true;
 
-                } else if (itemId == R.id.Nav_Profile) {
+                } else if (itemId == R.id.nav_profile) {
+                    // Navigate to Profile Activity
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
                         Intent intent = new Intent(getActivity(), UserProfile.class);
                         startActivity(intent);
@@ -171,7 +173,7 @@ public class Dashboard extends Fragment {
     }
 
     private void setupHotlineClick(View parentView, int layoutId, String phoneNumber, String serviceName,
-                                    int iconResId, String description, String displayPhone, String address) {
+                                   int iconResId, String description, String displayPhone, String address) {
         LinearLayout layout = parentView.findViewById(layoutId);
         if (layout != null) {
             layout.setOnClickListener(v -> {
@@ -181,7 +183,7 @@ public class Dashboard extends Fragment {
     }
 
     private void showHotlineInfoDialog(String serviceName, int iconResId, String description,
-                                        String displayPhone, String dialPhone, String address) {
+                                       String displayPhone, String dialPhone, String address) {
         Dialog dialog = new Dialog(requireContext());
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_hotline_info);
@@ -227,14 +229,14 @@ public class Dashboard extends Fragment {
 
         // Service
         view.findViewById(R.id.quick_service).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), MapDash.class);
+            Intent intent = new Intent(getActivity(), services.class);
             startActivity(intent);
         });
 
         // Report History
         view.findViewById(R.id.quick_history).setOnClickListener(v -> {
             if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                Intent intent = new Intent(getActivity(), ReportIncident.class);
+                Intent intent = new Intent(getActivity(), ReportHistoryActivity.class);
                 startActivity(intent);
             } else {
                 Toast.makeText(getContext(), "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
@@ -259,17 +261,10 @@ public class Dashboard extends Fragment {
 
         // Feedback
         view.findViewById(R.id.quick_feedback).setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), AboutUs.class);
+            Intent intent = new Intent(getActivity(), contactus.class);
             startActivity(intent);
         });
 
-        // Logout
-        view.findViewById(R.id.quick_logout).setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(getActivity(), Login.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-        });
     }
 
     private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {
