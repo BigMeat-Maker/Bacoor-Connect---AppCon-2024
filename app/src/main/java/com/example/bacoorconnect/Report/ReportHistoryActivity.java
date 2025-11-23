@@ -26,10 +26,12 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.General.NavigationHandler;
 import com.example.bacoorconnect.General.NavigationHeader;
 import com.example.bacoorconnect.Helpers.PdfPreviewActivity;
 import com.example.bacoorconnect.R;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.database.DatabaseReference;
@@ -51,16 +53,13 @@ public class ReportHistoryActivity extends AppCompatActivity {
 
     private static final String TAG = "ReportHistoryActivity";
 
+    private BottomNavigationView bottomNavigationView;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView emptyTextView;
     private MaterialButton exportButton;
     private MaterialButton printButton;
     private List<ReportItem> reportItems;
-    private ImageView menuIcon;
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-
     private DatabaseReference databaseReference;
 
     // Dashboard views
@@ -74,20 +73,6 @@ public class ReportHistoryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: Activity created");
         setContentView(R.layout.activity_report_history);
-
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
-
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
 
         // Initialize views
         recyclerView = findViewById(R.id.report_recycler_view);
@@ -116,23 +101,13 @@ public class ReportHistoryActivity extends AppCompatActivity {
         // Load report history data
         loadReportHistory();
 
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+        if (bottomNavigationView != null) {
+            BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_history);
+        } else {
+            android.util.Log.e("ServicesActivity", "BottomNavigationView not found. Check layout ID.");
+        }
 
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-        navigationView.setNavigationItemSelectedListener(item -> {
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
     }
 
     private void loadReportHistory() {

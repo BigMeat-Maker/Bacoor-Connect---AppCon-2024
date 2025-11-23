@@ -103,7 +103,7 @@ public class Dashboard extends Fragment {
 
                 } else if (itemId == R.id.nav_service) {
                     // Navigate to Service Activity
-                    Intent intent = new Intent(getActivity(), MapDash.class);
+                    Intent intent = new Intent(getActivity(), services.class);
                     startActivity(intent);
                     return true;
 
@@ -120,7 +120,7 @@ public class Dashboard extends Fragment {
                 } else if (itemId == R.id.nav_history) {
                     // Navigate to Report History Activity
                     if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                        Intent intent = new Intent(getActivity(), ReportIncident.class);
+                        Intent intent = new Intent(getActivity(), ReportHistoryActivity.class);
                         startActivity(intent);
                     } else {
                         Toast.makeText(getContext(), "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();

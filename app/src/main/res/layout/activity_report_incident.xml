@@ -21,51 +21,6 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/top_navigation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_gravity="center"
-                android:background="@color/baconnect_blue"
-                android:padding="12dp"
-                tools:ignore="MissingConstraints">
-
-                <ImageView
-                    android:id="@+id/menu_icon"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginTop="10dp"
-                    android:src="@drawable/menu_white"
-                    android:contentDescription="Menu"
-                    android:gravity="center_horizontal"/>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1" />
-
-                <ImageView
-                    android:layout_width="65dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/logo_baconnect_nobg"
-                    android:contentDescription="App Logo" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1" />
-
-                <ImageView
-                    android:id="@+id/notification"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
-                    android:layout_marginTop="7dp"
-                    android:src="@drawable/notification_white"
-                    android:contentDescription="Notification"
-                    android:gravity="center_horizontal"/>
-            </LinearLayout>
-
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
@@ -370,11 +325,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:itemIconTint="@color/bottomnavbar"
-            app:itemTextColor="@color/bottomnavbar"
-            android:background="@color/baconnect_blue"
-            app:menu="@menu/bottom_navigation_menu"
-            style="@style/CustomBottomNav" />
+            app:itemTextColor="@color/baconnect_blue"
+            app:menu="@menu/bottom_navigation_menu"/>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

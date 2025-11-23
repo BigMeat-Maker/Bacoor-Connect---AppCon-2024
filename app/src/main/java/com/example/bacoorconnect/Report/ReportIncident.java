@@ -24,9 +24,6 @@ import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
-import com.example.bacoorconnect.General.NavigationHandler;
-import com.example.bacoorconnect.General.NavigationHeader;
-import com.example.bacoorconnect.General.NotificationCenter;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Helpers.ReverseImageSearch;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
@@ -58,8 +55,8 @@ public class ReportIncident extends AppCompatActivity {
     private RadioButton preciseRadioButton, generalRadioButton;
     private EditText descriptionEditText;
     private TextView locationText;
-    private ImageView selectImageButton, menuIcon;
-    private NavigationView navigationView;
+    private ImageView selectImageButton;
+
     private ImageView imagePreview;
     private double lon;
     private double lat;
@@ -91,40 +88,12 @@ public class ReportIncident extends AppCompatActivity {
         locationText = findViewById(R.id.location_text_view);
         imagePreview = findViewById(R.id.image_preview);
         selectImageButton = findViewById(R.id.select_image_button);
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
+
         DashNotif = findViewById(R.id.notification);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
     }
 
     private void setupNavigation() {
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-        boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            if (isGuest && (item.getItemId() == R.id.nav_history || item.getItemId() == R.id.nav_profile)) {
-                Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
-
-        DashNotif.setOnClickListener(v -> {
-            startActivity(new Intent(ReportIncident.this, NotificationCenter.class));
-        });
-
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_ri);
     }

@@ -19,6 +19,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.example.bacoorconnect.Helpers.LocationTrackingService;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.User;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -89,6 +90,12 @@ public class FrontpageActivity extends AppCompatActivity {
             // Check if user is already logged in
             checkAutoLogin();
         }
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            BottomNavHelper.setupBottomNavigation(this, bottomNav, R.id.nav_home);
+        }
+
     }
 
     private void checkAutoLogin() {

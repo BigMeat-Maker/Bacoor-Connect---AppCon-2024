@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportHistoryActivity;
@@ -35,7 +36,7 @@ public class BottomNavHelper {
             }
 
             if (itemId == R.id.nav_home) {
-                targetActivity = Dashboard.class;
+                targetActivity = FrontpageActivity.class;
             } else if (itemId == R.id.nav_service) {
                 targetActivity = services.class;
             } else if (itemId == R.id.nav_ri) {
@@ -49,6 +50,8 @@ public class BottomNavHelper {
             if (targetActivity != null && !activity.getClass().equals(targetActivity)) {
                 Intent intent = new Intent(activity, targetActivity);
                 intent.putExtra("isGuest", isGuest);
+                if (targetActivity == FrontpageActivity.class) {
+                    intent.putExtra("LOAD_DASHBOARD", true);}
                 activity.startActivity(intent);
                 activity.overridePendingTransition(0, 0);
 
@@ -58,4 +61,12 @@ public class BottomNavHelper {
             return false;
         });
     }
+
+    private static void replaceFragment(AppCompatActivity activity, Fragment fragment) {
+        activity.getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
+    }
+
 }

@@ -26,12 +26,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.bumptech.glide.Glide;
+import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.General.Login;
-import com.example.bacoorconnect.General.NavigationHandler;
-import com.example.bacoorconnect.General.NavigationHeader;
-import com.example.bacoorconnect.General.NotificationCenter;
 import com.example.bacoorconnect.Helpers.AccountDeleter;
-import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -64,14 +62,13 @@ public class UserProfile extends AppCompatActivity {
     private EditText fname, lname, email, contactno;
     private TextView EditPFP, editProfileTitle, UserProfileName, UserProfileEmail;
     private ImageView UserPFP;
-    private NavigationView navigationView;
     private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
-    private ImageView menuIcon, editDetailsBtn;
+    private ImageView editDetailsBtn;
     private DrawerLayout drawerLayout;
     private Button saveChangesBtn, cancelEditBtn, logoutBtn;
     public boolean isEditing = false;
-    private ImageView DashNotif;
+    private BottomNavigationView bottomNavigationView;
     private String originalEmail, originalPhone, originalImageUrl;
     private LinearLayout editProfileImageLayout, EditContainer;
     private TableLayout userDetailsTable;
@@ -90,14 +87,7 @@ public class UserProfile extends AppCompatActivity {
         lname = findViewById(R.id.lname);
         email = findViewById(R.id.email);
         contactno = findViewById(R.id.contactno);
-
-        drawerLayout = findViewById(R.id.drawer_layout);
-        menuIcon = findViewById(R.id.menu_icon);
-
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
-        NavigationHeader.setupNavigationHeader(this, navigationView);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         editProfileTitle = findViewById(R.id.edit_profile_title);
         editProfileImageLayout = findViewById(R.id.edit_profile_image_layout);
@@ -111,26 +101,7 @@ public class UserProfile extends AppCompatActivity {
             startActivity(intent);
         });
 
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-        navigationView.setNavigationItemSelectedListener(item -> {
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
 
-        DashNotif = findViewById(R.id.notification);
-
-        DashNotif.setOnClickListener(v -> {
-            Intent intent = new Intent(UserProfile.this, NotificationCenter.class);
-            startActivity(intent);
-        });
 
         loadProfileImage();
         loadUserDetails();
@@ -162,7 +133,14 @@ public class UserProfile extends AppCompatActivity {
             popupMenu.show();
         });
 
+        if (bottomNavigationView != null) {
+            BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);
+        } else {
+            android.util.Log.e("ServicesActivity", "BottomNavigationView not found. Check layout ID.");
+        }
+
     }
+
 
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(this)
