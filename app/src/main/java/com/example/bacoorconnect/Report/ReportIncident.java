@@ -1,7 +1,10 @@
 package com.example.bacoorconnect.Report;
 
+import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -13,9 +16,11 @@ import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -27,6 +32,8 @@ import com.example.bacoorconnect.Helpers.ImageUploader;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Helpers.ReverseImageSearch;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -56,19 +63,19 @@ public class ReportIncident extends AppCompatActivity {
     private EditText descriptionEditText;
     private TextView locationText;
     private ImageView selectImageButton;
-
     private ImageView imagePreview;
     private double lon;
     private double lat;
     private BottomNavigationView bottomNavigationView;
-    private ImageView DashNotif;
     private DatabaseReference auditRef;
-    private DrawerLayout drawerLayout;
+    private FusedLocationProviderClient fusedLocationClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_report_incident);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         initializeViews();
         setupNavigation();
@@ -78,6 +85,51 @@ public class ReportIncident extends AppCompatActivity {
         setupSubmitButton();
 
         handleIntentExtras();
+
+        if (lat == 0.0 && lon == 0.0) {
+            getCurrentLocation();
+        }
+    }
+
+    private void getCurrentLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(this, location -> {
+                        if (location != null) {
+                            lat = location.getLatitude();
+                            lon = location.getLongitude();
+
+                            // Update location text
+                            String locationTextStr = "Lat: " + lat + ", Lon: " + lon;
+                            locationText.setText(locationTextStr);
+
+                            Log.d("ReportIncident", "Got location: " + lat + ", " + lon);
+                        } else {
+                            Log.e("ReportIncident", "Location is null");
+                            Toast.makeText(this, "Location not available", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("ReportIncident", "Failed to get location: " + e.getMessage());
+                    });
+        } else {
+            // Request permission
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 100) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getCurrentLocation();
+            } else {
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void initializeViews() {
@@ -89,7 +141,6 @@ public class ReportIncident extends AppCompatActivity {
         imagePreview = findViewById(R.id.image_preview);
         selectImageButton = findViewById(R.id.select_image_button);
 
-        DashNotif = findViewById(R.id.notification);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
     }
 
@@ -153,9 +204,18 @@ public class ReportIncident extends AppCompatActivity {
             lat = arguments.getDouble("lat", 0.0);
             lon = arguments.getDouble("lon", 0.0);
 
+            // ADD LOGGING
+            Log.d("ReportIncident", "=== INTENT EXTRAS ===");
+            Log.d("ReportIncident", "Location string: " + location);
+            Log.d("ReportIncident", "Latitude: " + lat);
+            Log.d("ReportIncident", "Longitude: " + lon);
+            Log.d("ReportIncident", "All extras keys: " + arguments.keySet());
+
             if (location != null && locationText != null) {
                 locationText.setText(location);
             }
+        } else {
+            Log.e("ReportIncident", "NO INTENT EXTRAS FOUND!");
         }
     }
 
@@ -304,35 +364,41 @@ public class ReportIncident extends AppCompatActivity {
     }
 
     private void performReverseImageSearch(Uri imageUri, String reportId) {
-        ProgressDialog progress = new ProgressDialog(this);
-        progress.setMessage("Verifying image...");
-        progress.setCancelable(false);
-        progress.show();
+        // Run ProgressDialog creation on UI thread
+        runOnUiThread(() -> {
+            ProgressDialog progress = new ProgressDialog(this);
+            progress.setMessage("Verifying image...");
+            progress.setCancelable(false);
+            progress.show();
 
-        String apiKey = "AIzaSyC9Fox3bylVocReIelel79lUzEkkR0smhU";
-        String cseId = "257c747f0be954590";
+            String apiKey = "AIzaSyC9Fox3bylVocReIelel79lUzEkkR0smhU";
+            String cseId = "257c747f0be954590";
 
-        ReverseImageSearch.searchImage(this, imageUri, apiKey, cseId,
-                new ReverseImageSearch.SearchCallback() {
-                    @Override
-                    public void onSearchComplete(boolean isSuspicious, String debugInfo) {
-                        progress.dismiss();
-
-                        if (isSuspicious) {
-                            handleInappropriateContent(3, "Suspicious image content",
-                                    imageUri, getCurrentDescription(), debugInfo);
-                        } else {
-                            verifyImageCategory(imageUri, reportId, debugInfo);
+            ReverseImageSearch.searchImage(this, imageUri, apiKey, cseId,
+                    new ReverseImageSearch.SearchCallback() {
+                        @Override
+                        public void onSearchComplete(boolean isSuspicious, String debugInfo) {
+                            runOnUiThread(() -> {
+                                progress.dismiss();
+                                if (isSuspicious) {
+                                    handleInappropriateContent(3, "Suspicious image content",
+                                            imageUri, getCurrentDescription(), debugInfo);
+                                } else {
+                                    verifyImageCategory(imageUri, reportId, debugInfo);
+                                }
+                            });
                         }
-                    }
 
-                    @Override
-                    public void onSearchFailed(String error) {
-                        progress.dismiss();
-                        Log.e("ReverseImageSearch", "Search failed: " + error);
-                        verifyImageCategory(imageUri, reportId, "Search failed: " + error);
-                    }
-                });
+                        @Override
+                        public void onSearchFailed(String error) {
+                            runOnUiThread(() -> {
+                                progress.dismiss();
+                                Log.e("ReverseImageSearch", "Search failed: " + error);
+                                verifyImageCategory(imageUri, reportId, "Search failed: " + error);
+                            });
+                        }
+                    });
+        });
     }
 
     private String getCurrentDescription() {

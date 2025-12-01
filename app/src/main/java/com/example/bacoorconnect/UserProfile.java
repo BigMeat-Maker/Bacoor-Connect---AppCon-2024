@@ -73,6 +73,7 @@ public class UserProfile extends AppCompatActivity {
     private LinearLayout editProfileImageLayout, EditContainer;
     private TableLayout userDetailsTable;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

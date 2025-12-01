@@ -7,10 +7,12 @@ import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -18,6 +20,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.Helpers.Mappart;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportActivity;
@@ -26,6 +29,7 @@ import com.example.bacoorconnect.UserProfile;
 import com.example.bacoorconnect.Weather.weatherDash;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -47,9 +51,9 @@ public class MapDash extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     public double currentLat, currentLon;
     private NavigationView navigationView;
+    private BottomNavigationView bottomNavigationView;
     private TextView locationTextView;
     private CardView reportButton;
-    private ImageView menuIcon, dashNotif;
     private DatabaseReference auditRef;
     private FusedLocationProviderClient fusedLocationClient;
     private String currentUserId;
@@ -65,7 +69,14 @@ public class MapDash extends AppCompatActivity {
         locationTextView = findViewById(R.id.location_text);
         navigationView = findViewById(R.id.nav_view);
         reportButton = findViewById(R.id.report_button);
-        dashNotif = findViewById(R.id.notification);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+
+        if (bottomNavigationView != null) {
+            BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_map);
+        } else {
+            Log.e("MapDash", "BottomNavigationView not found. Check layout ID.");
+        }
 
         boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
         reportButton.setEnabled(true);
@@ -82,55 +93,6 @@ public class MapDash extends AppCompatActivity {
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-        menuIcon = findViewById(R.id.menu_icon);
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            if (isGuest && (item.getItemId() == R.id.nav_history || item.getItemId() == R.id.nav_profile)) {
-                Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-
-            Intent intent = null;
-            int id = item.getItemId();
-
-            if (id == R.id.nav_home) {
-                intent = new Intent(this, Dashboard.class);
-            } else if (id == R.id.nav_service) {
-                intent = new Intent(this, services.class);
-            } else if (id == R.id.nav_service) {
-                intent = new Intent(this, weatherDash.class);
-            } else if (id == R.id.nav_about) {
-                intent = new Intent(this, AboutUs.class);
-            } else if (id == R.id.nav_feedback) {
-                intent = new Intent(this, contactus.class);
-            } else if (id == R.id.nav_map) {
-                intent = new Intent(this, MapDash.class);
-            }else if (id == R.id.nav_history) {
-                intent = new Intent(this, ReportHistoryActivity.class);
-            } else if (id == R.id.nav_profile) {
-                intent = new Intent(this, UserProfile.class);
-            }
-
-            if (intent != null) {
-                intent.putExtra("isGuest", isGuest);
-                startActivity(intent);
-            }
-
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
-
-        dashNotif.setOnClickListener(v -> {
-            startActivity(new Intent(MapDash.this, NotificationCenter.class));
-        });
 
         if (isGuest) {
             disableGuestFeatures();
@@ -152,12 +114,25 @@ public class MapDash extends AppCompatActivity {
         loadMapFragment();
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getLastLocation();
+            } else {
+                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     private void disableGuestFeatures() {
         Menu menu = navigationView.getMenu();
         menu.findItem(R.id.nav_history).setVisible(false);
         menu.findItem(R.id.nav_profile).setVisible(false);
         Toast.makeText(this, "Guest mode: Limited access", Toast.LENGTH_SHORT).show();
     }
+
     private void getLastLocation() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -236,8 +211,15 @@ public class MapDash extends AppCompatActivity {
             GeoPoint reportLocation = mapFragment.getReportMarkerLocation();
             GeoPoint userLocation = mapFragment.getLastKnownUserLocation();
 
+            Log.d("MapDashDebug", "reportLocation: " + (reportLocation != null ?
+                    "Lat=" + reportLocation.getLatitude() + ", Lon=" + reportLocation.getLongitude() : "null"));
+            Log.d("MapDashDebug", "userLocation: " + (userLocation != null ?
+                    "Lat=" + userLocation.getLatitude() + ", Lon=" + userLocation.getLongitude() : "null"));
+            Log.d("MapDashDebug", "currentLat/Lon from MapDash: " + currentLat + ", " + currentLon);
+
             if (userLocation == null) {
                 Toast.makeText(this, "ErrorCheck: User location unavailable", Toast.LENGTH_SHORT).show();
+                Log.e("MapDashDebug", "userLocation is null!");
                 return;
             }
 
@@ -258,10 +240,18 @@ public class MapDash extends AppCompatActivity {
 
             GeoPoint finalReportLocation = (reportLocation != null) ? reportLocation : userLocation;
 
+            Log.d("MapDashDebug", "finalReportLocation - Lat: " + finalReportLocation.getLatitude() +
+                    ", Lon: " + finalReportLocation.getLongitude());
+
             Intent intent = new Intent(MapDash.this, ReportActivity.class);
             intent.putExtra("location", "Lat: " + finalReportLocation.getLatitude() + ", Lon: " + finalReportLocation.getLongitude());
             intent.putExtra("lat", finalReportLocation.getLatitude());
             intent.putExtra("lon", finalReportLocation.getLongitude());
+
+            Log.d("MapDashDebug", "Intent extras - location: " +
+                    intent.getStringExtra("location") + ", lat: " +
+                    intent.getDoubleExtra("lat", 0.0) + ", lon: " +
+                    intent.getDoubleExtra("lon", 0.0));
 
             startActivityForResult(intent, 100);
 

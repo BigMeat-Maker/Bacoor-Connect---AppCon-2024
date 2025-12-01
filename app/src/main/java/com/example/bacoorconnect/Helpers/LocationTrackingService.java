@@ -71,23 +71,43 @@ public class LocationTrackingService extends Service {
     }
 
     private void loadConfirmedReports() {
-
         DatabaseReference reportsRef = FirebaseDatabase.getInstance().getReference("Report");
         reportsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-
                 confirmedReports.clear();
+                notifiedReports.clear(); // Clear previous notifications
                 for (DataSnapshot reportSnapshot : snapshot.getChildren()) {
-                    Log.d("loadConfirmedReports", "for loop");
-                    Double lat = reportSnapshot.child("lat").getValue(Double.class);
-                    Double lon = reportSnapshot.child("lon").getValue(Double.class);
+                    Log.d("loadConfirmedReports", "Processing report: " + reportSnapshot.getKey());
 
-                    if (lat == null) {
-                        lat = 14.4451;
+                    // Try multiple possible field names
+                    Double lat = null;
+                    Double lon = null;
+
+                    // Check for "latitude" (your current field name)
+                    if (reportSnapshot.child("latitude").exists()) {
+                        lat = reportSnapshot.child("latitude").getValue(Double.class);
                     }
-                    if (lon == null) {
-                        lon = 120.9511;
+                    // Check for "lat" (alternative)
+                    else if (reportSnapshot.child("lat").exists()) {
+                        lat = reportSnapshot.child("lat").getValue(Double.class);
+                    }
+
+                    // Check for "longitude" (your current field name)
+                    if (reportSnapshot.child("longitude").exists()) {
+                        lon = reportSnapshot.child("longitude").getValue(Double.class);
+                    }
+                    // Check for "lon" (alternative)
+                    else if (reportSnapshot.child("lon").exists()) {
+                        lon = reportSnapshot.child("lon").getValue(Double.class);
+                    }
+
+                    // If still null, use default Bacoor coordinates
+                    if (lat == null || lon == null) {
+                        Log.w("LocationTracking", "Missing coordinates for report " + reportSnapshot.getKey() +
+                                ", using default Bacoor location");
+                        if (lat == null) lat = 14.4451;
+                        if (lon == null) lon = 120.9511;
                     }
 
                     String category = reportSnapshot.child("category").getValue(String.class);
@@ -99,27 +119,40 @@ public class LocationTrackingService extends Service {
                     int downvotes = 0;
 
                     if (reportSnapshot.child("upvotes").exists()) {
-                        upvotes = reportSnapshot.child("upvotes").getValue(Integer.class);
+                        Object upvotesObj = reportSnapshot.child("upvotes").getValue();
+                        if (upvotesObj instanceof Long) {
+                            upvotes = ((Long) upvotesObj).intValue();
+                        } else if (upvotesObj instanceof Integer) {
+                            upvotes = (Integer) upvotesObj;
+                        }
                     }
 
                     if (reportSnapshot.child("downvotes").exists()) {
-                        downvotes = reportSnapshot.child("downvotes").getValue(Integer.class);
+                        Object downvotesObj = reportSnapshot.child("downvotes").getValue();
+                        if (downvotesObj instanceof Long) {
+                            downvotes = ((Long) downvotesObj).intValue();
+                        } else if (downvotesObj instanceof Integer) {
+                            downvotes = (Integer) downvotesObj;
+                        }
                     }
 
-                    Log.d("UpvotesDownvotes", "Upvotes: " + upvotes + ", Downvotes: " + downvotes);
-                    Log.d("ReportData", "Report ID: " + reportId + ", User ID: " + userId);
+                    Log.d("ReportDebug", "Report ID: " + reportId +
+                            ", Lat: " + lat + ", Lon: " + lon +
+                            ", Upvotes: " + upvotes + ", Downvotes: " + downvotes);
 
-
+                    // Check if report is confirmed (more upvotes than downvotes)
                     if (upvotes > downvotes) {
                         confirmedReports.add(new Report(lat, lon, category, description, reportId, userId));
-                        Log.d("Confirmation", "Report retrieved");
+                        Log.d("Confirmation", "Added confirmed report: " + reportId);
                     }
                 }
+                Log.d("ConfirmedReports", "Total confirmed reports loaded: " + confirmedReports.size());
             }
 
-
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("FirebaseError", "Failed to load reports: " + error.getMessage());
+            }
         });
     }
 
