@@ -34,36 +34,36 @@
         android:layout_weight="1"
         tools:ignore="MissingConstraints">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_marginTop="0dp"
-        android:padding="16dp">
-
-        <!-- standardized title spacing -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Create New Account"
-            android:fontFamily="@font/montserrat_extrabold"
-            android:textColor="#2B3381"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:layout_marginBottom="8dp" />
-
-        <TextView
-            android:id="@+id/LoginText"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="28dp"
-            android:text="Already registered? Log in here."
-            android:fontFamily="@font/poppins_light"
-            android:textSize="15dp"
-            android:textAlignment="center"
-            android:textColor="#2B3381" />
+            android:orientation="vertical"
+            android:layout_marginTop="0dp"
+            android:padding="16dp">
+
+            <!-- standardized title spacing -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Create New Account"
+                android:fontFamily="@font/montserrat_extrabold"
+                android:textColor="#2B3381"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/LoginText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="28dp"
+                android:text="Already registered? Log in here."
+                android:fontFamily="@font/poppins_light"
+                android:textSize="15sp"
+                android:textAlignment="center"
+                android:textColor="#2B3381" />
 
             <!-- Form Card -->
             <com.google.android.material.card.MaterialCardView
@@ -74,243 +74,292 @@
                 app:cardCornerRadius="28dp"
                 app:cardElevation="6dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <!-- First Name -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="FIRST NAME"
-                    android:fontFamily="@font/poppins_light"
-                    android:textColor="#2B3381"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextFirstName"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/graybox"
-                        android:paddingLeft="15dp"
-                        android:textColor="@color/black"
-                        android:fontFamily="@font/poppins_regular"
-                        android:singleLine="true"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Last Name -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="LAST NAME"
-                    android:fontFamily="@font/poppins_light"
-                    android:textColor="#2B3381"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextLastName"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/graybox"
-                        android:paddingLeft="15dp"
-                        android:textColor="@color/black"
-                        android:fontFamily="@font/poppins_regular"
-                        android:singleLine="true"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Email -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="EMAIL ADDRESS"
-                    android:fontFamily="@font/poppins_light"
-                    android:textColor="#2B3381"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextEmail"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/graybox"
-                        android:paddingLeft="15dp"
-                        android:textColor="@color/black"
-                        android:fontFamily="@font/poppins_regular"
-                        android:singleLine="true"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Contact Number -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="CONTACT NUMBER"
-                    android:fontFamily="@font/poppins_light"
-                    android:textColor="#2B3381"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextContactNum"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/graybox"
-                        android:paddingLeft="15dp"
-                        android:textColor="@color/black"
-                        android:fontFamily="@font/poppins_regular"
-                        android:singleLine="true"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical"
-                        android:inputType="phone" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Password -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="PASSWORD"
-                    android:fontFamily="@font/poppins_light"
-                    android:textColor="#2B3381"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:endIconMode="password_toggle"
-                    app:boxBackgroundMode="outline">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/graybox"
-                        android:paddingLeft="15dp"
-                        android:inputType="textPassword"
-                        android:textColor="@color/black"
-                        android:fontFamily="@font/poppins_regular"
-                        android:singleLine="true"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Confirm Password -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="CONFIRM PASSWORD"
-                    android:fontFamily="@font/poppins_light"
-                    android:textColor="#2B3381"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="8dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:endIconMode="password_toggle"
-                    app:boxBackgroundMode="outline">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextConfirmPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:background="@drawable/graybox"
-                        android:paddingLeft="15dp"
-                        android:inputType="textPassword"
-                        android:textColor="@color/black"
-                        android:fontFamily="@font/poppins_regular"
-                        android:singleLine="true"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:gravity="center_vertical" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- improved terms and conditions spacing -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginBottom="16dp">
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
+                    <!-- First Name -->
                     <TextView
-                        android:id="@+id/termsLink"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="View Terms and Conditions"
-                        android:textColor="@color/baconnect_blue"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textSize="12sp" />
+                        android:text="FIRST NAME"
+                        android:fontFamily="@font/poppins_light"
+                        android:textColor="#2B3381"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text=" and "
-                        android:layout_marginHorizontal="4dp"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textSize="12sp" />
+                        android:layout_marginBottom="16dp"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextFirstName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="50dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/graybox"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_regular"
+                            android:singleLine="true"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:includeFontPadding="false" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Last Name -->
                     <TextView
-                        android:id="@+id/privacyLink"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Privacy Policy"
-                        android:textColor="@color/baconnect_blue"
-                        android:textStyle="bold"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textSize="12sp" />
+                        android:text="LAST NAME"
+                        android:fontFamily="@font/poppins_light"
+                        android:textColor="#2B3381"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextLastName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="50dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/graybox"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_regular"
+                            android:singleLine="true"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:includeFontPadding="false" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Email -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="EMAIL ADDRESS"
+                        android:fontFamily="@font/poppins_light"
+                        android:textColor="#2B3381"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="50dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/graybox"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_regular"
+                            android:singleLine="true"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:includeFontPadding="false"
+                            android:inputType="textEmailAddress" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Contact Number -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="CONTACT NUMBER"
+                        android:fontFamily="@font/poppins_light"
+                        android:textColor="#2B3381"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextContactNum"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="50dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/graybox"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_regular"
+                            android:singleLine="true"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:includeFontPadding="false"
+                            android:inputType="phone" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Password -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="PASSWORD"
+                        android:fontFamily="@font/poppins_light"
+                        android:textColor="#2B3381"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:endIconMode="password_toggle"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="50dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/graybox"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:inputType="textPassword"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_regular"
+                            android:singleLine="true"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:includeFontPadding="false" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Confirm Password -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="CONFIRM PASSWORD"
+                        android:fontFamily="@font/poppins_light"
+                        android:textColor="#2B3381"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        app:endIconMode="password_toggle"
+                        app:boxBackgroundMode="outline"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="0dp">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editTextConfirmPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="50dp"
+                            android:textSize="14sp"
+                            android:background="@drawable/graybox"
+                            android:paddingLeft="15dp"
+                            android:paddingRight="15dp"
+                            android:paddingTop="12dp"
+                            android:paddingBottom="12dp"
+                            android:inputType="textPassword"
+                            android:textColor="@color/black"
+                            android:fontFamily="@font/poppins_regular"
+                            android:singleLine="true"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:includeFontPadding="false" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- improved terms and conditions spacing -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:id="@+id/termsLink"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View Terms and Conditions"
+                            android:textColor="@color/baconnect_blue"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" and "
+                            android:layout_marginHorizontal="4dp"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/privacyLink"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Privacy Policy"
+                            android:textColor="@color/baconnect_blue"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_regular"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- register button now uses match_parent with horizontal padding -->
+                    <Button
+                        android:id="@+id/RegisterButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginBottom="16dp"
+                        android:backgroundTint="#2B3381"
+                        android:text="REGISTER"
+                        android:fontFamily="@font/poppins_bold"
+                        android:textSize="16sp"
+                        android:textColor="@color/white"
+                        android:textStyle="bold" />
                 </LinearLayout>
-
-                <!-- register button now uses match_parent with horizontal padding -->
-                <Button
-                    android:id="@+id/RegisterButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp"
-                    android:layout_marginBottom="16dp"
-                    android:backgroundTint="#2B3381"
-                    android:text="REGISTER"
-                    android:fontFamily="@font/poppins_bold"
-                    android:textSize="16sp"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
-            </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
+        </LinearLayout>
 
     </ScrollView>
 

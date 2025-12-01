@@ -2,6 +2,7 @@ package com.example.bacoorconnect.General;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Html;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TextView;
@@ -39,6 +40,12 @@ public class PrivacyPolicy extends AppCompatActivity {
                 termsTextView = findViewById(R.id.termsTextView);
                 agreeCheckBox = findViewById(R.id.agreeCheckBox);
                 proceedButton = findViewById(R.id.proceedButton);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            termsTextView.setText(Html.fromHtml(getString(R.string.privacypolicy), Html.FROM_HTML_MODE_COMPACT));
+        } else {
+            termsTextView.setText(Html.fromHtml(getString(R.string.privacypolicy)));
+        }
 
                 agreeCheckBox.setEnabled(false);
                 proceedButton.setEnabled(false);

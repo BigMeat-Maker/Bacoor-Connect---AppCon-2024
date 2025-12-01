@@ -120,6 +120,12 @@
                         android:lineSpacingExtra="2dp" />
                 </LinearLayout>
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="#cacaca"
+                    android:layout_marginBottom="12dp" />
+
                 <!-- Mission Card with background -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
@@ -174,7 +180,7 @@
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="2dp"
-                    android:layout_marginBottom="32dp">
+                    android:layout_marginBottom="12dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -216,11 +222,21 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:background="#cacaca"
+                    android:layout_marginBottom="12dp" />
+
+
                 <!-- Team Header with better spacing -->
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
+                    android:padding="60px"
                     android:layout_marginBottom="24dp">
 
                     <LinearLayout

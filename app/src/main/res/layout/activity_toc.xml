@@ -35,9 +35,13 @@
             android:id="@+id/termsTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="8dp"
+            android:text="@string/toc"
+            android:textSize="14sp"
+            android:textColor="#000000"
+            android:padding="20dp"
             android:fontFamily="@font/poppins_regular"
-            android:text="@string/toc" />
+            android:lineSpacingMultiplier="1.3"
+            android:justificationMode="inter_word"/>
     </androidx.core.widget.NestedScrollView>
 
     <CheckBox
