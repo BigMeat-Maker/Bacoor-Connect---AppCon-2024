@@ -26,6 +26,7 @@ import android.Manifest;
 // Android Permissions & Activity Compatibility
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
@@ -57,7 +58,9 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 //stuff for automated post deletion
 
@@ -108,6 +111,13 @@ public class Mappart extends Fragment {
 
     //Map area may be too small hard to see
     //
+
+    private ImageView btnFilterToggle;
+    private Button btnFilterAll, btnFilterAccident, btnFilterFire, btnFilterTraffic, btnFilterNatural;
+    private String currentFilterCategory = "all";
+    private boolean isDropdownVisible = false;
+    private List<Marker> allMarkers = new ArrayList<>();
+    private Map<String, List<Marker>> categoryMarkers = new HashMap<>();
 
     public Mappart() {
     }
@@ -253,7 +263,137 @@ public class Mappart extends Fragment {
         });
 
         addFoggingOverlay();
+
+        // ============ wa wa wa wat the stink============
+        btnFilterToggle = rootView.findViewById(R.id.btn_filter_toggle);
+
+
+        btnFilterAll = rootView.findViewById(R.id.btn_filter_all);
+        btnFilterAccident = rootView.findViewById(R.id.btn_filter_accident);
+        btnFilterFire = rootView.findViewById(R.id.btn_filter_fire);
+        btnFilterTraffic = rootView.findViewById(R.id.btn_filter_traffic);
+        btnFilterNatural = rootView.findViewById(R.id.btn_filter_natural);
+
+        setupFilterButtons();
+
+        initializeCategoryMarkers();
+
         return rootView;
+    }
+
+    private void initializeCategoryMarkers() {
+        categoryMarkers.put("all", new ArrayList<>());
+        categoryMarkers.put("accident", new ArrayList<>());
+        categoryMarkers.put("fire", new ArrayList<>());
+        categoryMarkers.put("traffic", new ArrayList<>());
+        categoryMarkers.put("naturaldisaster", new ArrayList<>());
+    }
+
+    private void setupFilterButtons() {
+        btnFilterToggle.setOnClickListener(v -> toggleCategoryDropdown());
+
+        btnFilterAll.setOnClickListener(v -> filterReportsByCategory("all"));
+        btnFilterAccident.setOnClickListener(v -> filterReportsByCategory("accident"));
+        btnFilterFire.setOnClickListener(v -> filterReportsByCategory("fire"));
+        btnFilterTraffic.setOnClickListener(v -> filterReportsByCategory("traffic"));
+        btnFilterNatural.setOnClickListener(v -> filterReportsByCategory("naturaldisaster"));
+    }
+
+    private void toggleCategoryDropdown() {
+        if (isDropdownVisible) {
+            hideCategoryButtons();
+        } else {
+            showCategoryButtons();
+        }
+        isDropdownVisible = !isDropdownVisible;
+    }
+
+    private void showCategoryButtons() {
+        btnFilterAll.setVisibility(View.VISIBLE);
+        btnFilterAccident.setVisibility(View.VISIBLE);
+        btnFilterFire.setVisibility(View.VISIBLE);
+        btnFilterTraffic.setVisibility(View.VISIBLE);
+        btnFilterNatural.setVisibility(View.VISIBLE);
+    }
+
+    private void hideCategoryButtons() {
+        btnFilterAll.setVisibility(View.GONE);
+        btnFilterAccident.setVisibility(View.GONE);
+        btnFilterFire.setVisibility(View.GONE);
+        btnFilterTraffic.setVisibility(View.GONE);
+        btnFilterNatural.setVisibility(View.GONE);
+    }
+
+    private void filterReportsByCategory(String category) {
+        currentFilterCategory = category;
+
+        updateFilterButtonAppearance();
+
+        for (List<Marker> markers : categoryMarkers.values()) {
+            for (Marker marker : markers) {
+                marker.setVisible(false);
+            }
+        }
+
+        if (category.equals("all")) {
+            for (Marker marker : allMarkers) {
+                marker.setVisible(true);
+            }
+        } else {
+            List<Marker> markers = categoryMarkers.get(category);
+            if (markers != null) {
+                for (Marker marker : markers) {
+                    marker.setVisible(true);
+                }
+            }
+        }
+
+        mapView.postInvalidate();
+
+        showReportListDialog(category);
+
+        if (isDropdownVisible) {
+            toggleCategoryDropdown();
+        }
+    }
+
+    private void showReportListDialog(String category) {
+        double userLat = getCurrentLat();
+        double userLon = getCurrentLon();
+
+        ReportListDialog dialog = ReportListDialog.newInstance(category, userLat, userLon);
+        dialog.show(getParentFragmentManager(), "ReportListDialog");
+    }
+
+
+    private void updateFilterButtonAppearance() {
+        int selectedColor = getResources().getColor(R.color.baconnect_dark_blue, null);
+        int unselectedColor = getResources().getColor(R.color.baconnect_blue, null);
+
+        btnFilterAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
+        btnFilterAccident.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
+        btnFilterFire.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
+        btnFilterTraffic.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
+        btnFilterNatural.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
+
+        // Set selected button
+        switch (currentFilterCategory) {
+            case "all":
+                btnFilterAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(selectedColor));
+                break;
+            case "accident":
+                btnFilterAccident.setBackgroundTintList(android.content.res.ColorStateList.valueOf(selectedColor));
+                break;
+            case "fire":
+                btnFilterFire.setBackgroundTintList(android.content.res.ColorStateList.valueOf(selectedColor));
+                break;
+            case "traffic":
+                btnFilterTraffic.setBackgroundTintList(android.content.res.ColorStateList.valueOf(selectedColor));
+                break;
+            case "naturaldisaster":
+                btnFilterNatural.setBackgroundTintList(android.content.res.ColorStateList.valueOf(selectedColor));
+                break;
+        }
     }
 
     private void centerMapOnUserLocation(Location location) {
@@ -328,19 +468,25 @@ public class Mappart extends Fragment {
 
     private void removeMarkerFromMap(String reportId) {
         boolean markerRemoved = false;
-        for (Overlay overlay : new ArrayList<>(mapView.getOverlays())) {
 
+        for (Overlay overlay : new ArrayList<>(mapView.getOverlays())) {
             if (overlay instanceof Marker) {
                 Marker marker = (Marker) overlay;
                 if (reportId.equals(marker.getId())) {
                     mapView.getOverlays().remove(marker);
                     markerRemoved = true;
-                    mapView.postInvalidate();
-                    Log.d("ReportFragment", "Marker removed for report ID: " + reportId);
+
+                    allMarkers.remove(marker);
+
+                    for (List<Marker> categoryList : categoryMarkers.values()) {
+                        categoryList.remove(marker);
+                    }
+
                     break;
                 }
             }
         }
+
         if (markerRemoved) {
             mapView.post(() -> mapView.invalidate());
         } else {
@@ -501,7 +647,7 @@ public class Mappart extends Fragment {
 
         // This enables reportbutton after moving, might change to a more distinct thing
         if (getActivity() instanceof MapDash) {
-            ImageView reportButton = getActivity().findViewById(R.id.report_button);
+            CardView reportButton = getActivity().findViewById(R.id.report_button);
             if (reportButton != null) {
                 reportButton.setEnabled(true);
             }
@@ -718,16 +864,29 @@ public class Mappart extends Fragment {
                 reportMarker.setId(reportId);
                 reportMarker.setSubDescription(category + "|" + addressPrecision);
                 mapView.getOverlays().add(reportMarker);
+
+                allMarkers.add(reportMarker);
+
+                String categoryKey = category.toLowerCase();
+                if (categoryMarkers.containsKey(categoryKey)) {
+                    categoryMarkers.get(categoryKey).add(reportMarker);
+                } else {
+                    List<Marker> newCategoryList = new ArrayList<>();
+                    newCategoryList.add(reportMarker);
+                    categoryMarkers.put(categoryKey, newCategoryList);
+                }
+
+                if (!currentFilterCategory.equals("all") && !currentFilterCategory.equals(categoryKey)) {
+                    reportMarker.setVisible(false);
+                }
+
                 mapView.postInvalidate();
 
-                // Pass reportId and userId when marker is clicked
                 reportMarker.setOnMarkerClickListener((marker, mapView) -> {
                     openReportDetailsFragment(reportId, userId);
-
                     return true;
                 });
 
-                // Add the report to the list (include reportId for tracking)
                 reportList.add(new Report(lat, lon, category, description, reportMessage, reportId, imageUrl, userId));
             }
         }
@@ -780,7 +939,7 @@ public class Mappart extends Fragment {
     }
 
 
-    private void openReportDetailsFragment(String reportId, String userId) {
+    public void openReportDetailsFragment(String reportId, String userId) {
 
         double userLat = getCurrentLat();
         double userLon = getCurrentLon();

@@ -25,6 +25,8 @@ public class Report {
 
     private DatabaseReference auditRef;
 
+
+
     public enum VoteState {
         NONE, UPVOTED, DOWNVOTED
     }
@@ -154,8 +156,11 @@ public class Report {
         logData.put("notes", notes);
         logData.put("changes", changes);
 
+
+
         if (logId != null) {
             auditRef.child(logId).setValue(logData);
         }
     }
+
 }

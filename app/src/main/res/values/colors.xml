@@ -4,6 +4,10 @@
     <color name="white">#FFFFFF</color>
     <color name="baconnect_blue">#2B3381</color>
     <color name="darker_gray">#AAAAAAFF</color>
+    <color name="baconnect_dark_blue">#1A2460</color>
+
+    <color name="green">#4CAF50</color>
+    <color name="orange">#FF9800</color>
 
     <!-- Blue Theme Colors -->
     <color name="colorPrimary">#1976D2</color>
