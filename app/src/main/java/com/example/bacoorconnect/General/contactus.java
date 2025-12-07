@@ -22,13 +22,11 @@ import com.google.android.material.textfield.TextInputEditText;
 public class contactus extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
-    private DrawerLayout drawerLayout;
-    private ImageView menuIcon;
+
     private NavigationView navigationView;
 
     private TextInputEditText fullnameInput, emailInput, numberInput, subjectInput, messageInput;
     private Button sendBtn;
-    private ImageView DashNotif;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -37,49 +35,9 @@ public class contactus extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_contactus);
 
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-
-        boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            if (isGuest && (item.getItemId() == R.id.nav_history || item.getItemId() == R.id.nav_profile)) {
-                Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);
 
-        DashNotif = findViewById(R.id.notification);
-        DashNotif.setOnClickListener(v -> {
-            Intent intent = new Intent(contactus.this, NotificationCenter.class);
-            startActivity(intent);
-        });
-
-        if (isGuest) {
-            disableGuestFeatures();
-        }
 
         fullnameInput = findViewById(R.id.contact_fullname);
         emailInput = findViewById(R.id.contact_email);
@@ -118,14 +76,4 @@ public class contactus extends AppCompatActivity {
         });
     }
 
-    private void disableGuestFeatures() {
-        Menu menu = navigationView.getMenu();
-        menu.findItem(R.id.nav_history).setVisible(false);
-        menu.findItem(R.id.nav_profile).setVisible(false);
-
-        bottomNavigationView.getMenu().findItem(R.id.nav_ri).setEnabled(false);
-        bottomNavigationView.getMenu().findItem(R.id.nav_ri).setVisible(false);
-
-        Toast.makeText(this, "Guest mode: Limited access", Toast.LENGTH_SHORT).show();
-    }
 }

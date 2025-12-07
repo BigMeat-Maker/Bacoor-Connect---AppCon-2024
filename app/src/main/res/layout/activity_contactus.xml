@@ -26,14 +26,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <ImageView
-                android:id="@+id/menu_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginTop="10dp"
-                android:src="@drawable/menu_white"
-                android:contentDescription="Menu"
-                android:layout_gravity="center_vertical"/>
 
             <View
                 android:layout_width="0dp"
@@ -51,14 +43,6 @@
                 android:layout_height="40dp"
                 android:layout_weight="1" />
 
-            <ImageView
-                android:id="@+id/notification"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:layout_marginTop="7dp"
-                android:src="@drawable/notification_white"
-                android:contentDescription="Notification"
-                android:layout_gravity="center_vertical"/>
         </LinearLayout>
 
 
