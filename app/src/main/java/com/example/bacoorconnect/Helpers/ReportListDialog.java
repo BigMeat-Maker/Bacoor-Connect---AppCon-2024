@@ -2,6 +2,7 @@ package com.example.bacoorconnect.Helpers;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -181,7 +182,14 @@ public class ReportListDialog extends DialogFragment {
 
 
         if (categoryTag != null) {
-            categoryTag.setText(category != null ? category.toUpperCase() : "UNKNOWN");
+            String catText = category != null ? category.toUpperCase() : "UNKNOWN";
+            categoryTag.setText(catText);
+
+            int backgroundColor = getCategoryColor(category);
+            GradientDrawable background = new GradientDrawable();
+            background.setCornerRadius(8f);
+            background.setColor(backgroundColor);
+            categoryTag.setBackground(background);
         }
 
         if (descText != null) {
@@ -233,6 +241,23 @@ public class ReportListDialog extends DialogFragment {
         });
 
         return cardView;
+    }
+
+    private int getCategoryColor(String category) {
+        if (category == null) return 0xFF757575; // Default gray
+
+        switch (category.toLowerCase()) {
+            case "accident":
+                return 0xFFF5C12E; // Yellow - #f5c12e
+            case "traffic":
+                return 0xFF77B255; // Green - #77b255
+            case "fire":
+                return 0xFFF56B00; // Orange - #f56b00
+            case "naturaldisaster":
+                return 0xFFAA2F8E; // Purple - #aa2f8e
+            default:
+                return 0xFF757575; // Default gray
+        }
     }
 
     private float calculateDistance(double lat1, double lon1, double lat2, double lon2) {

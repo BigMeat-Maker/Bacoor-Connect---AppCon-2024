@@ -113,7 +113,7 @@ public class Mappart extends Fragment {
     //
 
     private ImageView btnFilterToggle;
-    private Button btnFilterAll, btnFilterAccident, btnFilterFire, btnFilterTraffic, btnFilterNatural;
+    private ImageView btnFilterAll, btnFilterAccident, btnFilterFire, btnFilterTraffic, btnFilterNatural;
     private String currentFilterCategory = "all";
     private boolean isDropdownVisible = false;
     private List<Marker> allMarkers = new ArrayList<>();
@@ -376,7 +376,6 @@ public class Mappart extends Fragment {
         btnFilterTraffic.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
         btnFilterNatural.setBackgroundTintList(android.content.res.ColorStateList.valueOf(unselectedColor));
 
-        // Set selected button
         switch (currentFilterCategory) {
             case "all":
                 btnFilterAll.setBackgroundTintList(android.content.res.ColorStateList.valueOf(selectedColor));
@@ -399,7 +398,7 @@ public class Mappart extends Fragment {
     private void centerMapOnUserLocation(Location location) {
         if (location != null && mapView != null) {
             GeoPoint userLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
-            mapView.getController().setZoom(16.0);  // camera level that starts the app at
+            mapView.getController().setZoom(16.0);
             mapView.getController().animateTo(userLocation);
         }
     }

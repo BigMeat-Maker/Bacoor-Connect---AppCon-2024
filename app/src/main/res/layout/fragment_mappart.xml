@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -27,89 +28,85 @@
             android:layout_alignParentStart="true"
             android:contentDescription="Filter reports"/>
 
-        <!-- Category Buttons - COMPLETELY TRANSPARENT BACKGROUND -->
-        <Button
+        <!-- Category Buttons - Using ImageView with your specific drawables -->
+        <!-- All Button -->
+        <ImageView
             android:id="@+id/btn_filter_all"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="All"
-            android:backgroundTint="@color/baconnect_blue"
-            android:textColor="@color/white"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/ic_filter"
+            android:background="@drawable/round_button_background"
             android:visibility="gone"
             android:layout_below="@id/btn_filter_toggle"
             android:layout_marginStart="24dp"
             android:layout_marginTop="8dp"
-            android:padding="12dp"
-            android:textAllCaps="false"
-            android:elevation="6dp"/>
+            android:elevation="6dp"
+            android:contentDescription="All reports"/>
 
-        <Button
+        <!-- Accident Button -->
+        <ImageView
             android:id="@+id/btn_filter_accident"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Accident"
-            android:backgroundTint="@color/baconnect_blue"
-            android:textColor="@color/white"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/button_accident"
+            android:background="@drawable/round_button_background"
             android:visibility="gone"
             android:layout_below="@id/btn_filter_all"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="4dp"
-            android:padding="12dp"
-            android:textAllCaps="false"
-            android:elevation="6dp"/>
+            android:layout_marginTop="8dp"
+            android:elevation="6dp"
+            android:contentDescription="Accident reports"/>
 
-        <Button
+        <!-- Fire Button -->
+        <ImageView
             android:id="@+id/btn_filter_fire"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Fire"
-            android:backgroundTint="@color/baconnect_blue"
-            android:textColor="@color/white"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/button_fire"
+            android:background="@drawable/round_button_background"
             android:visibility="gone"
             android:layout_below="@id/btn_filter_accident"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="4dp"
-            android:padding="12dp"
-            android:textAllCaps="false"
-            android:elevation="6dp"/>
+            android:layout_marginTop="8dp"
+            android:elevation="6dp"
+            android:contentDescription="Fire reports"/>
 
-        <Button
+        <!-- Traffic Button -->
+        <ImageView
             android:id="@+id/btn_filter_traffic"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Traffic"
-            android:backgroundTint="@color/baconnect_blue"
-            android:textColor="@color/white"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/button_traffic"
+            android:background="@drawable/round_button_background"
             android:visibility="gone"
             android:layout_below="@id/btn_filter_fire"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="4dp"
-            android:padding="12dp"
-            android:textAllCaps="false"
-            android:elevation="6dp"/>
+            android:layout_marginTop="8dp"
+            android:elevation="6dp"
+            android:contentDescription="Traffic reports"/>
 
-        <Button
+        <!-- Natural Disaster Button -->
+        <ImageView
             android:id="@+id/btn_filter_natural"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Natural"
-            android:backgroundTint="@color/baconnect_blue"
-            android:textColor="@color/white"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/button_disaster"
+            android:background="@drawable/round_button_background"
             android:visibility="gone"
             android:layout_below="@id/btn_filter_traffic"
             android:layout_marginStart="24dp"
-            android:layout_marginTop="4dp"
-            android:padding="12dp"
-            android:textAllCaps="false"
-            android:elevation="6dp"/>
+            android:layout_marginTop="8dp"
+            android:elevation="6dp"
+            android:contentDescription="Natural disaster reports"/>
 
+        <!-- Recenter Button (Keep as Button) -->
         <Button
             android:id="@+id/btn_recenter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Recenter"
             android:textColor="@android:color/white"
-            android:backgroundTint="@color/baconnect_blue"
+            app:backgroundTint="@color/baconnect_blue"
             android:layout_margin="16dp"
             android:elevation="4dp"
             android:padding="8dp"
