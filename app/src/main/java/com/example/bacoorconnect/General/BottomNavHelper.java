@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.bacoorconnect.R;
+import com.example.bacoorconnect.Report.ReportActivity;
 import com.example.bacoorconnect.Report.ReportHistoryActivity;
 import com.example.bacoorconnect.Report.ReportIncident;
 import com.example.bacoorconnect.UserProfile;
@@ -27,6 +28,10 @@ public class BottomNavHelper {
             Class<?> targetActivity = null;
             boolean isGuest = FirebaseAuth.getInstance().getCurrentUser() == null;
 
+            if (activity instanceof MapDash) {
+                return false;
+            }
+
             if (isGuest && (itemId == R.id.nav_ri || itemId == R.id.nav_map)) {
                 String featureName = (itemId == R.id.nav_ri) ? "Report Incident" : "Map";
                 Toast.makeText(activity, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
@@ -40,7 +45,10 @@ public class BottomNavHelper {
             } else if (itemId == R.id.nav_service) {
                 targetActivity = services.class;
             } else if (itemId == R.id.nav_ri) {
+                // For non-MapDash activities, go to ReportIncident
                 targetActivity = ReportIncident.class;
+            } else if (itemId == R.id.nav_map) {
+                targetActivity = MapDash.class;
             } else if (itemId == R.id.nav_history) {
                 targetActivity = ReportHistoryActivity.class;
             } else if (itemId == R.id.nav_profile) {
@@ -68,5 +76,4 @@ public class BottomNavHelper {
                 .replace(R.id.fragment_container, fragment)
                 .commit();
     }
-
 }

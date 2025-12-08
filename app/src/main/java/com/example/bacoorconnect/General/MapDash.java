@@ -7,26 +7,21 @@ import android.location.Geocoder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
 
-import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.Helpers.Mappart;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportActivity;
 import com.example.bacoorconnect.Report.ReportHistoryActivity;
 import com.example.bacoorconnect.UserProfile;
-import com.example.bacoorconnect.Weather.weatherDash;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -53,7 +48,6 @@ public class MapDash extends AppCompatActivity {
     private NavigationView navigationView;
     private BottomNavigationView bottomNavigationView;
     private TextView locationTextView;
-    private CardView reportButton;
     private DatabaseReference auditRef;
     private FusedLocationProviderClient fusedLocationClient;
     private String currentUserId;
@@ -68,20 +62,12 @@ public class MapDash extends AppCompatActivity {
         drawerLayout = findViewById(R.id.drawer_layout);
         locationTextView = findViewById(R.id.location_text);
         navigationView = findViewById(R.id.nav_view);
-        reportButton = findViewById(R.id.report_button);
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-
-        if (bottomNavigationView != null) {
-            BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_map);
-        } else {
-            Log.e("MapDash", "BottomNavigationView not found. Check layout ID.");
-        }
+        // Custom setup for MapDash bottom navigation
+        setupMapDashBottomNavigation();
 
         boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-        reportButton.setEnabled(true);
-
-        reportButton.setOnClickListener(v -> handleReportClick());
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -93,7 +79,6 @@ public class MapDash extends AppCompatActivity {
                     new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
-
         if (isGuest) {
             disableGuestFeatures();
         }
@@ -101,17 +86,61 @@ public class MapDash extends AppCompatActivity {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             if (currentUser.isAnonymous()) {
-                setReportButtonState(false);
                 Toast.makeText(this, "Guest users cannot submit reports", Toast.LENGTH_LONG).show();
             } else {
                 currentUserId = currentUser.getUid();
-                checkUserStrikesAndUpdateReportButton();
+                checkUserStrikes();
             }
-        } else {
-            setReportButtonState(false);
         }
 
         loadMapFragment();
+    }
+
+    private void setupMapDashBottomNavigation() {
+        // Set the Report item to appear larger and selected
+        bottomNavigationView.setSelectedItemId(R.id.nav_ri);
+
+        // Custom listener for MapDash
+        bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+            Class<?> targetActivity = null;
+            boolean isGuest = FirebaseAuth.getInstance().getCurrentUser() == null;
+
+            // Handle Report click directly on MapDash
+            if (itemId == R.id.nav_ri) {
+                handleReportClick();
+                return true; // Stay on MapDash
+            }
+
+            if (isGuest && (itemId == R.id.nav_ri)) {
+                Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
+                logActivity(currentUserId, "Guest", "Access Attempt", "Report", "Denied", "Guest tried to access Report", "N/A");
+                return false;
+            }
+
+            if (itemId == R.id.nav_home) {
+                targetActivity = FrontpageActivity.class;
+            } else if (itemId == R.id.nav_service) {
+                targetActivity = services.class;
+            } else if (itemId == R.id.nav_history) {
+                targetActivity = ReportHistoryActivity.class;
+            } else if (itemId == R.id.nav_profile) {
+                targetActivity = UserProfile.class;
+            }
+
+            if (targetActivity != null && !this.getClass().equals(targetActivity)) {
+                Intent intent = new Intent(this, targetActivity);
+                intent.putExtra("isGuest", isGuest);
+                if (targetActivity == FrontpageActivity.class) {
+                    intent.putExtra("LOAD_DASHBOARD", true);
+                }
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+                return true;
+            }
+
+            return false;
+        });
     }
 
     @Override
@@ -193,7 +222,6 @@ public class MapDash extends AppCompatActivity {
     private void loadMapFragment() {
         Mappart mapFragment = new Mappart();
         Bundle args = new Bundle();
-        args.putBoolean("reportButtonState", reportButton.isEnabled());
         args.putDouble("initialLat", currentLat);
         args.putDouble("initialLon", currentLon);
         mapFragment.setArguments(args);
@@ -224,7 +252,6 @@ public class MapDash extends AppCompatActivity {
             }
 
             if (!mapFragment.isWithinBacoor(userLocation)) {
-                setReportButtonState(false);
                 new AlertDialog.Builder(this)
                         .setTitle("Reporting Disabled")
                         .setMessage("Sorry, you cannot report while outside Bacoor.")
@@ -235,8 +262,6 @@ public class MapDash extends AppCompatActivity {
                         "User attempted to report outside allowed area", "N/A");
                 return;
             }
-
-            setReportButtonState(true);
 
             GeoPoint finalReportLocation = (reportLocation != null) ? reportLocation : userLocation;
 
@@ -280,7 +305,7 @@ public class MapDash extends AppCompatActivity {
         }
     }
 
-    private void checkUserStrikesAndUpdateReportButton() {
+    private void checkUserStrikes() {
         DatabaseReference strikesRef = FirebaseDatabase.getInstance().getReference("Users").child(currentUserId).child("strikes");
 
         long expirationPeriod = 7 * 24 * 60 * 60 * 1000;
@@ -301,20 +326,11 @@ public class MapDash extends AppCompatActivity {
             }
 
             if (totalStrikes >= 5) {
-                setReportButtonState(false);
                 Toast.makeText(MapDash.this, "Reporting disabled: 5 or more active strikes", Toast.LENGTH_LONG).show();
-            } else {
-                setReportButtonState(true);
             }
         }).addOnFailureListener(e -> {
             Log.e("StrikeCheck", "Error retrieving user strikes", e);
-            setReportButtonState(true);
         });
-    }
-
-    public void setReportButtonState(boolean isEnabled) {
-        reportButton.setEnabled(isEnabled);
-        reportButton.setAlpha(isEnabled ? 1.0f : 0.5f);
     }
 
     public void updateLocation(double lat, double lon) {

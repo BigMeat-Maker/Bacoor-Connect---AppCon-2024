@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
@@ -14,7 +15,7 @@
     <item
         android:id="@+id/nav_ri"
         android:enabled="true"
-        android:icon="@drawable/ic_report_cta"
+        android:icon="@drawable/selector_report_icon"
         android:title="Report"/>
     <item
         android:id="@+id/nav_history"

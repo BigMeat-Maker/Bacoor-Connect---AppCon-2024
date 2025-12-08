@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Normal state -->
+    <item android:state_checked="false"
+        android:drawable="@drawable/ic_report_cta"
+        android:width="32dp"
+        android:height="32dp"/>
+
+    <!-- Selected/checked state (will be used in MapDash) -->
+    <item android:state_checked="true"
+        android:drawable="@drawable/ic_report_cta"
+        android:width="48dp"
+        android:height="48dp"/>
+</selector>
