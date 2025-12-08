@@ -1,111 +1,44 @@
 package com.example.bacoorconnect.Weather;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.widget.ImageView;
-import android.widget.Toast;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 
-import com.example.bacoorconnect.Emergency.EarthquakeView;
-import com.example.bacoorconnect.General.NavigationHandler;
-import com.example.bacoorconnect.General.NavigationHeader;
-import com.example.bacoorconnect.General.NotificationCenter;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.Report.ReportFeedActivity;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.database.*;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class weatherDash extends AppCompatActivity {
+public class weatherDash extends Fragment {
 
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private ImageView menuIcon, DashNotif;
     private final String TAG = "WeatherDebug";
 
+    public weatherDash() {
+    }
+
+    public static weatherDash newInstance() {
+        return new weatherDash();
+    }
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(com.example.bacoorconnect.R.layout.activity_weather_dash);
-
-        // UI setup
-        menuIcon = findViewById(com.example.bacoorconnect.R.id.menu_icon);
-        drawerLayout = findViewById(com.example.bacoorconnect.R.id.drawer_layout);
-        navigationView = findViewById(com.example.bacoorconnect.R.id.nav_view);
-        DashNotif = findViewById(com.example.bacoorconnect.R.id.notification);
-
-        setupNavigation();
-
-        BottomNavigationView serviceNavigation = findViewById(com.example.bacoorconnect.R.id.bottomservice_navigation);
-        serviceNavigation.setSelectedItemId(com.example.bacoorconnect.R.id.nav_weather);
-
-        serviceNavigation.setOnNavigationItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == com.example.bacoorconnect.R.id.nav_weather) return true;
-
-            if (itemId == com.example.bacoorconnect.R.id.nav_earthquake) {
-                startActivity(new Intent(this, EarthquakeView.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (itemId == com.example.bacoorconnect.R.id.nav_RL) {
-                startActivity(new Intent(this, ReportFeedActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            }
-            return false;
-        });
-
-        boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-        if (isGuest) {
-            disableGuestFeatures();
-        }
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.activity_weather_dash, container, false);
 
         loadDailyWeatherFragment();
         loadHourlyWeatherFragment();
-    }
 
-    private void setupNavigation() {
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-        boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            if (isGuest && (item.getItemId() == com.example.bacoorconnect.R.id.nav_history || item.getItemId() == com.example.bacoorconnect.R.id.nav_profile)) {
-                Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            return true;
-        });
-
-        DashNotif.setOnClickListener(v -> {
-            startActivity(new Intent(weatherDash.this, NotificationCenter.class));
-        });
-    }
-
-    private void disableGuestFeatures() {
-        Menu menu = navigationView.getMenu();
-        menu.findItem(com.example.bacoorconnect.R.id.nav_history).setVisible(false);
-        menu.findItem(com.example.bacoorconnect.R.id.nav_profile).setVisible(false);
-
-        Toast.makeText(this, "Guest mode: Limited access", Toast.LENGTH_SHORT).show();
+        return view;
     }
 
     private void loadDailyWeatherFragment() {
@@ -118,9 +51,9 @@ public class weatherDash extends AppCompatActivity {
                     DailyForecast forecast = snap.getValue(DailyForecast.class);
                     if (forecast != null) dailyList.add(forecast);
                 }
-                if (!dailyList.isEmpty()) {
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(com.example.bacoorconnect.R.id.DailyWeather, WeatherDaily.newInstance(dailyList))
+                if (!dailyList.isEmpty() && getActivity() != null) {
+                    getActivity().getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.DailyWeather, WeatherDaily.newInstance(dailyList))
                             .commit();
                 }
             }
@@ -144,8 +77,8 @@ public class weatherDash extends AppCompatActivity {
                         if (forecast != null) hourlyList.add(forecast);
                     }
                 }
-                if (!hourlyList.isEmpty()) {
-                    getSupportFragmentManager().beginTransaction()
+                if (!hourlyList.isEmpty() && getActivity() != null) {
+                    getActivity().getSupportFragmentManager().beginTransaction()
                             .replace(R.id.HourlyWeather, WeatherHourly.newInstance(hourlyList))
                             .commit();
                 }

@@ -22,34 +22,7 @@
             android:padding="12dp"
             tools:ignore="MissingConstraints">
 
-            <ImageView
-                android:id="@+id/menu_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginTop="10dp"
-                android:src="@drawable/menu_white"
-                android:contentDescription="Menu"
-                android:gravity="center_horizontal"/>
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1" />
-
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1" />
-
-            <ImageView
-                android:id="@+id/notification"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:layout_marginTop="7dp"
-                android:src="@drawable/notification_white"
-                android:contentDescription="Notification"
-                android:gravity="center_horizontal"/>
         </LinearLayout>
 
         <!-- main content -->
@@ -245,33 +218,7 @@
 
     </ScrollView>
 
-        <!--Bottom Nav-->
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomservice_navigation"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:paddingVertical="2dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:background="@color/baconnect_blue"
-            app:itemIconTint="@color/bottomnavbar"
-            app:itemTextColor="@color/bottomnavbar"
-            app:menu="@menu/services_navigation_menu"
-            style="@style/CustomBottomNav" />
-
-
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- Navigation Drawer -->
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        app:itemIconTint="@color/baconnect_blue"
-        app:headerLayout="@layout/nav_header_dashboard"
-        app:menu="@menu/dashboard_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>
 

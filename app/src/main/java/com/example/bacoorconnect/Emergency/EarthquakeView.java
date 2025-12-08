@@ -1,28 +1,18 @@
 package com.example.bacoorconnect.Emergency;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.bacoorconnect.General.NavigationHandler;
-import com.example.bacoorconnect.General.NavigationHeader;
-import com.example.bacoorconnect.General.NotificationCenter;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.Report.ReportFeedActivity;
-import com.example.bacoorconnect.Weather.weatherDash;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -32,23 +22,28 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EarthquakeView extends AppCompatActivity {
+public class EarthquakeView extends Fragment {
 
     private RecyclerView earthquakeRecyclerView;
     private EarthquakeAdapter earthquakeAdapter;
     private List<Earthquake> earthquakeList;
-    private BottomNavigationView bottomNavigationView;
-    private DrawerLayout drawerLayout;
-    private NavigationView navigationView;
-    private ImageView menuIcon, DashNotif;
+
+    public EarthquakeView() {
+        // Required empty public constructor
+    }
+
+    public static EarthquakeView newInstance() {
+        return new EarthquakeView();
+    }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_earthquake_view);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout
+        View view = inflater.inflate(R.layout.activity_earthquake_view, container, false);
 
-        earthquakeRecyclerView = findViewById(R.id.earthquakeRecyclerView);
-        earthquakeRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        earthquakeRecyclerView = view.findViewById(R.id.earthquakeRecyclerView);
+        earthquakeRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         earthquakeList = new ArrayList<>();
         earthquakeAdapter = new EarthquakeAdapter(earthquakeList);
@@ -56,49 +51,7 @@ public class EarthquakeView extends AppCompatActivity {
 
         fetchEarthquakeData();
 
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
-
-        DashNotif = findViewById(R.id.notification);
-        DashNotif.setOnClickListener(v -> {
-            Intent intent = new Intent(EarthquakeView.this, NotificationCenter.class);
-            startActivity(intent);
-        });
-
-        BottomNavigationView serviceNavigation = findViewById(R.id.bottomservice_navigation);
-        serviceNavigation.setSelectedItemId(R.id.nav_earthquake);
-        serviceNavigation.setOnNavigationItemSelectedListener(item -> {
-            int itemId = item.getItemId();
-            if (itemId == R.id.nav_weather) {
-                startActivity(new Intent(EarthquakeView.this, weatherDash.class));
-                overridePendingTransition(0, 0);
-                return true;
-            } else if (itemId == R.id.nav_earthquake) {
-                return true;
-            } else if (itemId == R.id.nav_RL) {
-                startActivity(new Intent(EarthquakeView.this, ReportFeedActivity.class));
-                overridePendingTransition(0, 0);
-                return true;
-            }
-            return false;
-        });
+        return view;
     }
 
     private void fetchEarthquakeData() {

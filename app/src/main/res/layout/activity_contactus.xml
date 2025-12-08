@@ -245,17 +245,14 @@
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingVertical="2dp"
+            app:itemTextColor="@color/baconnect_blue"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_navigation_menu"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:background="@color/baconnect_blue"
-            app:itemIconTint="@color/bottomnavbar"
-            app:itemTextColor="@color/bottomnavbar"
-            app:menu="@menu/bottom_navigation_menu"
-            style="@style/CustomBottomNav" />
+            app:layout_constraintEnd_toEndOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

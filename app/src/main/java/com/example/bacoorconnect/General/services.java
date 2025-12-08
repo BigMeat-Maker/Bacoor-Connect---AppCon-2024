@@ -7,7 +7,10 @@ import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
+import com.example.bacoorconnect.Emergency.EarthquakeView;
 import com.example.bacoorconnect.R;
+import com.example.bacoorconnect.Report.ReportFeedActivity;
+import com.example.bacoorconnect.Weather.weatherDash;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -33,22 +36,20 @@ public class services extends AppCompatActivity {
             currentUserId = user.getUid();
         }
 
-        // Initialize your buttons
         Button reportlistBtn = findViewById(R.id.nav_RL);
         Button earthquakesBtn = findViewById(R.id.nav_earthquake);
         Button weatherBtn = findViewById(R.id.nav_weather);
 
-        // Set up click listeners
         reportlistBtn.setOnClickListener(v -> {
-            //loadFragment(new ReportFeedActivity());
+            loadFragment(ReportFeedActivity.newInstance());
         });
 
         earthquakesBtn.setOnClickListener(v -> {
-            //loadFragment(new EarthquakeView());
+            loadFragment(EarthquakeView.newInstance());
         });
 
         weatherBtn.setOnClickListener(v -> {
-            //loadFragment(new weatherDash());
+            loadFragment(weatherDash.newInstance());
         });
 
         // Setup bottom navigation
