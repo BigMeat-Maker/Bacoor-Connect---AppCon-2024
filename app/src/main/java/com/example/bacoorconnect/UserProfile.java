@@ -65,7 +65,6 @@ public class UserProfile extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1;
     private Uri imageUri;
     private ImageView editDetailsBtn;
-    private DrawerLayout drawerLayout;
     private Button saveChangesBtn, cancelEditBtn, logoutBtn;
     public boolean isEditing = false;
     private BottomNavigationView bottomNavigationView;
@@ -135,7 +134,7 @@ public class UserProfile extends AppCompatActivity {
         });
 
         if (bottomNavigationView != null) {
-            BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);
+            BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_profile);
         } else {
             android.util.Log.e("ServicesActivity", "BottomNavigationView not found. Check layout ID.");
         }
