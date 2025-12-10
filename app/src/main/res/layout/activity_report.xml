@@ -36,7 +36,7 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_marginTop="10dp"
-                android:src="@drawable/menu_white"
+                android:src="@drawable/back_button"
                 android:contentDescription="Menu"
                 android:gravity="center_horizontal"/>
 
@@ -61,7 +61,6 @@
                 android:layout_width="25dp"
                 android:layout_height="25dp"
                 android:layout_marginTop="7dp"
-                android:src="@drawable/notification_white"
                 android:contentDescription="Notification"
                 android:gravity="center_horizontal"/>
         </LinearLayout>

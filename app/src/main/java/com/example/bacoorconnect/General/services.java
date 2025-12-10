@@ -31,6 +31,7 @@ public class services extends AppCompatActivity {
 
         auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
 
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             currentUserId = user.getUid();
@@ -52,7 +53,8 @@ public class services extends AppCompatActivity {
             loadFragment(weatherDash.newInstance());
         });
 
-        // Setup bottom navigation
+        loadFragment(ReportFeedActivity.newInstance());
+
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         if (bottomNavigationView != null) {
             BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);

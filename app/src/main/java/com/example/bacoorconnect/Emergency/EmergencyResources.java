@@ -21,12 +21,8 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class EmergencyResources extends AppCompatActivity {
 
-    private DrawerLayout drawerLayout;
-    private ImageView menuIcon;
-    private NavigationView navigationView;
     private BottomNavigationView bottomNavigationView;
     private String currentUserId;
-    private ImageView DashNotif;
     private boolean isGuest = false;
     private Button hotlinesBtn, hospitalsBtn, guidelinesBtn;
 
@@ -43,26 +39,10 @@ public class EmergencyResources extends AppCompatActivity {
             isGuest = true;
         }
 
-        menuIcon = findViewById(R.id.menu_icon);
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.nav_view);
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        // Navigation drawer menu removed - functionality moved to Emergency Hotlines fragment
-
         hotlinesBtn = findViewById(R.id.nav_hotlines);
         hospitalsBtn = findViewById(R.id.nav_hospitals);
         guidelinesBtn = findViewById(R.id.nav_guidelines);
 
-        // set by default
         hotlinesBtn.setSelected(true);
 
         hotlinesBtn.setOnClickListener(v -> {
@@ -85,12 +65,6 @@ public class EmergencyResources extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_service);
-
-        DashNotif = findViewById(R.id.notification);
-        DashNotif.setOnClickListener(v -> {
-            Intent intent = new Intent(EmergencyResources.this, NotificationCenter.class);
-            startActivity(intent);
-        });
 
         if (isGuest) {
             disableGuestFeatures();

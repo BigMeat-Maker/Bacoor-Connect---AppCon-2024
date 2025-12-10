@@ -150,12 +150,17 @@
         <!-- Bottom Navigation -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            app:elevation="8dp"
             app:itemTextColor="@color/baconnect_blue"
+            app:itemIconTint="@color/baconnect_blue"
             app:labelVisibilityMode="labeled"
             app:menu="@menu/bottom_navigation_menu"
-            android:foregroundGravity="center" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
     </LinearLayout>
 
 

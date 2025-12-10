@@ -644,13 +644,6 @@ public class Mappart extends Fragment {
         }
 
 
-        // This enables reportbutton after moving, might change to a more distinct thing
-        if (getActivity() instanceof MapDash) {
-            CardView reportButton = getActivity().findViewById(R.id.report_button);
-            if (reportButton != null) {
-                reportButton.setEnabled(true);
-            }
-        }
         if (getActivity() instanceof MapDash) {
             ((MapDash) getActivity()).updateLocation(currentLat, currentLon); // Update the MapDash with the new location
         }
