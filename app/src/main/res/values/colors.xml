@@ -25,4 +25,10 @@
     <color name="magnitude_low">#f5c12e</color> <!-- Yellow -->
     <color name="magnitude_medium">#ff7300</color> <!-- Orange -->
     <color name="magnitude_high">#ce0000</color> <!-- Red -->
+
+    <color name="light_gray_background">#F5F5F5</color>
+    <color name="dark_gray">#666666</color>
+    <color name="primary_blue">#2B3381</color>
+    <color name="divider_gray">#EEEEEE</color>
+    <color name="image_placeholder">#F0F0F0</color>
 </resources>

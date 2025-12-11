@@ -11,175 +11,207 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp"
+        android:background="@color/white">
 
-        <!-- Profile Pic + Location Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:paddingBottom="12dp"
+            android:paddingTop="8dp">
 
             <ImageView
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:id="@+id/user_profile_image"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:src="@drawable/profile"
-                android:layout_marginRight="10dp"/>
-
-            <TextView
-                android:id="@+id/Username"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="name"
-                android:textSize="13sp"
-                android:textColor="@android:color/black"/>
+                android:layout_marginEnd="12dp"/>
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:orientation="vertical">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/Username"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:src="@drawable/location"
-                        android:layout_marginEnd="5dp"/>
-
-                    <TextView
-                        android:id="@+id/location_text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Location text"
-                        android:textSize="13sp"
-                        android:textColor="@android:color/black"/>
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"/>
-
-                    <TextView
-                        android:id="@+id/user_distance"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="37M"
-                        android:textSize="13sp"
-                        android:textColor="@android:color/black"/>
-
-                    <ImageView
-                        android:id="@+id/threedots"
-                        android:layout_margin="5dp"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/post_option"
-                        android:layout_marginTop="5dp" />
-
-
-                </LinearLayout>
+                    android:text="User Name"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/poppins_bold"/>
 
                 <ImageView
                     android:id="@+id/report_category"
-                    android:layout_width="100dp"
-                    android:layout_height="25dp"
-                    android:layout_marginLeft="30dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="24dp"
+                    android:layout_marginTop="4dp"
                     android:src="@drawable/tag_roadaccident"
-                    android:layout_marginTop="5dp"/>
-
+                    android:adjustViewBounds="true"/>
             </LinearLayout>
+
+            <ImageView
+                android:id="@+id/threedots"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/post_option"
+                android:padding="4dp"/>
         </LinearLayout>
 
-        <View
-            android:layout_width="10dp"
-            android:layout_height="10dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="8dp"
+            android:background="@color/light_gray_background"
+            android:paddingHorizontal="12dp"
+            android:layout_marginBottom="16dp"
+            android:paddingStart="60dp">
 
-        <!-- Crash Image Restored -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/location"
+                    android:layout_marginEnd="8dp"
+                    app:tint="@color/primary_blue" />
+
+                <TextView
+                    android:id="@+id/location_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location not specified"
+                    android:textSize="14sp"
+                    android:textColor="@color/dark_gray"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/poppins_regular"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/user_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="-- km"
+                android:textSize="14sp"
+                android:textColor="@color/primary_blue"
+                android:textStyle="bold"
+                android:fontFamily="@font/poppins_bold"/>
+        </LinearLayout>
+
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
-            android:layout_marginTop="10dp">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone">
 
             <ImageView
                 android:id="@+id/report_image"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:src="@drawable/carcrash"
-                android:scaleType="centerCrop" />
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"
+                android:background="@color/image_placeholder"/>
         </androidx.cardview.widget.CardView>
 
         <TextView
             android:id="@+id/report_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="12dp"
-            android:text="Sample report description here."
-            android:textColor="@color/black"/>
+            android:text="Report description will appear here..."
+            android:textSize="15sp"
+            android:textColor="@color/black"
+            android:lineSpacingExtra="4dp"
+            android:paddingBottom="16dp"
+            android:fontFamily="@font/poppins_regular"/>
 
-        <!-- Vote + Comment Section -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider_gray"
+            android:layout_marginVertical="8dp"/>
+
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="5dp">
+            android:paddingVertical="8dp">
 
-            <ImageView
-                android:id="@+id/upvote_button"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:src="@drawable/upvote_filled"/>
-            <TextView
-                android:id="@+id/upvote_count"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="6"
-                android:textSize="20sp"
-                android:layout_marginLeft="5dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="8dp"
+                android:background="?selectableItemBackground">
 
-            <View
-                android:layout_width="10dp"
-                android:layout_height="10dp"/>
+                <ImageView
+                    android:id="@+id/upvote_button"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/upvote_blank"
+                    android:layout_marginEnd="6dp"/>
 
-            <ImageView
-                android:id="@+id/downvote_button"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:src="@drawable/downvote_blank"/>
-            <TextView
-                android:id="@+id/downvote_count"
+                <TextView
+                    android:id="@+id/upvote_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/poppins_bold"/>
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="20sp"
-                android:layout_marginLeft="5dp"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="8dp"
+                android:background="?selectableItemBackground">
 
+                <ImageView
+                    android:id="@+id/downvote_button"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/downvote_blank"
+                    android:layout_marginEnd="6dp"/>
+
+                <TextView
+                    android:id="@+id/downvote_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/poppins_bold"/>
+            </LinearLayout>
+
+            <!-- Flexible Space -->
             <View
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="1dp"
                 android:layout_weight="1"/>
 
-            <ImageView
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:src="@drawable/comment"/>
-            <TextView
-                android:id="@+id/CommentNumber"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="6"
-                android:textSize="20sp"
-                android:layout_marginLeft="5dp"/>
         </LinearLayout>
 
         <View
-            android:layout_width="10dp"
-            android:layout_height="10dp"/>
+            android:layout_width="match_parent"
+            android:layout_height="12dp"/>
 
     </LinearLayout>
 </FrameLayout>

@@ -30,20 +30,20 @@ import java.util.HashMap;
 public class ReportDetailsFrag extends DialogFragment {
 
     private TextView descriptionView, upvoteCountView, downvoteCountView, user_distance;
-    private ImageView upvoteButton, downvoteButton, categoryImageView;
-    private DatabaseReference reportRef, auditRef;
+    private TextView locationTextView, usernameView;
+    private ImageView upvoteButton, downvoteButton, userProfileImageView;
+    private DatabaseReference reportRef, usersRef, auditRef;
     private String reportId, currentUserId;
-    private static double userLat;
-    private static double userLon;
+    private double userLat = 14.4597; // Default Bacoor coordinates
+    private double userLon = 120.9333;
 
     public ReportDetailsFrag() {
     }
 
-    public static ReportDetailsFrag newInstance(String reportId, String userId) {
+    public static ReportDetailsFrag newInstance(String reportId, double userLat, double userLon) {
         ReportDetailsFrag fragment = new ReportDetailsFrag();
         Bundle args = new Bundle();
         args.putString("reportId", reportId);
-        args.putString("userId", userId);
         args.putDouble("userLat", userLat);
         args.putDouble("userLon", userLon);
         fragment.setArguments(args);
@@ -55,12 +55,12 @@ public class ReportDetailsFrag extends DialogFragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             reportId = getArguments().getString("reportId");
-            currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            userLat = getArguments().getDouble("userLat");
-            userLon = getArguments().getDouble("userLon");
-
+            userLat = getArguments().getDouble("userLat", 14.4597);
+            userLon = getArguments().getDouble("userLon", 120.9333);
         }
+        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         reportRef = FirebaseDatabase.getInstance().getReference("Report").child(reportId);
+        usersRef = FirebaseDatabase.getInstance().getReference("Users");
         auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
     }
 
@@ -69,18 +69,23 @@ public class ReportDetailsFrag extends DialogFragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_report_details, container, false);
 
+        // Initialize all views
         descriptionView = view.findViewById(R.id.report_description);
         upvoteCountView = view.findViewById(R.id.upvote_count);
         downvoteCountView = view.findViewById(R.id.downvote_count);
         upvoteButton = view.findViewById(R.id.upvote_button);
         downvoteButton = view.findViewById(R.id.downvote_button);
+        user_distance = view.findViewById(R.id.user_distance);
+        locationTextView = view.findViewById(R.id.location_text);
+        usernameView = view.findViewById(R.id.Username);
+        userProfileImageView = view.findViewById(R.id.user_profile_image);
 
         loadReportDetails();
 
         upvoteButton.setOnClickListener(v -> modifyVote(true));
         downvoteButton.setOnClickListener(v -> modifyVote(false));
-        ImageView threedots = view.findViewById(R.id.threedots);
 
+        ImageView threedots = view.findViewById(R.id.threedots);
         threedots.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(requireContext(), threedots);
             popupMenu.getMenuInflater().inflate(R.menu.post_options_menu, popupMenu.getMenu());
@@ -97,10 +102,8 @@ public class ReportDetailsFrag extends DialogFragment {
                 }
                 return false;
             });
-
             popupMenu.show();
         });
-
 
         return view;
     }
@@ -119,35 +122,52 @@ public class ReportDetailsFrag extends DialogFragment {
                     String previousVote = snapshot.child("voters").child(currentUserId).getValue(String.class);
                     String category = snapshot.child("category").getValue(String.class);
                     String imageUrl = snapshot.child("imageUrl").getValue(String.class);
+                    String location = snapshot.child("location").getValue(String.class);
 
                     ImageView reportImageView = getView().findViewById(R.id.report_image);
 
+                    // Calculate and display distance
                     calculateDistance(reportLat, reportLon);
 
+                    // Display location text
+                    if (location != null && !location.isEmpty()) {
+                        String formattedLocation = formatLocation(location);
+                        locationTextView.setText(formattedLocation);
+                    } else {
+                        locationTextView.setText("Location not specified");
+                    }
+
+                    // Load report image
                     if (imageUrl != null && !imageUrl.isEmpty()) {
                         Glide.with(requireContext())
                                 .load(imageUrl)
                                 .diskCacheStrategy(DiskCacheStrategy.ALL)
+                                .centerCrop()
                                 .into(reportImageView);
                         reportImageView.setVisibility(View.VISIBLE);
                     } else {
                         reportImageView.setVisibility(View.GONE);
                     }
 
+                    // Set text values
                     descriptionView.setText(description);
-                    upvoteCountView.setText("" + upvotes);
-                    downvoteCountView.setText("" + downvotes);
+                    upvoteCountView.setText(String.valueOf(upvotes));
+                    downvoteCountView.setText(String.valueOf(downvotes));
 
+                    // Update category icon
                     if (category != null) {
                         updateCategoryIcon(category.toLowerCase());
                     }
 
+                    // Load user data (name and profile picture)
                     if (reportOwnerId != null) {
-                        fetchAndDisplayUsername(reportOwnerId);
+                        fetchAndDisplayUserInfo(reportOwnerId);
                     }
 
+                    // Update vote icons
                     updateVoteIcons(previousVote);
 
+                    // Show/hide options button
                     ImageView threedots = getView().findViewById(R.id.threedots);
                     if (reportOwnerId != null && reportOwnerId.equals(currentUserId)) {
                         threedots.setVisibility(View.VISIBLE);
@@ -175,28 +195,39 @@ public class ReportDetailsFrag extends DialogFragment {
         float[] results = new float[1];
         android.location.Location.distanceBetween(userLat, userLon, reportLat, reportLon, results);
 
-        float distanceInMeters = results[0]; // Distance in meters
-
-        // Debugging: Log the distance in meters
-        Log.d("ReportDetailsFrag", "Distance (meters): " + distanceInMeters);
-
-        // Convert the distance to kilometers
+        float distanceInMeters = results[0];
         float distanceInKm = distanceInMeters / 1000;
 
-        // Debugging: Log the distance in kilometers
-        Log.d("ReportDetailsFrag", "Distance (km): " + distanceInKm);
-
-        // Display the distance in the TextView (you can modify this as needed)
-        TextView userDistanceView = getView().findViewById(R.id.user_distance);
-        userDistanceView.setText("Distance: " + String.format("%.2f", distanceInKm) + " km");
+        // Display the distance
+        user_distance.setText(String.format("%.2f km", distanceInKm));
     }
 
+    private String formatLocation(String location) {
+        if (location == null || location.isEmpty()) {
+            return "Location unknown";
+        }
 
+        try {
+            if (location.contains("Lat:") && location.contains("Lon:")) {
+                String[] parts = location.split(",");
+                if (parts.length >= 2) {
+                    String latPart = parts[0].replace("Lat:", "").trim();
+                    String lonPart = parts[1].replace("Lon:", "").trim();
 
-    //self explanatory i think just a nifty lil thing to update the tag
+                    double lat = Double.parseDouble(latPart);
+                    double lon = Double.parseDouble(lonPart);
+
+                    return String.format("Lat: %.2f, Lon: %.2f", lat, lon);
+                }
+            }
+            return location;
+        } catch (NumberFormatException e) {
+            return location;
+        }
+    }
+
     private void updateCategoryIcon(String category) {
         int categoryDrawable;
-
         switch (category) {
             case "accident":
                 categoryDrawable = R.drawable.tag_roadaccident;
@@ -211,7 +242,7 @@ public class ReportDetailsFrag extends DialogFragment {
                 categoryDrawable = R.drawable.tag_traffic;
                 break;
             default:
-                categoryDrawable = R.drawable.tag_roadaccident;  // Default to road accident if unknown
+                categoryDrawable = R.drawable.tag_roadaccident;
                 break;
         }
 
@@ -219,29 +250,42 @@ public class ReportDetailsFrag extends DialogFragment {
         reportCategoryImageView.setImageResource(categoryDrawable);
     }
 
-    //gets the firstname which i hope will be changed to username soon and pops it at a temp place at the fragment
-    private void fetchAndDisplayUsername(String userId) {
-        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId);
-
-        userRef.child("firstName").addListenerForSingleValueEvent(new ValueEventListener() {
+    private void fetchAndDisplayUserInfo(String userId) {
+        usersRef.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    String firstName = snapshot.getValue(String.class);
-                    TextView usernameView = getView().findViewById(R.id.Username);
-                    usernameView.setText(firstName != null ? firstName : "Unknown User");
+                    // Get user name
+                    String firstName = snapshot.child("firstName").getValue(String.class);
+                    String lastName = snapshot.child("lastName").getValue(String.class);
+                    if (firstName != null && lastName != null) {
+                        usernameView.setText(firstName + " " + lastName);
+                    } else if (firstName != null) {
+                        usernameView.setText(firstName);
+                    } else {
+                        usernameView.setText("Unknown User");
+                    }
+
+                    // Get and load profile image
+                    String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
+                    if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                        Glide.with(requireContext())
+                                .load(profileImageUrl)
+                                .circleCrop()
+                                .placeholder(R.drawable.profile)
+                                .into(userProfileImageView);
+                    }
                 } else {
-                    Toast.makeText(getActivity(), "User not found.", Toast.LENGTH_SHORT).show();
+                    usernameView.setText("Unknown User");
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getActivity(), "Failed to load username.", Toast.LENGTH_SHORT).show();
+                usernameView.setText("Unknown User");
             }
         });
     }
-
 
     private void updateVoteIcons(String previousVote) {
         if ("upvote".equals(previousVote)) {
@@ -258,53 +302,46 @@ public class ReportDetailsFrag extends DialogFragment {
 
     private boolean isVotingInProgress = false;
 
-
     @SuppressLint("SetTextI18n")
     private void modifyVote(boolean isUpvote) {
         if (isVotingInProgress) return;
-
         isVotingInProgress = true;
 
         reportRef.get().addOnSuccessListener(snapshot -> {
             if (snapshot.exists()) {
                 int upvotes = snapshot.child("upvotes").getValue(Integer.class);
                 int downvotes = snapshot.child("downvotes").getValue(Integer.class);
-
-                String voterPath = "voters/" + currentUserId;
                 String previousVote = snapshot.child("voters").child(currentUserId).getValue(String.class);
-
                 HashMap<String, Object> updateData = new HashMap<>();
-                String action = isUpvote ? "upvote" : "downvote";
 
-                // Handles voting scenarios like changes cancels etc
                 if (previousVote != null) {
                     if (previousVote.equals("upvote") && isUpvote) {
                         upvotes--;
-                        updateData.put(voterPath, null);
+                        updateData.put("voters/" + currentUserId, null);
                         updateVoteIcons(null);
                     } else if (previousVote.equals("downvote") && !isUpvote) {
                         downvotes--;
-                        updateData.put(voterPath, null);
+                        updateData.put("voters/" + currentUserId, null);
                         updateVoteIcons(null);
                     } else if (previousVote.equals("upvote") && !isUpvote) {
                         upvotes--;
                         downvotes++;
-                        updateData.put(voterPath, "downvote");
+                        updateData.put("voters/" + currentUserId, "downvote");
                         updateVoteIcons("downvote");
                     } else if (previousVote.equals("downvote") && isUpvote) {
                         downvotes--;
                         upvotes++;
-                        updateData.put(voterPath, "upvote");
+                        updateData.put("voters/" + currentUserId, "upvote");
                         updateVoteIcons("upvote");
                     }
                 } else {
                     if (isUpvote) {
                         upvotes++;
-                        updateData.put(voterPath, "upvote");
+                        updateData.put("voters/" + currentUserId, "upvote");
                         updateVoteIcons("upvote");
                     } else {
                         downvotes++;
-                        updateData.put(voterPath, "downvote");
+                        updateData.put("voters/" + currentUserId, "downvote");
                         updateVoteIcons("downvote");
                     }
                 }
@@ -312,8 +349,8 @@ public class ReportDetailsFrag extends DialogFragment {
                 updateData.put("upvotes", upvotes);
                 updateData.put("downvotes", downvotes);
 
-                upvoteCountView.setText(""+upvotes);
-                downvoteCountView.setText(""+downvotes);
+                upvoteCountView.setText(String.valueOf(upvotes));
+                downvoteCountView.setText(String.valueOf(downvotes));
 
                 reportRef.updateChildren(updateData).addOnCompleteListener(task -> isVotingInProgress = false);
             } else {

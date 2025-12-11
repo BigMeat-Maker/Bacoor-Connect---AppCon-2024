@@ -267,7 +267,6 @@
                                     android:fontFamily="@font/poppins_light"
                                     android:gravity="end"
                                     android:padding="8dp"
-                                    android:text="0917-123-4567"
                                     android:textColor="@color/black"
                                     android:textSize="16sp" />
                             </TableRow>
@@ -348,7 +347,6 @@
                                     android:id="@+id/contactNumberInfo"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="666"
                                     android:textSize="14sp"
                                     android:fontFamily="@font/poppins_regular"
                                     android:textColor="@color/black"

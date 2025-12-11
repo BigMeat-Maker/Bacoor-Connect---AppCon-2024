@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -16,9 +17,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.bumptech.glide.Glide;
 import com.example.bacoorconnect.Helpers.LocationTrackingService;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.User;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -39,6 +40,7 @@ public class FrontpageActivity extends AppCompatActivity {
     private View headerLayout;
     private View bottomNavigation;
     private TextView greetingText;
+    private ImageView profileIcon; // Add this
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +59,17 @@ public class FrontpageActivity extends AppCompatActivity {
         headerLayout = findViewById(R.id.headerLayout);
         bottomNavigation = findViewById(R.id.bottom_navigation);
         greetingText = findViewById(R.id.greetingText);
+        profileIcon = findViewById(R.id.profileIcon); // Initialize this
 
         Logindirect = findViewById(R.id.Logindirect);
         Registerdirect = findViewById(R.id.RegisterButton);
         Guestdirect = findViewById(R.id.LoginGuest);
+
+        // Add click listener for profile icon
+        profileIcon.setOnClickListener(v -> {
+            // Navigate to profile or show profile menu
+            // You can add your profile navigation logic here
+        });
 
         Logindirect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -95,7 +104,6 @@ public class FrontpageActivity extends AppCompatActivity {
         if (bottomNav != null) {
             BottomNavHelper.setupBottomNavigation(this, bottomNav, R.id.nav_home);
         }
-
     }
 
     private void checkAutoLogin() {
@@ -114,18 +122,43 @@ public class FrontpageActivity extends AppCompatActivity {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         if (snapshot.exists()) {
                             // Get user details from Firebase
-                            User.firstName = snapshot.child("firstName").getValue(String.class);
-                            User.lastName = snapshot.child("lastName").getValue(String.class);
-                            User.email = snapshot.child("email").getValue(String.class);
-                            User.phoneNumber = snapshot.child("phoneNumber").getValue(String.class);
+                            String firstName = snapshot.child("firstName").getValue(String.class);
+                            String lastName = snapshot.child("lastName").getValue(String.class);
+                            String email = snapshot.child("email").getValue(String.class);
+                            String phoneNumber = snapshot.child("phoneNumber").getValue(String.class);
 
-                            // Ensure values are not null
-                            if (User.firstName == null) User.firstName = "";
-                            if (User.lastName == null) User.lastName = "";
-                            if (User.email == null) User.email = "";
-                            if (User.phoneNumber == null) User.phoneNumber = "";
+                            // Store in SharedPreferences for easy access
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putString("userFirstName", firstName != null ? firstName : "");
+                            editor.putString("userLastName", lastName != null ? lastName : "");
+                            editor.putString("userEmail", email != null ? email : "");
+                            editor.putString("userPhone", phoneNumber != null ? phoneNumber : "");
+                            editor.apply();
+
+                            // Load profile image if exists
+                            if (snapshot.hasChild("profileImage")) {
+                                String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
+                                if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                                    // Store profile image URL
+                                    editor.putString("userProfileImage", profileImageUrl);
+                                    editor.apply();
+
+                                    // Load profile image using Glide
+                                    runOnUiThread(() -> {
+                                        Glide.with(FrontpageActivity.this)
+                                                .load(profileImageUrl)
+                                                .circleCrop()
+                                                .placeholder(R.drawable.profile) // Default profile icon
+                                                .into(profileIcon);
+                                    });
+                                }
+                            }
+
+                            // Update greeting text
+                            runOnUiThread(() -> {
+                                updateGreetingText(firstName, lastName, email);
+                            });
                         }
-
                         loadDashboardFragment();
                         Intent serviceIntent = new Intent(FrontpageActivity.this, LocationTrackingService.class);
                         ContextCompat.startForegroundService(FrontpageActivity.this, serviceIntent);
@@ -159,6 +192,50 @@ public class FrontpageActivity extends AppCompatActivity {
         } else {
             // If welcome screen is showing, exit the app
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh user data when returning to this activity
+        refreshUserData();
+    }
+
+    private void refreshUserData() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(user.getUid());
+            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    if (snapshot.exists()) {
+                        String firstName = snapshot.child("firstName").getValue(String.class);
+                        String lastName = snapshot.child("lastName").getValue(String.class);
+                        String email = snapshot.child("email").getValue(String.class);
+
+                        // Update greeting
+                        updateGreetingText(firstName, lastName, email);
+
+                        // Update profile picture
+                        if (snapshot.hasChild("profileImage")) {
+                            String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
+                            if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+                                Glide.with(FrontpageActivity.this)
+                                        .load(profileImageUrl)
+                                        .circleCrop()
+                                        .placeholder(R.drawable.profile)
+                                        .into(profileIcon);
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    // Handle error
+                }
+            });
         }
     }
 
@@ -200,6 +277,9 @@ public class FrontpageActivity extends AppCompatActivity {
 
         // Clear the back stack
         getSupportFragmentManager().popBackStack();
+
+        // Reset profile icon to default
+        profileIcon.setImageResource(R.drawable.profile);
     }
 
     public void loadDashboardFragment() {
@@ -211,7 +291,7 @@ public class FrontpageActivity extends AppCompatActivity {
         bottomNavigation.setVisibility(View.VISIBLE);
 
         // Update greeting text with user's name
-        updateGreetingText();
+        updateGreetingTextFromPrefs();
 
         // Clear the back stack before loading dashboard
         getSupportFragmentManager().popBackStack(null, getSupportFragmentManager().POP_BACK_STACK_INCLUSIVE);
@@ -221,19 +301,28 @@ public class FrontpageActivity extends AppCompatActivity {
         transaction.commit();
     }
 
-    private void updateGreetingText() {
+    private void updateGreetingTextFromPrefs() {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String firstName = preferences.getString("userFirstName", "");
+        String lastName = preferences.getString("userLastName", "");
+        String email = preferences.getString("userEmail", "");
+
+        updateGreetingText(firstName, lastName, email);
+    }
+
+    private void updateGreetingText(String firstName, String lastName, String email) {
         String greeting = "Hello, ";
 
         // Build the greeting with available user information
-        if (User.firstName != null && !User.firstName.isEmpty()) {
-            greeting += User.firstName;
-            if (User.lastName != null && !User.lastName.isEmpty()) {
-                greeting += " " + User.lastName;
+        if (firstName != null && !firstName.isEmpty()) {
+            greeting += firstName;
+            if (lastName != null && !lastName.isEmpty()) {
+                greeting += " " + lastName;
             }
             greeting += "!";
-        } else if (User.email != null && !User.email.isEmpty()) {
+        } else if (email != null && !email.isEmpty()) {
             // If no name is available, use email
-            greeting += User.email + "!";
+            greeting += email + "!";
         } else {
             // Fallback to generic greeting
             greeting += "User!";
@@ -241,5 +330,4 @@ public class FrontpageActivity extends AppCompatActivity {
 
         greetingText.setText(greeting);
     }
-
 }

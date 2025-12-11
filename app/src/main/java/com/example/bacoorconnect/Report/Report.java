@@ -1,166 +1,132 @@
 package com.example.bacoorconnect.Report;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
 public class Report {
-    private double latitude;
-    private double longitude;
-    private String category;
-    private String description;
-    private String reportMessage;
-    private String reportID;
+    // Firebase fields
+    private String reportId;
     private String userId;
+    private String description;
+    private String category;
     private String imageUrl;
-
-
     private int upvotes = 0;
     private int downvotes = 0;
-    private VoteState userVote = VoteState.NONE;
+    private long timestamp;
 
-    private DatabaseReference auditRef;
+    // Additional fields from your Firebase
+    private double latitude;
+    private double longitude;
+    private String location; // This is the "location" field in Firebase
+    private String addressPrecision;
+    private String reportMessage; // If you still want this
 
-
-
-    public enum VoteState {
-        NONE, UPVOTED, DOWNVOTED
-    }
-
-    public String getUserVote() {
-        switch (userVote) {
-            case UPVOTED:
-                return "upvote";
-            case DOWNVOTED:
-                return "downvote";
-            default:
-                return "none";
-        }
-    }
-
-
+    // Constructors
     public Report() {
+        // Default constructor required for Firebase
     }
 
-    public Report(double lat, double lon, String category, String description, String reportMessage, String reportId, String imageUrl, String userId) {
+    public Report(double lat, double lon, String category, String description,
+                  String reportMessage, String reportId, String userId, String imageUrl) {
         this.latitude = lat;
         this.longitude = lon;
         this.category = category;
         this.description = description;
-        this.reportMessage = reportMessage;
-        this.reportID = reportId;
+        this.reportId = reportId;
         this.userId = userId;
         this.imageUrl = imageUrl;
-        this.auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
+        // Set other fields as needed
+        this.location = "Lat: " + lat + ", Lon: " + lon;
+        this.timestamp = System.currentTimeMillis();
+        this.upvotes = 0;
+        this.downvotes = 0;
     }
 
-    // Getters
-    public double getLat() {
-        return latitude;
-    }
 
-    public double getLon() {
-        return longitude;
-    }
+    // Getters and Setters
+    public String getReportId() { return reportId; }
+    public void setReportId(String reportId) { this.reportId = reportId; }
 
-    public String getImageUrl() {
-        return imageUrl;  // This will return the image URL (or null if not set)
-    }
-    public String getCategory() {
-        return category;
-    }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
-    public String getDescription() {
-        return description;
-    }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-    public String getReportMessage() {
-        return reportMessage;
-    }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
-    public String getReportId() {
-        return reportID;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public String getUserId() {
-        return userId;
-    }
+    public int getUpvotes() { return upvotes; }
+    public void setUpvotes(int upvotes) { this.upvotes = upvotes; }
 
-    public int getUpvotes() {
-        return upvotes;
-    }
+    public int getDownvotes() { return downvotes; }
+    public void setDownvotes(int downvotes) { this.downvotes = downvotes; }
 
-    public int getDownvotes() {
-        return downvotes;
-    }
+    public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 
-    public boolean hasUpvoted() {
-        return userVote == VoteState.UPVOTED;
-    }
+    public double getLatitude() { return latitude; }
+    public void setLatitude(double latitude) { this.latitude = latitude; }
 
-    public boolean hasDownvoted() {
-        return userVote == VoteState.DOWNVOTED;
-    }
+    public double getLongitude() { return longitude; }
+    public void setLongitude(double longitude) { this.longitude = longitude; }
 
-    public void toggleUpvote() {
-        if (userVote == VoteState.UPVOTED) {
-            upvotes--;
-            userVote = VoteState.NONE;
-            logActivity("Upvote Removed", "Removed upvote on report", "Upvotes: " + upvotes);
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public String getAddressPrecision() { return addressPrecision; }
+    public void setAddressPrecision(String addressPrecision) { this.addressPrecision = addressPrecision; }
+
+    // For compatibility with old code
+    public double getLat() { return latitude; }
+    public double getLon() { return longitude; }
+    public String getReportMessage() { return description; } // Use description as reportMessage
+
+    // Helper methods
+    public String getFormattedTime() {
+        if (timestamp == 0) return "";
+
+        long now = System.currentTimeMillis();
+        long diff = now - timestamp;
+
+        long seconds = diff / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        if (seconds < 60) {
+            return "Just now";
+        } else if (minutes < 60) {
+            return minutes + "m ago";
+        } else if (hours < 24) {
+            return hours + "h ago";
+        } else if (days < 7) {
+            return days + "d ago";
         } else {
-            if (userVote == VoteState.DOWNVOTED) {
-                downvotes--;
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM d", Locale.getDefault());
+            return sdf.format(new Date(timestamp));
+        }
+    }
+
+    // Parse coordinates from location string if needed
+    public void parseCoordinatesFromLocation() {
+        if (location != null && location.contains("Lat:") && location.contains("Lon:")) {
+            try {
+                String[] parts = location.split(",");
+                if (parts.length >= 2) {
+                    String latPart = parts[0].replace("Lat:", "").trim();
+                    String lonPart = parts[1].replace("Lon:", "").trim();
+                    this.latitude = Double.parseDouble(latPart);
+                    this.longitude = Double.parseDouble(lonPart);
+                }
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
             }
-            upvotes++;
-            userVote = VoteState.UPVOTED;
-            logActivity("Upvote", "Upvoted report", "Upvotes: " + upvotes);
         }
     }
-
-    public void toggleDownvote() {
-        if (userVote == VoteState.DOWNVOTED) {
-            downvotes--;
-            userVote = VoteState.NONE;
-            logActivity("Downvote Removed", "Removed downvote on report", "Downvotes: " + downvotes);
-        } else {
-            if (userVote == VoteState.UPVOTED) {
-                upvotes--;
-            }
-            downvotes++;
-            userVote = VoteState.DOWNVOTED;
-            logActivity("Downvote", "Downvoted report", "Downvotes: " + downvotes);
-        }
-    }
-
-    public void setReportId(String reportID) {
-        this.reportID = reportID;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    private void logActivity(String action, String notes, String changes) {
-        String logId = auditRef.push().getKey();
-        String dateTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-
-        HashMap<String, Object> logData = new HashMap<>();
-        logData.put("dateTime", dateTime);
-        logData.put("userId", userId);
-        logData.put("reportId", reportID);
-        logData.put("action", action);
-        logData.put("notes", notes);
-        logData.put("changes", changes);
-
-
-
-        if (logId != null) {
-            auditRef.child(logId).setValue(logData);
-        }
-    }
-
 }

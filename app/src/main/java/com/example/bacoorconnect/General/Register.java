@@ -27,7 +27,7 @@ import java.util.HashMap;
 public class Register extends AppCompatActivity {
 
     private EditText editTextFirstName, editTextLastName, editTextEmail, editTextContactNum, editTextPassword, editTextConfirmPassword;
-    private Button register, backButton;
+    private Button register;
     private TextView loginText;
     private ProgressDialog progressDialog;
     private DatabaseReference mDatabase;
@@ -90,14 +90,18 @@ public class Register extends AppCompatActivity {
             }
         });
 
-        loginText.setOnClickListener(v -> startActivity(new Intent(Register.this, Login.class)));
+        loginText.setOnClickListener(v -> {
+            startActivity(new Intent(Register.this, Login.class));
+            finish(); // Add finish() to prevent going back to register
+        });
 
         ImageView backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(Register.this, FrontpageActivity.class);
-                startActivity(intent);
+                // Instead of starting a new FrontpageActivity, just finish this one
+                // to go back to the previous activity (which should be FrontpageActivity)
+                finish();
             }
         });
     }
@@ -112,10 +116,17 @@ public class Register extends AppCompatActivity {
             } else if (requestCode == PRIVACY_REQUEST_CODE) {
                 privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
             }
-
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        // Override back button to go back to FrontpageActivity
+        super.onBackPressed();
+        finish();
+    }
+
+    // ... rest of your methods remain the same ...
     private void togglePasswordVisibility(EditText editText, ImageView toggleIcon) {
         if (editText.getTransformationMethod() instanceof PasswordTransformationMethod) {
             editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());

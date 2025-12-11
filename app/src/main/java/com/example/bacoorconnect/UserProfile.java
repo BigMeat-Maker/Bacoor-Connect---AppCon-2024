@@ -27,7 +27,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.bumptech.glide.Glide;
 import com.example.bacoorconnect.General.BottomNavHelper;
-import com.example.bacoorconnect.General.Login;
+import com.example.bacoorconnect.General.FrontpageActivity;
 import com.example.bacoorconnect.Helpers.AccountDeleter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -56,6 +56,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import android.text.InputFilter;
+import android.text.Spanned;
+import android.text.InputType;
 
 public class UserProfile extends AppCompatActivity {
 
@@ -95,13 +99,8 @@ public class UserProfile extends AppCompatActivity {
 
         logoutBtn = findViewById(R.id.logout_btn);
         logoutBtn.setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(this, Login.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
+            logoutUser();
         });
-
-
 
         loadProfileImage();
         loadUserDetails();
@@ -141,6 +140,28 @@ public class UserProfile extends AppCompatActivity {
 
     }
 
+    private void logoutUser() {
+        SharedPreferences preferences = getSharedPreferences("UserProfilePrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("keepLoggedIn", false);
+        editor.apply();
+
+        SharedPreferences defaultPrefs = android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor defaultEditor = defaultPrefs.edit();
+        defaultEditor.remove("userFirstName");
+        defaultEditor.remove("userLastName");
+        defaultEditor.remove("userEmail");
+        defaultEditor.remove("userPhone");
+        defaultEditor.remove("userProfileImage");
+        defaultEditor.apply();
+
+        FirebaseAuth.getInstance().signOut();
+
+        Intent intent = new Intent(UserProfile.this, FrontpageActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
 
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(this)
@@ -162,7 +183,11 @@ public class UserProfile extends AppCompatActivity {
             public void onSuccess() {
                 progressDialog.dismiss();
                 Toast.makeText(UserProfile.this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(UserProfile.this, Login.class));
+
+                // Navigate to FrontpageActivity instead of Login
+                Intent intent = new Intent(UserProfile.this, FrontpageActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
                 finish();
             }
             @Override
@@ -216,21 +241,83 @@ public class UserProfile extends AppCompatActivity {
                 String firstName = dataSnapshot.child("firstName").getValue(String.class);
                 String lastName = dataSnapshot.child("lastName").getValue(String.class);
                 String userEmail = dataSnapshot.child("email").getValue(String.class);
-                String phone = dataSnapshot.child("phone").getValue(String.class);
 
-                if (firstName != null) fname.setText(firstName);
-                if (lastName != null) lname.setText(lastName);
-                if (userEmail != null) email.setText(userEmail);
-                if (phone != null) contactno.setText(phone);
+                // Get phone number - check different field names
+                String phone = null;
 
-                if (firstName != null) UserProfileName.setText(firstName + " " + lastName);
-                if (userEmail != null) UserProfileEmail.setText(userEmail);
+                if (dataSnapshot.hasChild("phone")) {
+                    phone = dataSnapshot.child("phone").getValue(String.class);
+                } else if (dataSnapshot.hasChild("phoneNumber")) {
+                    phone = dataSnapshot.child("phoneNumber").getValue(String.class);
+                } else if (dataSnapshot.hasChild("contactNum")) {
+                    phone = dataSnapshot.child("contactNum").getValue(String.class);
+                } else if (dataSnapshot.hasChild("contactno")) {
+                    phone = dataSnapshot.child("contactno").getValue(String.class);
+                }
 
+                Log.d("UserProfile", "Phone number from Firebase: " + phone);
+
+                if (firstName != null && !firstName.isEmpty()) fname.setText(firstName);
+                if (lastName != null && !lastName.isEmpty()) lname.setText(lastName);
+                if (userEmail != null && !userEmail.isEmpty()) email.setText(userEmail);
+
+                if (phone != null && !phone.isEmpty()) {
+                    String formattedPhone = formatPhoneNumber(phone);
+                    contactno.setText(phone);
+
+                    TextView contactNumberInfo = findViewById(R.id.contactNumberInfo);
+                    if (contactNumberInfo != null) {
+                        contactNumberInfo.setText(formattedPhone);
+                    }
+                } else {
+                    contactno.setText("");
+                    TextView contactNumberInfo = findViewById(R.id.contactNumberInfo);
+                    if (contactNumberInfo != null) {
+                        contactNumberInfo.setText("No phone number set");
+                    }
+                }
+
+                if (firstName != null && !firstName.isEmpty()) {
+                    if (lastName != null && !lastName.isEmpty()) {
+                        UserProfileName.setText(firstName + " " + lastName);
+                    } else {
+                        UserProfileName.setText(firstName);
+                    }
+                }
+
+                if (userEmail != null && !userEmail.isEmpty()) {
+                    UserProfileEmail.setText(userEmail);
+                }
+
+            } else {
+                Toast.makeText(this, "User data not found.", Toast.LENGTH_SHORT).show();
             }
         }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Failed to load user details.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to load user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e("UserProfile", "Error loading user details", e);
         });
     }
+
+    private String formatPhoneNumber(String phone) {
+        if (phone == null || phone.isEmpty()) {
+            return "";
+        }
+
+        String digitsOnly = phone.replaceAll("[^0-9]", "");
+
+        if (digitsOnly.length() == 11) {
+            return digitsOnly.substring(0, 4) + "-" +
+                    digitsOnly.substring(4, 7) + "-" +
+                    digitsOnly.substring(7);
+        } else if (digitsOnly.length() == 10) {
+            return digitsOnly.substring(0, 3) + "-" +
+                    digitsOnly.substring(3, 6) + "-" +
+                    digitsOnly.substring(6);
+        } else {
+            return phone;
+        }
+    }
+
 
     private void openImageChooser() {
         Intent intent = new Intent();
@@ -321,6 +408,33 @@ public class UserProfile extends AppCompatActivity {
             field.setFocusableInTouchMode(true);
             setupSelectAllOnFocus(field);
         }
+
+        // Add phone number input filtering
+        InputFilter[] phoneFilters = new InputFilter[] {
+                new InputFilter.LengthFilter(15), // Maximum 15 characters
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source, int start, int end,
+                                               Spanned dest, int dstart, int dend) {
+                        // Allow only digits and plus sign at the beginning
+                        for (int i = start; i < end; i++) {
+                            char c = source.charAt(i);
+                            if (!Character.isDigit(c) && c != '+') {
+                                return "";
+                            }
+                            // Plus sign only allowed at position 0
+                            if (c == '+' && dstart != 0) {
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        };
+        contactno.setFilters(phoneFilters);
+
+        // Add input type for phone
+        contactno.setInputType(InputType.TYPE_CLASS_PHONE);
 
         EditPFP.setOnClickListener(v -> openImageChooser());
         saveChangesBtn.setOnClickListener(v -> validateEmailAndPhone());
@@ -423,6 +537,9 @@ public class UserProfile extends AppCompatActivity {
     private void proceedWithProfileUpdate(String newEmail, String newPhone) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
+        // Clean the phone number (remove any dashes or spaces)
+        String cleanPhone = newPhone.replaceAll("[^0-9+]", "");
+
         currentUser.updateEmail(newEmail)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -430,9 +547,15 @@ public class UserProfile extends AppCompatActivity {
                                 .child(currentUser.getUid());
 
                         userRef.child("email").setValue(newEmail);
-                        userRef.child("phone").setValue(newPhone);
+                        userRef.child("phone").setValue(cleanPhone); // Save cleaned number
 
                         saveLastProfileEditTime();
+
+                        // Update the contactNumberInfo TextView with formatted number
+                        TextView contactNumberInfo = findViewById(R.id.contactNumberInfo);
+                        if (contactNumberInfo != null) {
+                            contactNumberInfo.setText(formatPhoneNumber(cleanPhone));
+                        }
 
                         if (imageUri != null) {
                             scanImageWithAzure(imageUri, () -> {
@@ -505,8 +628,6 @@ public class UserProfile extends AppCompatActivity {
         }
     }
 
-
-
     private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {
         DatabaseReference auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
         String logId = auditRef.push().getKey();
@@ -532,7 +653,13 @@ public class UserProfile extends AppCompatActivity {
     }
 
     private boolean isValidPhone(String phone) {
-        return phone != null && phone.matches("^\\+?\\d{10,15}$");
+        if (phone == null || phone.isEmpty()) {
+            return false;
+        }
+
+        String cleanPhone = phone.replaceAll("[^0-9+]", "");
+
+        return cleanPhone.matches("^\\+?[0-9]{10,13}$");
     }
 
 }
