@@ -31,4 +31,11 @@
     <color name="primary_blue">#2B3381</color>
     <color name="divider_gray">#EEEEEE</color>
     <color name="image_placeholder">#F0F0F0</color>
+
+    <!-- Weather Colors -->
+    <color name="weather_card_background">#FFFFFF</color>
+    <color name="weather_icon_background">#E8F4FD</color>
+    <color name="weather_text_primary">#2B3381</color>
+    <color name="weather_text_secondary">#666666</color>
+
 </resources>

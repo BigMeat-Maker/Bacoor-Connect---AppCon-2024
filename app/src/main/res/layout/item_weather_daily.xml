@@ -1,88 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.cardview.widget.CardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:paddingVertical="12dp"
-    android:gravity="center_vertical"
-    android:layout_marginBottom="4dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white">
 
-    <TextView
-        android:id="@+id/textDate"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
-        android:gravity="center"
-        android:text="Monday"
-        android:textSize="16sp"
-        android:textColor="@color/baconnect_blue"
-        android:fontFamily="@font/poppins_bold" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="14dp"
+        android:paddingHorizontal="16dp">
 
-    <ImageView
-        android:id="@+id/imageWeatherIconDay"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weather_sunny"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
+        <!-- Date (Day Name) -->
+        <TextView
+            android:id="@+id/textDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:gravity="start"
+            android:text="Monday"
+            android:textSize="16sp"
+            android:textColor="@color/weather_text_primary"
+            android:fontFamily="@font/poppins_bold" />
 
-    <ImageView
-        android:id="@+id/imageWeatherIconthunderstorm"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weather_thunderstorm"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
-    <ImageView
-        android:id="@+id/imageWeatherIconExtHot"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weatersupersunny"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
-    <ImageView
-        android:id="@+id/imageWeatherIconCloudy"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weathersunny"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
+        <!-- Weather Icon Container with Background -->
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginHorizontal="8dp"
+            android:background="@drawable/weather_icon_background">
 
-    <ImageView
-        android:id="@+id/imageWeatherIconrainy"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weather_rainy"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
+            <!-- All weather icons stacked - only one visible at a time -->
+            <ImageView
+                android:id="@+id/imageWeatherIconDay"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/weather_sunny"
+                android:visibility="gone"
+                android:contentDescription="Sunny" />
 
-    <ImageView
-        android:id="@+id/imageWeatherIconwindy"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weather_windy"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
-    <ImageView
-        android:id="@+id/imageWeatherIconpartlycloudy"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:src="@drawable/weather_partlycloudy"
-        android:layout_marginHorizontal="6dp"
-        android:contentDescription="Weather Icon" />
+            <ImageView
+                android:id="@+id/imageWeatherIconCloudy"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/weathersunny"
+                android:visibility="gone"
+                android:contentDescription="Cloudy" />
 
-    <TextView
-        android:id="@+id/textTemperatureRange"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="2"
-        android:layout_gravity="center"
-        android:fontFamily="@font/poppins_bold"
-        android:gravity="end"
-        android:text="30° / 24         "
-        android:textColor="@color/baconnect_blue"
-        android:textSize="16sp" />
+            <ImageView
+                android:id="@+id/imageWeatherIconrainy"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/weather_rainy"
+                android:visibility="gone"
+                android:contentDescription="Rainy" />
 
-</LinearLayout>
+            <ImageView
+                android:id="@+id/imageWeatherIconthunderstorm"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/weather_thunderstorm"
+                android:visibility="gone"
+                android:contentDescription="Thunderstorm" />
+
+            <ImageView
+                android:id="@+id/imageWeatherIconwindy"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/weather_windy"
+                android:visibility="gone"
+                android:contentDescription="Windy" />
+
+            <ImageView
+                android:id="@+id/imageWeatherIconExtHot"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/weatersupersunny"
+                android:visibility="gone"
+                android:contentDescription="Extremely Hot" />
+
+        </FrameLayout>
+
+        <!-- Temperature Range -->
+        <TextView
+            android:id="@+id/textTemperatureRange"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.5"
+            android:gravity="end"
+            android:text="30° / 24°"
+            android:textSize="16sp"
+            android:textColor="@color/weather_text_primary"
+            android:fontFamily="@font/poppins_bold" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
