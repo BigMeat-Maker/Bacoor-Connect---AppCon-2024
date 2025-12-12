@@ -227,7 +227,7 @@
                                     android:text="Email"
                                     android:fontFamily="@font/poppins_bold"
                                     android:textStyle="bold"
-                                    android:textColor="@color/white"
+                                    android:textColor="@color/black"
                                     android:textSize="18sp"
                                     android:padding="8dp" />
 
@@ -240,7 +240,7 @@
                                     android:gravity="end"
                                     android:text="johndoe@gmail.com"
                                     android:fontFamily="@font/poppins_light"
-                                    android:textColor="@color/white"
+                                    android:textColor="@color/black"
                                     android:textSize="16sp"
                                     android:padding="8dp" />
                             </TableRow>

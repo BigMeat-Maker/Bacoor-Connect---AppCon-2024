@@ -129,10 +129,13 @@ public class LoginFragment extends Fragment {
                                 FirebaseAuth.getInstance().signOut();
                                 Toast.makeText(requireContext(), "Account is still marked online. Please wait or logout from previous session.", Toast.LENGTH_LONG).show();
                             } else {
-                                // If status is missing (null), initialize it
                                 if (status == null) {
-                                    snapshot.getRef().setValue("offline");
+                                    snapshot.getRef().setValue("online");
                                 }
+                                else if ("offline".equals(status)) {
+                                    snapshot.getRef().setValue("online");
+                                }
+
                                 proceedWithFinalLogin(userID);
                             }
                         }

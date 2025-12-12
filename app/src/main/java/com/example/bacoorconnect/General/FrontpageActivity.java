@@ -3,11 +3,13 @@ package com.example.bacoorconnect.General;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,11 +17,17 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.bumptech.glide.Glide;
+import com.example.bacoorconnect.Emergency.EmergencyGuides;
+import com.example.bacoorconnect.Emergency.EmergencyHospitals;
 import com.example.bacoorconnect.Helpers.LocationTrackingService;
 import com.example.bacoorconnect.R;
+import com.example.bacoorconnect.Report.ReportHistoryActivity;
+import com.example.bacoorconnect.Report.ReportIncident;
+import com.example.bacoorconnect.UserProfile;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -40,35 +48,33 @@ public class FrontpageActivity extends AppCompatActivity {
     private View headerLayout;
     private View bottomNavigation;
     private TextView greetingText;
-    private ImageView profileIcon; // Add this
+    private ImageView profileIcon;
+    private ImageView backButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_frontpage);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
+        backButton = findViewById(R.id.backButton);
         welcomeLayout = findViewById(R.id.welcomeLayout);
         loggedInLayout = findViewById(R.id.loggedInLayout);
         fragmentContainer = findViewById(R.id.fragment_container);
         headerLayout = findViewById(R.id.headerLayout);
         bottomNavigation = findViewById(R.id.bottom_navigation);
         greetingText = findViewById(R.id.greetingText);
-        profileIcon = findViewById(R.id.profileIcon); // Initialize this
+        profileIcon = findViewById(R.id.profileIcon);
 
         Logindirect = findViewById(R.id.Logindirect);
         Registerdirect = findViewById(R.id.RegisterButton);
         Guestdirect = findViewById(R.id.LoginGuest);
 
-        // Add click listener for profile icon
         profileIcon.setOnClickListener(v -> {
-            // Navigate to profile or show profile menu
-            // You can add your profile navigation logic here
+        });
+
+        backButton.setOnClickListener(v -> {
+            onBackPressed();
         });
 
         Logindirect.setOnClickListener(new View.OnClickListener() {
@@ -92,18 +98,84 @@ public class FrontpageActivity extends AppCompatActivity {
             }
         });
 
-        // Check if we should load dashboard fragment
         if (getIntent().getBooleanExtra("LOAD_DASHBOARD", false)) {
             loadDashboardFragment();
         } else {
-            // Check if user is already logged in
             checkAutoLogin();
         }
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav != null) {
-            BottomNavHelper.setupBottomNavigation(this, bottomNav, R.id.nav_home);
+            setupCustomBottomNavigation(bottomNav);
         }
+
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            updateUIForCurrentFragment();
+        });
+
+        updateGreetingTextFromPrefs();
+
+    }
+
+    private void setupCustomBottomNavigation(BottomNavigationView bottomNav) {
+        bottomNav.setSelectedItemId(R.id.nav_home);
+
+        bottomNav.setOnNavigationItemSelectedListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                new Handler().postDelayed(() -> {
+                    Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                    if (!(currentFragment instanceof Dashboard)) {
+                        loadDashboardFragment();
+                    }
+                }, 50);
+                return true;
+
+            } else if (itemId == R.id.nav_service) {
+                Intent intent = new Intent(FrontpageActivity.this, services.class);
+                startActivity(intent);
+                return true;
+
+            } else if (itemId == R.id.nav_ri) {
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    Intent intent = new Intent(FrontpageActivity.this, ReportIncident.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "Please login to report incidents", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+
+            } else if (itemId == R.id.nav_map) {
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    Intent intent = new Intent(FrontpageActivity.this, MapDash.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+
+            } else if (itemId == R.id.nav_history) {
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    Intent intent = new Intent(FrontpageActivity.this, ReportHistoryActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+
+            } else if (itemId == R.id.nav_profile) {
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    Intent intent = new Intent(FrontpageActivity.this, UserProfile.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+
+            return false;
+        });
     }
 
     private void checkAutoLogin() {
@@ -113,7 +185,6 @@ public class FrontpageActivity extends AppCompatActivity {
         if (isLoggedIn) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user != null) {
-                // Fetch user details from Firebase before loading dashboard
                 String userID = user.getUid();
                 DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference("Users");
 
@@ -121,13 +192,11 @@ public class FrontpageActivity extends AppCompatActivity {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         if (snapshot.exists()) {
-                            // Get user details from Firebase
                             String firstName = snapshot.child("firstName").getValue(String.class);
                             String lastName = snapshot.child("lastName").getValue(String.class);
                             String email = snapshot.child("email").getValue(String.class);
                             String phoneNumber = snapshot.child("phoneNumber").getValue(String.class);
 
-                            // Store in SharedPreferences for easy access
                             SharedPreferences.Editor editor = preferences.edit();
                             editor.putString("userFirstName", firstName != null ? firstName : "");
                             editor.putString("userLastName", lastName != null ? lastName : "");
@@ -135,26 +204,22 @@ public class FrontpageActivity extends AppCompatActivity {
                             editor.putString("userPhone", phoneNumber != null ? phoneNumber : "");
                             editor.apply();
 
-                            // Load profile image if exists
                             if (snapshot.hasChild("profileImage")) {
                                 String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
                                 if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
-                                    // Store profile image URL
                                     editor.putString("userProfileImage", profileImageUrl);
                                     editor.apply();
 
-                                    // Load profile image using Glide
                                     runOnUiThread(() -> {
                                         Glide.with(FrontpageActivity.this)
                                                 .load(profileImageUrl)
                                                 .circleCrop()
-                                                .placeholder(R.drawable.profile) // Default profile icon
+                                                .placeholder(R.drawable.profile)
                                                 .into(profileIcon);
                                     });
                                 }
                             }
 
-                            // Update greeting text
                             runOnUiThread(() -> {
                                 updateGreetingText(firstName, lastName, email);
                             });
@@ -166,7 +231,6 @@ public class FrontpageActivity extends AppCompatActivity {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
-                        // Still load dashboard even if user details fetch fails
                         loadDashboardFragment();
                         Intent serviceIntent = new Intent(FrontpageActivity.this, LocationTrackingService.class);
                         ContextCompat.startForegroundService(FrontpageActivity.this, serviceIntent);
@@ -178,28 +242,60 @@ public class FrontpageActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // If logged in layout is visible, handle back navigation
         if (loggedInLayout.getVisibility() == View.VISIBLE) {
-            if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                // Pop the back stack (will go back to welcome screen)
-                getSupportFragmentManager().popBackStack();
-                welcomeLayout.setVisibility(View.VISIBLE);
-                loggedInLayout.setVisibility(View.GONE);
-            } else {
-                // If dashboard is showing, exit the app
+            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+            if (currentFragment instanceof Dashboard) {
                 super.onBackPressed();
+            } else {
+                if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+                    getSupportFragmentManager().popBackStackImmediate();
+
+                    updateUIForCurrentFragment();
+                } else {
+                    loadDashboardFragment();
+                }
             }
         } else {
-            // If welcome screen is showing, exit the app
             super.onBackPressed();
+        }
+    }
+
+    private void updateUIForCurrentFragment() {
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+        if (currentFragment instanceof Dashboard) {
+            backButton.setVisibility(View.GONE);
+            updateGreetingTextFromPrefs();
+        } else if (currentFragment != null) {
+            backButton.setVisibility(View.VISIBLE);
+
+            if (currentFragment instanceof EmergencyGuides) {
+                greetingText.setText("Emergency Guides");
+            } else if (currentFragment instanceof EmergencyHospitals) {
+                greetingText.setText("Emergency Hospitals");
+            } else if (currentFragment instanceof LoginFragment) {
+                greetingText.setText("Login");
+            }
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh user data when returning to this activity
         refreshUserData();
+
+        checkCurrentFragment();
+    }
+
+    private void checkCurrentFragment() {
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (currentFragment instanceof Dashboard) {
+            backButton.setVisibility(View.GONE);
+            updateGreetingTextFromPrefs();
+        } else if (currentFragment != null) {
+            backButton.setVisibility(View.VISIBLE);
+        }
     }
 
     private void refreshUserData() {
@@ -214,10 +310,8 @@ public class FrontpageActivity extends AppCompatActivity {
                         String lastName = snapshot.child("lastName").getValue(String.class);
                         String email = snapshot.child("email").getValue(String.class);
 
-                        // Update greeting
                         updateGreetingText(firstName, lastName, email);
 
-                        // Update profile picture
                         if (snapshot.hasChild("profileImage")) {
                             String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
                             if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
@@ -233,7 +327,6 @@ public class FrontpageActivity extends AppCompatActivity {
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
-                    // Handle error
                 }
             });
         }
@@ -261,7 +354,6 @@ public class FrontpageActivity extends AppCompatActivity {
         welcomeLayout.setVisibility(View.GONE);
         loggedInLayout.setVisibility(View.VISIBLE);
 
-        // Hide header and bottom navigation during login
         headerLayout.setVisibility(View.GONE);
         bottomNavigation.setVisibility(View.GONE);
 
@@ -274,31 +366,48 @@ public class FrontpageActivity extends AppCompatActivity {
     public void showWelcomeScreen() {
         welcomeLayout.setVisibility(View.VISIBLE);
         loggedInLayout.setVisibility(View.GONE);
-
-        // Clear the back stack
         getSupportFragmentManager().popBackStack();
-
-        // Reset profile icon to default
         profileIcon.setImageResource(R.drawable.profile);
     }
-
     public void loadDashboardFragment() {
         welcomeLayout.setVisibility(View.GONE);
         loggedInLayout.setVisibility(View.VISIBLE);
 
-        // Show header and bottom navigation when dashboard loads
         headerLayout.setVisibility(View.VISIBLE);
         bottomNavigation.setVisibility(View.VISIBLE);
 
-        // Update greeting text with user's name
+        backButton.setVisibility(View.GONE);
+
         updateGreetingTextFromPrefs();
 
-        // Clear the back stack before loading dashboard
         getSupportFragmentManager().popBackStack(null, getSupportFragmentManager().POP_BACK_STACK_INCLUSIVE);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, new Dashboard());
         transaction.commit();
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_home);
+        }
+    }
+    public void loadEmergencyFragment(Fragment fragment, String title) {
+        welcomeLayout.setVisibility(View.GONE);
+        loggedInLayout.setVisibility(View.VISIBLE);
+        headerLayout.setVisibility(View.VISIBLE);
+        bottomNavigation.setVisibility(View.VISIBLE);
+        backButton.setVisibility(View.VISIBLE);
+        greetingText.setText(title);
+
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, fragment);
+        transaction.addToBackStack("emergency_fragment");
+        transaction.commit();
+
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.getMenu().findItem(R.id.nav_home).setChecked(false);
+        }
     }
 
     private void updateGreetingTextFromPrefs() {
@@ -313,7 +422,6 @@ public class FrontpageActivity extends AppCompatActivity {
     private void updateGreetingText(String firstName, String lastName, String email) {
         String greeting = "Hello, ";
 
-        // Build the greeting with available user information
         if (firstName != null && !firstName.isEmpty()) {
             greeting += firstName;
             if (lastName != null && !lastName.isEmpty()) {
@@ -321,10 +429,8 @@ public class FrontpageActivity extends AppCompatActivity {
             }
             greeting += "!";
         } else if (email != null && !email.isEmpty()) {
-            // If no name is available, use email
             greeting += email + "!";
         } else {
-            // Fallback to generic greeting
             greeting += "User!";
         }
 

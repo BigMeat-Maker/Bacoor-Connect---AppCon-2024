@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
 import java.util.ArrayList;
@@ -51,6 +52,42 @@ public class LocationTrackingService extends Service {
         }
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Location Tracking Service";
+            String description = "Notification for Location Tracking Service";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        DatabaseReference userStatusRef = FirebaseDatabase.getInstance()
+                .getReference("Users")
+                .child(FirebaseAuth.getInstance().getUid())
+                .child("status");
+
+        DatabaseReference connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected");
+        connectedRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean connected = snapshot.getValue(Boolean.class);
+                if (connected != null && connected) {
+                    userStatusRef.setValue("online");
+                    userStatusRef.onDisconnect().setValue("offline");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
+        });
+
     }
 
     @Override
@@ -58,7 +95,7 @@ public class LocationTrackingService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Location Tracking")
                 .setContentText("The app is tracking your location.")
-                .setSmallIcon(R.drawable.alerts) //change this for the notif icon
+                .setSmallIcon(R.drawable.alerts)
                 .build();
 
         startForeground(1, notification);
@@ -67,7 +104,7 @@ public class LocationTrackingService extends Service {
 
         startLocationUpdates();
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     private void loadConfirmedReports() {
@@ -76,33 +113,27 @@ public class LocationTrackingService extends Service {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 confirmedReports.clear();
-                notifiedReports.clear(); // Clear previous notifications
+                notifiedReports.clear();
                 for (DataSnapshot reportSnapshot : snapshot.getChildren()) {
                     Log.d("loadConfirmedReports", "Processing report: " + reportSnapshot.getKey());
 
-                    // Try multiple possible field names
                     Double lat = null;
                     Double lon = null;
 
-                    // Check for "latitude" (your current field name)
                     if (reportSnapshot.child("latitude").exists()) {
                         lat = reportSnapshot.child("latitude").getValue(Double.class);
                     }
-                    // Check for "lat" (alternative)
                     else if (reportSnapshot.child("lat").exists()) {
                         lat = reportSnapshot.child("lat").getValue(Double.class);
                     }
 
-                    // Check for "longitude" (your current field name)
                     if (reportSnapshot.child("longitude").exists()) {
                         lon = reportSnapshot.child("longitude").getValue(Double.class);
                     }
-                    // Check for "lon" (alternative)
                     else if (reportSnapshot.child("lon").exists()) {
                         lon = reportSnapshot.child("lon").getValue(Double.class);
                     }
 
-                    // If still null, use default Bacoor coordinates
                     if (lat == null || lon == null) {
                         Log.w("LocationTracking", "Missing coordinates for report " + reportSnapshot.getKey() +
                                 ", using default Bacoor location");
@@ -140,7 +171,6 @@ public class LocationTrackingService extends Service {
                             ", Lat: " + lat + ", Lon: " + lon +
                             ", Upvotes: " + upvotes + ", Downvotes: " + downvotes);
 
-                    // Check if report is confirmed (more upvotes than downvotes)
                     if (upvotes > downvotes) {
                         confirmedReports.add(new Report(lat, lon, category, description, reportId, userId));
                         Log.d("Confirmation", "Added confirmed report: " + reportId);
@@ -225,6 +255,7 @@ public class LocationTrackingService extends Service {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
         super.onDestroy();
+        setUserOffline();
     }
 
     private static class Report {
@@ -240,4 +271,25 @@ public class LocationTrackingService extends Service {
             this.userId = userId;
         }
     }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        setUserOffline();
+        stopSelf();
+        super.onTaskRemoved(rootIntent);
+    }
+
+    private void setUserOffline() {
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId != null) {
+            FirebaseDatabase.getInstance()
+                    .getReference("Users")
+                    .child(userId)
+                    .child("status")
+                    .setValue("offline");
+        }
+    }
+
+
+
 }

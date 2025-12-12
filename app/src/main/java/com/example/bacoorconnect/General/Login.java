@@ -133,7 +133,7 @@ public class Login extends AppCompatActivity {
                             } else {
                                 // If status is missing (null), initialize it
                                 if (status == null) {
-                                    snapshot.getRef().setValue("offline");
+                                    snapshot.getRef().setValue("online");
                                 }
                                 proceedWithFinalLogin(userID);
                             }

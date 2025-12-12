@@ -90,7 +90,6 @@ public class NavigationHandler {
                 : "Guest";
 
         if (!isGuestMode()) {
-            // Update user status to "offline" in Firebase Database
             DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId);
             userRef.child("status").setValue("offline")
                     .addOnCompleteListener(task -> {

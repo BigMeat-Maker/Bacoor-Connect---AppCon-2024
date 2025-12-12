@@ -21,6 +21,10 @@ public class BottomNavHelper {
             BottomNavigationView bottomNav,
             int selectedItemId
     ) {
+        if (activity instanceof FrontpageActivity) {
+            return;
+        }
+
         bottomNav.setSelectedItemId(selectedItemId);
 
         bottomNav.setOnNavigationItemSelectedListener(item -> {
@@ -45,7 +49,6 @@ public class BottomNavHelper {
             } else if (itemId == R.id.nav_service) {
                 targetActivity = services.class;
             } else if (itemId == R.id.nav_ri) {
-                // For non-MapDash activities, go to ReportIncident
                 targetActivity = ReportIncident.class;
             } else if (itemId == R.id.nav_map) {
                 targetActivity = MapDash.class;
@@ -59,21 +62,14 @@ public class BottomNavHelper {
                 Intent intent = new Intent(activity, targetActivity);
                 intent.putExtra("isGuest", isGuest);
                 if (targetActivity == FrontpageActivity.class) {
-                    intent.putExtra("LOAD_DASHBOARD", true);}
+                    intent.putExtra("LOAD_DASHBOARD", true);
+                }
                 activity.startActivity(intent);
                 activity.overridePendingTransition(0, 0);
-
                 return true;
             }
 
             return false;
         });
-    }
-
-    private static void replaceFragment(AppCompatActivity activity, Fragment fragment) {
-        activity.getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .commit();
     }
 }

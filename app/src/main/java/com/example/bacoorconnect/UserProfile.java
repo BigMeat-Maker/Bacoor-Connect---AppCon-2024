@@ -141,6 +141,16 @@ public class UserProfile extends AppCompatActivity {
     }
 
     private void logoutUser() {
+
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid != null) {
+            FirebaseDatabase.getInstance()
+                    .getReference("Users")
+                    .child(uid)
+                    .child("status")
+                    .setValue("offline");
+        }
+
         SharedPreferences preferences = getSharedPreferences("UserProfilePrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("keepLoggedIn", false);
@@ -162,6 +172,7 @@ public class UserProfile extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
+
 
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(this)

@@ -15,20 +15,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.cardview.widget.CardView;
-import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.annotation.NonNull;
 
 import com.example.bacoorconnect.Emergency.EmergencyGuides;
 import com.example.bacoorconnect.Emergency.EmergencyHospitals;
-import com.example.bacoorconnect.General.AboutUs;
-import com.example.bacoorconnect.General.Dashboard;
-import com.example.bacoorconnect.General.Login;
-import com.example.bacoorconnect.General.MapDash;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportHistoryActivity;
-import com.example.bacoorconnect.Report.ReportIncident;
 import com.example.bacoorconnect.UserProfile;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -49,7 +43,6 @@ public class Dashboard extends Fragment {
         auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
         logActivity("Unknown", "Navigation", "Opened Emergency Hotlines", "Emergency Resources", "Success", "User accessed the emergency resources: hotlines page", "N/A");
 
-        // Setup hotline click listeners with detailed information
         setupHotlineClick(view, R.id.hotline_rer, "161", "RER 161",
                 R.drawable.logo_alert161,
                 "Rapid Emergency Response - 24/7 emergency assistance for all types of emergencies in Bacoor City.",
@@ -82,82 +75,32 @@ public class Dashboard extends Fragment {
 
         setupEmergencyResourcesCards(view);
         setupQuickAccessListeners(view);
-        setupBottomNavigation(view);
-
         return view;
     }
 
-    private void setupBottomNavigation(View view) {
-        com.google.android.material.bottomnavigation.BottomNavigationView bottomNav =
-                view.findViewById(R.id.bottom_navigation);
-
-        if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_home);
-
-            bottomNav.setOnItemSelectedListener(item -> {
-                int itemId = item.getItemId();
-
-                if (itemId == R.id.nav_home) {
-                    // Stay on the Dashboard (Home)
-                    return true;
-
-                } else if (itemId == R.id.nav_service) {
-                    // Navigate to Service Activity
-                    Intent intent = new Intent(getActivity(), services.class);
-                    startActivity(intent);
-                    return true;
-
-                } else if (itemId == R.id.nav_ri) {
-                    // Navigate to Report Incident Activity
-                    if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                        Intent intent = new Intent(getActivity(), ReportIncident.class);
-                        startActivity(intent);
-                    } else {
-                        Toast.makeText(getContext(), "Please login to report incidents", Toast.LENGTH_SHORT).show();
-                    }
-                    return true;
-
-                } else if (itemId == R.id.nav_history) {
-                    // Navigate to Report History Activity
-                    if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                        Intent intent = new Intent(getActivity(), ReportHistoryActivity.class);
-                        startActivity(intent);
-                    } else {
-                        Toast.makeText(getContext(), "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                    }
-                    return true;
-
-                } else if (itemId == R.id.nav_profile) {
-                    // Navigate to Profile Activity
-                    if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-                        Intent intent = new Intent(getActivity(), UserProfile.class);
-                        startActivity(intent);
-                    } else {
-                        Toast.makeText(getContext(), "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                    }
-                    return true;
-                }
-
-                return false;
-            });
-        }
-    }
-
     private void setupEmergencyResourcesCards(View view) {
-        // Hospital Directory Card
         CardView hospitalCard = view.findViewById(R.id.card_hospitals);
         if (hospitalCard != null) {
             hospitalCard.setOnClickListener(v -> {
-                navigateToFragment(new EmergencyHospitals());
+                if (getActivity() instanceof FrontpageActivity) {
+                    ((FrontpageActivity) getActivity()).loadEmergencyFragment(
+                            new EmergencyHospitals(),
+                            "Emergency Hospitals"
+                    );
+                }
                 logActivity("Unknown", "Navigation", "Opened Hospital Directory", "Emergency Resources", "Success", "User accessed hospital directory", "N/A");
             });
         }
 
-        // Emergency Guides Card
         CardView guidesCard = view.findViewById(R.id.card_emergency_guides);
         if (guidesCard != null) {
             guidesCard.setOnClickListener(v -> {
-                navigateToFragment(new EmergencyGuides());
+                if (getActivity() instanceof FrontpageActivity) {
+                    ((FrontpageActivity) getActivity()).loadEmergencyFragment(
+                            new EmergencyGuides(),
+                            "Emergency Guides"
+                    );
+                }
                 logActivity("Unknown", "Navigation", "Opened Emergency Guides", "Emergency Resources", "Success", "User accessed emergency guides", "N/A");
             });
         }
