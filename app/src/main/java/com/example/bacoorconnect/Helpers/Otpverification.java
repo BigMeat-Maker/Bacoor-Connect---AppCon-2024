@@ -28,8 +28,8 @@ import java.util.Random;
 public class Otpverification extends AppCompatActivity {
 
     private static final int OTP_LENGTH = 6;
-    private static final long OTP_TIMEOUT_MS = 180000; // 3 minutes
-    private static final long RESEND_DELAY_MS = 15000; // 15 seconds
+    private static final long OTP_TIMEOUT_MS = 180000;
+    private static final long RESEND_DELAY_MS = 15000;
 
     private final EditText[] otpInputs = new EditText[OTP_LENGTH];
     private Button verifyButton;
@@ -134,7 +134,6 @@ public class Otpverification extends AppCompatActivity {
                 return;
             }
 
-            // OTP is valid
             Toast.makeText(Otpverification.this, "OTP Verified!", Toast.LENGTH_SHORT).show();
             logActivity("OTP Verification", "Success", "OTP Verified successfully");
             saveUserToFirebase(email, firstName, lastName, savedOTP, otpRef);
@@ -155,6 +154,8 @@ public class Otpverification extends AppCompatActivity {
         return otp.toString();
     }
 
+
+    //here is where user creation should be
     private void saveUserToFirebase(String email, String firstName, String lastName,
                                     String otp, DatabaseReference otpRef) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();

@@ -24,7 +24,9 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
 
-public class Register extends AppCompatActivity {
+public class
+
+Register extends AppCompatActivity {
 
     private EditText editTextFirstName, editTextLastName, editTextEmail, editTextContactNum, editTextPassword, editTextConfirmPassword;
     private Button register;

@@ -93,7 +93,9 @@
             android:text="LOG IN AS GUEST"
             android:textColor="@color/baconnect_blue"
             android:textSize="20dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:visibility="gone"
+            />
     </LinearLayout>
 
     <!-- Logged In Layout (shown when logged in) -->

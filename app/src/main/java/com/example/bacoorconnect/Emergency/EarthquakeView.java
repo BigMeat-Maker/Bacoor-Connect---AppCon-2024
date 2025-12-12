@@ -35,7 +35,6 @@ public class EarthquakeView extends Fragment {
     private WeeklySummary weeklySummary;
 
     public EarthquakeView() {
-        // Required empty public constructor
     }
 
     public static EarthquakeView newInstance() {
@@ -65,18 +64,15 @@ public class EarthquakeView extends Fragment {
                 displayList.clear();
                 olderQuakes.clear();
 
-                // Get today's date
                 String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
                 List<Earthquake> todaysQuakes = new ArrayList<>();
 
-                // Process all earthquakes
                 for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
                     Earthquake earthquake = dataSnapshot.getValue(Earthquake.class);
                     if (earthquake != null) {
                         allEarthquakes.add(earthquake);
 
-                        // Separate today's and older earthquakes
                         if (earthquake.getDate().equals(today)) {
                             todaysQuakes.add(earthquake);
                         } else {
@@ -85,17 +81,12 @@ public class EarthquakeView extends Fragment {
                     }
                 }
 
-                // Sort older quakes by date (most recent first)
                 olderQuakes.sort((q1, q2) -> q2.getDate().compareTo(q1.getDate()));
 
-                // Create weekly summary
                 weeklySummary = calculateWeeklySummary(allEarthquakes);
 
-                // Build display list with proper structure
-                // 1. Add "Today" header
                 displayList.add("TODAY_HEADER");
 
-                // 2. Add today's earthquakes
                 if (!todaysQuakes.isEmpty()) {
                     for (Earthquake quake : todaysQuakes) {
                         displayList.add(quake);
@@ -104,13 +95,10 @@ public class EarthquakeView extends Fragment {
                     displayList.add("NO_QUAKES_TODAY");
                 }
 
-                // 3. Add "Weekly Summary" header
                 displayList.add("WEEKLY_HEADER");
 
-                // 4. Add weekly summary
                 displayList.add(weeklySummary);
 
-                // 5. Add "Horizontal Recent Earthquakes" if there are any
                 if (!olderQuakes.isEmpty()) {
                     displayList.add("HORIZONTAL_LIST");
                 }
@@ -147,7 +135,6 @@ public class EarthquakeView extends Fragment {
                     strongest = mag;
                 }
             } catch (NumberFormatException e) {
-                // Skip invalid magnitude
             }
         }
 
@@ -158,7 +145,6 @@ public class EarthquakeView extends Fragment {
         return summary;
     }
 
-    // Earthquake Data Model
     public static class Earthquake {
         private String date;
         private String location;
@@ -192,7 +178,6 @@ public class EarthquakeView extends Fragment {
         public double strongestMagnitude;
     }
 
-    // RecyclerView Adapter with Multiple View Types
     public class EarthquakeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         private static final int TYPE_TODAY_HEADER = 0;
