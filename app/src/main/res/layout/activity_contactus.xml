@@ -21,27 +21,35 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:background="@color/baconnect_blue"
-            android:padding="12dp"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="16dp"
+            android:gravity="center_vertical"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1" />
+            <ImageView
+                android:id="@+id/backButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/back_button"
+                android:tint="@color/white"
+                android:contentDescription="Menu"
+                android:layout_marginEnd="16dp" />
 
             <ImageView
+                android:id="@+id/app_logo"
                 android:layout_width="65dp"
                 android:layout_height="40dp"
                 android:src="@drawable/logo_baconnect_nobg"
+                android:layout_gravity="center"
+                android:layout_weight="1"
                 android:contentDescription="App Logo" />
 
+            <!-- Empty space for symmetry -->
             <View
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1" />
+                android:layout_width="24dp"
+                android:layout_height="24dp" />
 
         </LinearLayout>
 

@@ -81,35 +81,47 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="8dp"
-                    android:gravity="center_vertical">
+                    android:padding="12dp"
+                    android:gravity="center_vertical"
+                    android:background="@color/light_gray">
 
+                    <!-- Location Text -->
                     <TextView
                         android:id="@+id/LocationText"
-                        android:layout_width="225dp"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:padding="5dp"
-                        android:text="@+id/location_text"
-                        android:fontFamily="@font/poppins_regular"
-                        android:textColor="@color/black"
-                        android:textSize="14sp" />
-
-                    <View
                         android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"/>
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/poppins_regular"
+                        android:padding="8dp"
+                        android:text="Loading location..."
+                        android:textColor="@color/primary_blue"
+                        android:textSize="15sp"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
 
-                    <TextView
-                        android:id="@+id/ChangeMapLocation"
+                    <!-- CHANGE Button - More noticeable -->
+                    <androidx.cardview.widget.CardView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:fontFamily="@font/poppins_regular"
-                        android:padding="5dp"
-                        android:text="CHANGE"
-                        android:textColor="#504F4F"
-                        android:textSize="13sp" />
+                        android:layout_marginStart="12dp"
+                        app:cardCornerRadius="8dp"
+                        app:cardElevation="2dp"
+                        app:cardBackgroundColor="@color/baconnect_blue">
+
+                        <TextView
+                            android:id="@+id/ChangeMapLocation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="16dp"
+                            android:paddingVertical="10dp"
+                            android:text="CHANGE"
+                            android:textColor="@color/white"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:fontFamily="@font/poppins_bold"
+                            android:gravity="center"
+                            android:minWidth="100dp"/>
+                    </androidx.cardview.widget.CardView>
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>

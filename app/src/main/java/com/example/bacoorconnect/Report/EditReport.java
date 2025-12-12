@@ -2,10 +2,12 @@ package com.example.bacoorconnect.Report;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -18,6 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import com.bumptech.glide.Glide;
+import com.example.bacoorconnect.Helpers.AdjustLocationFragment;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
@@ -33,6 +36,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,6 +48,9 @@ public class EditReport extends AppCompatActivity {
 
     private ProgressDialog verificationProgress;
     private TextView locationText;
+    private double lat = 14.4597;
+    private double lon = 120.9333;
+    private TextView changeMapLocation;
     private TextInputEditText descriptionEditText;
     private RadioButton roadAccidentRadioButton, disasterAccidentRadioButton, fireAccidentRadioButton, trafficRadioButton;
     private ImageView roadAccidentImage, fireAccidentImage, disasterAccidentImage, trafficImage;
@@ -90,6 +98,8 @@ public class EditReport extends AppCompatActivity {
         disasterAccidentImage = findViewById(R.id.NaturalDisaster);
         trafficImage = findViewById(R.id.TrafficReport);
 
+        changeMapLocation = findViewById(R.id.ChangeMapLocation);
+
         userUploadedImage1 = findViewById(R.id.Useruploadedimage1);
 
         reportId = getIntent().getStringExtra("reportId");
@@ -106,12 +116,45 @@ public class EditReport extends AppCompatActivity {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        selectedImageUri = result.getData().getData();
-                        userUploadedImage1.setImageURI(selectedImageUri);
-                        userUploadedImage1.setVisibility(View.VISIBLE);
-                        isImageChanged = true;
+                        if (result.getData().getExtras() != null && result.getData().getExtras().get("data") != null) {
+                            Bitmap imageBitmap = (Bitmap) result.getData().getExtras().get("data");
+                            if (imageBitmap != null) {
+                                selectedImageUri = saveBitmapToFile(imageBitmap);
+                                userUploadedImage1.setImageBitmap(imageBitmap);
+                                userUploadedImage1.setVisibility(View.VISIBLE);
+                                isImageChanged = true;
+                            }
+                        }
+                        else if (result.getData().getData() != null) {
+                            selectedImageUri = result.getData().getData();
+                            userUploadedImage1.setImageURI(selectedImageUri);
+                            userUploadedImage1.setVisibility(View.VISIBLE);
+                            isImageChanged = true;
+                        }
                     }
                 });
+    }
+
+    private Uri saveBitmapToFile(Bitmap bitmap) {
+        try {
+            File cachePath = new File(getCacheDir(), "images");
+            if (!cachePath.exists()) {
+                cachePath.mkdirs();
+            }
+
+            String filename = "camera_" + System.currentTimeMillis() + ".jpg";
+            File imageFile = new File(cachePath, filename);
+
+            FileOutputStream stream = new FileOutputStream(imageFile);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream);
+            stream.close();
+
+            return Uri.fromFile(imageFile);
+
+        } catch (IOException e) {
+            Log.e("EditReport", "Error saving bitmap", e);
+            return null;
+        }
     }
 
     private void setupButtonListeners() {
@@ -121,10 +164,56 @@ public class EditReport extends AppCompatActivity {
 
         userUploadedImage1.setOnClickListener(v -> showDeleteImageDialog());
 
-        roadAccidentRadioButton.setOnClickListener(v -> updateCategoryUI("accident"));
-        disasterAccidentRadioButton.setOnClickListener(v -> updateCategoryUI("disaster"));
-        fireAccidentRadioButton.setOnClickListener(v -> updateCategoryUI("fire"));
-        trafficRadioButton.setOnClickListener(v -> updateCategoryUI("traffic"));
+        roadAccidentRadioButton.setOnClickListener(v -> {
+            updateCategoryUI("accident");
+            selectedCategory = "accident";
+        });
+        disasterAccidentRadioButton.setOnClickListener(v -> {
+            updateCategoryUI("disaster");
+            selectedCategory = "disaster";
+        });
+        fireAccidentRadioButton.setOnClickListener(v -> {
+            updateCategoryUI("fire");
+            selectedCategory = "fire";
+        });
+        trafficRadioButton.setOnClickListener(v -> {
+            updateCategoryUI("traffic");
+            selectedCategory = "traffic";
+        });
+
+        changeMapLocation.setOnClickListener(v -> openLocationAdjuster());
+    }
+
+    private void openLocationAdjuster() {
+        AdjustLocationFragment fragment = new AdjustLocationFragment();
+        Bundle bundle = new Bundle();
+        bundle.putDouble("lat", lat);
+        bundle.putDouble("lon", lon);
+        fragment.setArguments(bundle);
+
+        getSupportFragmentManager().setFragmentResultListener("locationResult", this,
+                (requestKey, result) -> {
+                    if (requestKey.equals("locationResult")) {
+                        double newLat = result.getDouble("lat", lat);
+                        double newLon = result.getDouble("lon", lon);
+                        String locationDetails = result.getString("locationDetails", "");
+
+                        lat = newLat;
+                        lon = newLon;
+
+                        if (locationDetails != null && !locationDetails.isEmpty()) {
+                            locationText.setText(locationDetails);
+                        } else {
+                            String locationStr = String.format(Locale.getDefault(),
+                                    "Lat: %.6f, Lon: %.6f", lat, lon);
+                            locationText.setText(locationStr);
+                        }
+
+                        Toast.makeText(this, "Location updated", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+        fragment.show(getSupportFragmentManager(), fragment.getTag());
     }
 
     private void showImageSelectionDialog() {
@@ -136,31 +225,27 @@ public class EditReport extends AppCompatActivity {
                 })
                 .show();
     }
-
     private void openCamera() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            try {
-                File photoFile = createImageFile();
-                selectedImageUri = FileProvider.getUriForFile(
-                        this,
-                        getApplicationContext().getPackageName() + ".provider",
-                        photoFile
-                );
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri);
-                imagePickerLauncher.launch(takePictureIntent);
-                isImageChanged = true;
-            } catch (Exception e) {
-                Toast.makeText(this, "Error creating image file.", Toast.LENGTH_SHORT).show();
-            }
-        }
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        imagePickerLauncher.launch(cameraIntent);
     }
 
     private File createImageFile() throws Exception {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "IMG_" + timeStamp;
+        String imageFileName = "IMG_" + timeStamp + "_";
+
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        return File.createTempFile(imageFileName, ".jpg", storageDir);
+        if (storageDir != null && !storageDir.exists()) {
+            storageDir.mkdirs();
+        }
+
+        File imageFile = File.createTempFile(
+                imageFileName,
+                ".jpg",
+                storageDir
+        );
+
+        return imageFile;
     }
 
     private void openGallery() {
@@ -173,9 +258,14 @@ public class EditReport extends AppCompatActivity {
                 .setTitle("Delete Image")
                 .setMessage("Are you sure you want to delete this image?")
                 .setPositiveButton("Yes", (dialog, which) -> {
-                    userUploadedImage1.setImageResource(R.drawable.carcrash);
+                    userUploadedImage1.setImageDrawable(null);
+                    userUploadedImage1.setVisibility(View.GONE);
                     selectedImageUri = null;
                     isImageChanged = true;
+
+                    if (originalImageUrl != null && !originalImageUrl.isEmpty()) {
+                        originalImageUrl = "";
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -191,7 +281,20 @@ public class EditReport extends AppCompatActivity {
                     String category = snapshot.child("category").getValue(String.class);
                     originalImageUrl = snapshot.child("imageUrl").getValue(String.class);
 
-                    locationText.setText(location);
+                    Double firebaseLat = snapshot.child("latitude").getValue(Double.class);
+                    Double firebaseLon = snapshot.child("longitude").getValue(Double.class);
+
+                    if (firebaseLat != null) lat = firebaseLat;
+                    if (firebaseLon != null) lon = firebaseLon;
+
+                    if (location != null && !location.isEmpty()) {
+                        locationText.setText(location);
+                    } else if (firebaseLat != null && firebaseLon != null) {
+                        String locationStr = String.format(Locale.getDefault(),
+                                "Lat: %.6f, Lon: %.6f", lat, lon);
+                        locationText.setText(locationStr);
+                    }
+
                     descriptionEditText.setText(description);
 
                     if (originalImageUrl != null && !originalImageUrl.isEmpty()) {
@@ -219,6 +322,12 @@ public class EditReport extends AppCompatActivity {
     }
 
     private void updateCategoryUI(String selectedCategory) {
+
+        roadAccidentRadioButton.setChecked(false);
+        disasterAccidentRadioButton.setChecked(false);
+        fireAccidentRadioButton.setChecked(false);
+        trafficRadioButton.setChecked(false);
+
         roadAccidentImage.setAlpha(0.5f);
         fireAccidentImage.setAlpha(0.5f);
         disasterAccidentImage.setAlpha(0.5f);
@@ -419,6 +528,10 @@ public class EditReport extends AppCompatActivity {
         HashMap<String, Object> updates = new HashMap<>();
         updates.put("description", description);
         updates.put("category", category);
+
+        updates.put("latitude", lat);
+        updates.put("longitude", lon);
+        updates.put("location", locationText.getText().toString());
 
         if (isImageChanged) {
             updates.put("imageUrl", imageUrl != null ? imageUrl : "");

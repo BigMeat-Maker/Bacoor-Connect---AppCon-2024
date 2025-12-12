@@ -7,6 +7,8 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -29,18 +31,22 @@ import com.bumptech.glide.Glide;
 import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.General.FrontpageActivity;
 import com.example.bacoorconnect.Helpers.AccountDeleter;
+import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.StorageReference;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -362,7 +368,24 @@ public class UserProfile extends AppCompatActivity {
                         });
                     })
                     .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        // Better error handling
+                        if (e instanceof StorageException) {
+                            StorageException storageException = (StorageException) e;
+                            int errorCode = storageException.getErrorCode();
+                            String errorMessage = storageException.getMessage();
+
+                            Log.e("FirebaseUpload", "Error Code: " + errorCode + ", Message: " + errorMessage);
+
+                            if (errorCode == StorageException.ERROR_NOT_AUTHENTICATED) {
+                                Toast.makeText(this, "Not authenticated. Please sign in again.", Toast.LENGTH_SHORT).show();
+                            } else if (errorCode == StorageException.ERROR_NOT_AUTHORIZED) {
+                                Toast.makeText(this, "Permission denied. Check security rules.", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this, "Upload failed: " + errorMessage, Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
                     });
         }
     }
@@ -401,6 +424,12 @@ public class UserProfile extends AppCompatActivity {
     private void enableEditing() {
         isEditing = true;
 
+        // Hide logout button when editing
+        logoutBtn.setVisibility(View.GONE);
+
+        // Load fresh data from Firebase when entering edit mode
+        refreshUserDetailsForEditing();
+
         EditContainer.setVisibility(View.VISIBLE);
         editProfileTitle.setVisibility(View.VISIBLE);
         editProfileImageLayout.setVisibility(View.VISIBLE);
@@ -409,6 +438,7 @@ public class UserProfile extends AppCompatActivity {
         saveChangesBtn.setVisibility(View.VISIBLE);
         cancelEditBtn.setVisibility(View.VISIBLE);
 
+        // Save original values AFTER refreshing from Firebase
         originalEmail = email.getText().toString();
         originalPhone = contactno.getText().toString();
 
@@ -455,6 +485,111 @@ public class UserProfile extends AppCompatActivity {
         setupChangeWatcher();
     }
 
+    // New method to refresh data specifically for editing
+    private void refreshUserDetailsForEditing() {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(FirebaseAuth.getInstance().getUid());
+
+        userRef.get().addOnSuccessListener(dataSnapshot -> {
+            if (dataSnapshot.exists()) {
+                String firstName = dataSnapshot.child("firstName").getValue(String.class);
+                String lastName = dataSnapshot.child("lastName").getValue(String.class);
+                String userEmail = dataSnapshot.child("email").getValue(String.class);
+
+                // Get phone number - check different field names
+                String phone = null;
+
+                if (dataSnapshot.hasChild("phone")) {
+                    phone = dataSnapshot.child("phone").getValue(String.class);
+                } else if (dataSnapshot.hasChild("phoneNumber")) {
+                    phone = dataSnapshot.child("phoneNumber").getValue(String.class);
+                } else if (dataSnapshot.hasChild("contactNum")) {
+                    phone = dataSnapshot.child("contactNum").getValue(String.class);
+                } else if (dataSnapshot.hasChild("contactno")) {
+                    phone = dataSnapshot.child("contactno").getValue(String.class);
+                }
+
+                if (firstName != null && !firstName.isEmpty()) fname.setText(firstName);
+                if (lastName != null && !lastName.isEmpty()) lname.setText(lastName);
+                if (userEmail != null && !userEmail.isEmpty()) email.setText(userEmail);
+
+                if (phone != null && !phone.isEmpty()) {
+                    contactno.setText(phone);
+                } else {
+                    contactno.setText("");
+                }
+
+            } else {
+                Toast.makeText(this, "User data not found.", Toast.LENGTH_SHORT).show();
+            }
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Failed to load user details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Log.e("UserProfile", "Error loading user details for editing", e);
+        });
+    }
+
+    private void disableEditing() {
+        isEditing = false;
+
+        logoutBtn.setVisibility(View.VISIBLE);
+
+        email.setText(originalEmail);
+        contactno.setText(originalPhone);
+
+        email.setEnabled(false);
+        contactno.setEnabled(false);
+
+        editProfileTitle.setVisibility(View.GONE);
+        editProfileImageLayout.setVisibility(View.GONE);
+        userDetailsTable.setVisibility(View.GONE);
+        EditPFP.setVisibility(View.GONE);
+        saveChangesBtn.setVisibility(View.GONE);
+        cancelEditBtn.setVisibility(View.GONE);
+
+        if (imageUri != null) {
+            imageUri = null;
+            if (originalImageUrl != null) {
+                Glide.with(this).load(originalImageUrl).circleCrop().into(UserPFP);
+            }
+        }
+
+        saveChangesBtn.setVisibility(View.GONE);
+    }
+
+    private void finishSave() {
+        Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show();
+        saveChangesBtn.setVisibility(View.GONE);
+
+        // Show logout button after saving
+        logoutBtn.setVisibility(View.VISIBLE);
+
+        // Reload user details to update the displayed values
+        loadUserDetails();
+        loadProfileImage();
+
+        // Disable editing mode
+        isEditing = false;
+        email.setEnabled(false);
+        contactno.setEnabled(false);
+
+        editProfileTitle.setVisibility(View.GONE);
+        editProfileImageLayout.setVisibility(View.GONE);
+        userDetailsTable.setVisibility(View.GONE);
+        EditPFP.setVisibility(View.GONE);
+        saveChangesBtn.setVisibility(View.GONE);
+        cancelEditBtn.setVisibility(View.GONE);
+
+        saveLastProfileEditTime();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isEditing) {
+            disableEditing();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
     private void setupSelectAllOnFocus(EditText editText) {
         editText.setSelectAllOnFocus(true);
         editText.setOnFocusChangeListener((v, hasFocus) -> {
@@ -475,63 +610,6 @@ public class UserProfile extends AppCompatActivity {
                 @Override
                 public void afterTextChanged(android.text.Editable s) { }
             });
-        }
-    }
-
-    private void scanImageWithAzure(Uri imageUri, Runnable onSafe, Runnable onUnsafe) {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            int nRead;
-            byte[] data = new byte[16384];
-            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-                buffer.write(data, 0, nRead);
-            }
-            buffer.flush();
-            byte[] imageBytes = buffer.toByteArray();
-
-            OkHttpClient client = new OkHttpClient();
-            RequestBody requestBody = RequestBody.create(imageBytes, MediaType.parse("application/octet-stream"));
-
-            Request request = new Request.Builder()
-                    .url("https://japaneast.api.cognitive.microsoft.com/contentsafety/image:analyze?api-version=2023-10-01")
-                    .addHeader("Ocp-Apim-Subscription-Key", "CbSF1NDTzzTa1ZAUAHxfOBM7VW3QNwWiE6gLheiXeUdUlrQ8xoKQJQQJ99BDACi0881XJ3w3AAAHACOGLPIj")
-                    .addHeader("Content-Type", "application/octet-stream")
-                    .post(requestBody)
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    runOnUiThread(() -> Toast.makeText(UserProfile.this, "Failed to scan image.", Toast.LENGTH_SHORT).show());
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        try {
-                            JSONObject result = new JSONObject(response.body().string());
-                            double severity = result.getJSONArray("categoriesAnalysis").getJSONObject(0).getDouble("severity");
-                            runOnUiThread(() -> {
-                                if (severity >= 0.5) {
-                                    Log.d("AzureCheck", "Unsafe content detected");
-                                    onUnsafe.run();
-                                } else {
-                                    Log.d("AzureCheck", "Safe content detected");
-                                    onSafe.run();
-                                }
-                            });
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        runOnUiThread(() -> Toast.makeText(UserProfile.this, "Image scan failed. Try again.", Toast.LENGTH_SHORT).show());
-                    }
-                }
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Unable to read image data", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -569,12 +647,82 @@ public class UserProfile extends AppCompatActivity {
                         }
 
                         if (imageUri != null) {
-                            scanImageWithAzure(imageUri, () -> {
-                                uploadImageToFirebase(imageUri);
-                            }, () -> {
-                                Toast.makeText(this, "Inappropriate content detected in your profile image. Update blocked.", Toast.LENGTH_LONG).show();
-                                addStrikeToUser("Inappropriate image content", imageUri.toString());
-                            });
+                            // COMPRESS IMAGE BEFORE AZURE SCAN
+                            Uri compressedUri = compressAndResizeImage(imageUri, 1024, 1024); // Max 1024px, 1024KB
+
+                            // Use compressed image for Azure scan
+                            ImageContentAnalyzer.analyzeImage(UserProfile.this, compressedUri,
+                                    new ImageContentAnalyzer.ImageAnalysisCallback() {
+                                        @Override
+                                        public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
+                                            runOnUiThread(() -> {
+                                                if (isRacy) {
+                                                    Toast.makeText(UserProfile.this,
+                                                            "❌ Inappropriate content detected.",
+                                                            Toast.LENGTH_LONG).show();
+                                                    addStrikeToUser("Inappropriate image content", debugJson);
+                                                    if (originalImageUrl != null) {
+                                                        Glide.with(UserProfile.this).load(originalImageUrl).circleCrop().into(UserPFP);
+                                                    }
+                                                    imageUri = null;
+                                                    finishSaveWithoutImage();
+                                                } else {
+                                                    Toast.makeText(UserProfile.this,
+                                                            "✓ Image verified. Uploading...",
+                                                            Toast.LENGTH_SHORT).show();
+                                                    // Upload ORIGINAL image to Firebase, not compressed
+                                                    uploadImageToFirebase(imageUri);
+                                                }
+                                            });
+                                        }
+
+                                        @Override
+                                        public void onContentCheckFailed(String error) {
+                                            Log.e("ProfileImageScan", "Image scan failed: " + error);
+
+                                            runOnUiThread(() -> {
+                                                // Try with original image as fallback
+                                                Toast.makeText(UserProfile.this,
+                                                        "⚠️ Retrying with original image...",
+                                                        Toast.LENGTH_SHORT).show();
+
+                                                ImageContentAnalyzer.analyzeImage(UserProfile.this, imageUri,
+                                                        new ImageContentAnalyzer.ImageAnalysisCallback() {
+                                                            @Override
+                                                            public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
+                                                                runOnUiThread(() -> {
+                                                                    if (isRacy) {
+                                                                        Toast.makeText(UserProfile.this,
+                                                                                "❌ Inappropriate content detected.",
+                                                                                Toast.LENGTH_LONG).show();
+                                                                        addStrikeToUser("Inappropriate image content", debugJson);
+                                                                        if (originalImageUrl != null) {
+                                                                            Glide.with(UserProfile.this).load(originalImageUrl).circleCrop().into(UserPFP);
+                                                                        }
+                                                                        imageUri = null;
+                                                                        finishSaveWithoutImage();
+                                                                    } else {
+                                                                        Toast.makeText(UserProfile.this,
+                                                                                "✓ Image verified. Uploading...",
+                                                                                Toast.LENGTH_SHORT).show();
+                                                                        uploadImageToFirebase(imageUri);
+                                                                    }
+                                                                });
+                                                            }
+
+                                                            @Override
+                                                            public void onContentCheckFailed(String error2) {
+                                                                runOnUiThread(() -> {
+                                                                    Toast.makeText(UserProfile.this,
+                                                                            "⚠️ Image scan failed. Uploading without scan.",
+                                                                            Toast.LENGTH_LONG).show();
+                                                                    uploadImageToFirebase(imageUri);
+                                                                });
+                                                            }
+                                                        });
+                                            });
+                                        }
+                                    });
                         } else {
                             finishSave();
                         }
@@ -584,43 +732,96 @@ public class UserProfile extends AppCompatActivity {
                 });
     }
 
-    private void addStrikeToUser(String reason, String textInQuestion) {
-        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users")
-                .child(FirebaseAuth.getInstance().getUid()).child("strikes");
+    private Uri compressAndResizeImage(Uri imageUri, int maxDimension, int maxSizeKB) {
+        try {
+            // Get image dimensions without loading full bitmap
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            InputStream boundsStream = getContentResolver().openInputStream(imageUri);
+            BitmapFactory.decodeStream(boundsStream, null, options);
+            boundsStream.close();
 
-        String strikeId = userRef.push().getKey();
-        long currentTime = System.currentTimeMillis();
+            int width = options.outWidth;
+            int height = options.outHeight;
+            Log.d("ImageInfo", "Original dimensions: " + width + "x" + height);
 
-        Map<String, Object> strikeData = new HashMap<>();
-        strikeData.put("reason", reason);
-        strikeData.put("textInQuestion", textInQuestion);
-        strikeData.put("time", currentTime);
+            // Calculate sampling to reduce memory usage
+            int sampleSize = 1;
+            while (width / sampleSize > maxDimension || height / sampleSize > maxDimension) {
+                sampleSize *= 2;
+            }
 
-        if (strikeId != null) {
-            userRef.child(strikeId).setValue(strikeData)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Log.d("ProfileEdit", "Strike added successfully with reason: " + reason);
-                        } else {
-                            Log.e("ProfileEdit", "Failed to add strike.");
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to add strike data.", Toast.LENGTH_SHORT).show();
-                    });
+            // Load bitmap with sampling
+            options.inJustDecodeBounds = false;
+            options.inSampleSize = sampleSize;
+            InputStream imageStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(imageStream, null, options);
+            imageStream.close();
+
+            if (bitmap == null) {
+                Log.e("ImageCompression", "Failed to decode bitmap");
+                return imageUri;
+            }
+
+            // Further resize if still too large
+            if (bitmap.getWidth() > maxDimension || bitmap.getHeight() > maxDimension) {
+                float scale = Math.min(
+                        (float) maxDimension / bitmap.getWidth(),
+                        (float) maxDimension / bitmap.getHeight()
+                );
+
+                int newWidth = (int) (bitmap.getWidth() * scale);
+                int newHeight = (int) (bitmap.getHeight() * scale);
+
+                Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+                bitmap.recycle();
+                bitmap = resizedBitmap;
+            }
+
+            // Compress to target size
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int quality = 90; // Start with 90% quality
+
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+
+            // Reduce quality if still too large
+            while (baos.toByteArray().length > maxSizeKB * 1024 && quality > 40) {
+                baos.reset();
+                quality -= 10;
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+            }
+
+            Log.d("ImageCompression",
+                    "Compressed: " + bitmap.getWidth() + "x" + bitmap.getHeight() +
+                            ", Quality=" + quality + "%, Size=" + (baos.toByteArray().length / 1024) + "KB");
+
+            // Save to cache
+            File cacheFile = new File(getCacheDir(), "compressed_" + System.currentTimeMillis() + ".jpg");
+            FileOutputStream fos = new FileOutputStream(cacheFile);
+            fos.write(baos.toByteArray());
+            fos.flush();
+            fos.close();
+            bitmap.recycle();
+
+            return Uri.fromFile(cacheFile);
+
+        } catch (Exception e) {
+            Log.e("ImageCompression", "Error: " + e.getMessage());
+            return imageUri;
         }
     }
 
-    private void finishSave() {
-        Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show();
+    private void finishSaveWithoutImage() {
+        Toast.makeText(this, "Profile updated (image blocked)", Toast.LENGTH_SHORT).show();
         saveChangesBtn.setVisibility(View.GONE);
-        disableEditing();
-        saveLastProfileEditTime();
-    }
 
-    private void disableEditing() {
+        // Show logout button
+        logoutBtn.setVisibility(View.VISIBLE);
+
+        loadUserDetails();
+        loadProfileImage();
+
         isEditing = false;
-
         email.setEnabled(false);
         contactno.setEnabled(false);
 
@@ -631,13 +832,71 @@ public class UserProfile extends AppCompatActivity {
         saveChangesBtn.setVisibility(View.GONE);
         cancelEditBtn.setVisibility(View.GONE);
 
-        if (imageUri != null) {
-            imageUri = null;
-            if (originalImageUrl != null) {
-                Glide.with(this).load(originalImageUrl).circleCrop().into(UserPFP);
-            }
+        saveLastProfileEditTime();
+    }
+
+    private void addStrikeToUser(String reason, String debugJson) {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference userStrikesRef = FirebaseDatabase.getInstance()
+                .getReference("Users")
+                .child(userId)
+                .child("strikes");
+
+        String strikeId = userStrikesRef.push().getKey();
+
+        Map<String, Object> strikeData = new HashMap<>();
+        strikeData.put("time", System.currentTimeMillis());
+        strikeData.put("reason", reason);
+        strikeData.put("debugInfo", debugJson);
+        strikeData.put("type", "profile_image");
+        strikeData.put("userId", userId);
+        strikeData.put("imageUri", imageUri != null ? imageUri.toString() : "N/A");
+
+        // Log the strike for auditing
+        Log.w("SECURITY", "Adding strike for user " + userId + ": " + reason);
+
+        if (strikeId != null) {
+            userStrikesRef.child(strikeId).setValue(strikeData)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Log.d("ProfileEdit", "Strike added successfully with reason: " + reason);
+
+                            // Check if user should be blocked after this strike
+                            checkUserStrikesAndWarn();
+                        } else {
+                            Log.e("ProfileEdit", "Failed to add strike: " + task.getException());
+                        }
+                    });
         }
     }
+
+    private void checkUserStrikesAndWarn() {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference userStrikesRef = FirebaseDatabase.getInstance()
+                .getReference("Users").child(userId).child("strikes");
+
+        userStrikesRef.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
+                long strikeCount = dataSnapshot.getChildrenCount();
+
+                if (strikeCount >= 3) {
+                    new AlertDialog.Builder(UserProfile.this)
+                            .setTitle("⚠️ Warning: Multiple Violations")
+                            .setMessage("You have received " + strikeCount + " strikes for inappropriate content. " +
+                                    "Further violations may result in account restrictions.")
+                            .setPositiveButton("OK", null)
+                            .show();
+                }
+            }
+
+            @Override
+            public void onCancelled(com.google.firebase.database.DatabaseError databaseError) {
+                Log.e("StrikeCheck", "Failed to check strikes", databaseError.toException());
+            }
+        });
+    }
+
 
     private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {
         DatabaseReference auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");

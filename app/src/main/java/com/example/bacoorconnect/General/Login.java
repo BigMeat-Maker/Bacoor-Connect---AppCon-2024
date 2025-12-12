@@ -55,7 +55,7 @@ public class Login extends AppCompatActivity {
 
         inputEmail = findViewById(com.example.bacoorconnect.R.id.inputEmail);
         inputPassword = findViewById(com.example.bacoorconnect.R.id.inputPassword);
-        loginButton = findViewById(com.example.bacoorconnect.R.id.LoginButton);
+        loginButton = findViewById(com.example.bacoorconnect.R.id.loginButton);
         keepLoggedInCheckbox = findViewById(com.example.bacoorconnect.R.id.keepLogIn);
         backButton = findViewById(R.id.backButton);
 

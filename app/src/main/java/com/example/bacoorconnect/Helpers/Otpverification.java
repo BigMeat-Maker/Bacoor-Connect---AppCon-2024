@@ -34,10 +34,11 @@ public class Otpverification extends AppCompatActivity {
     private final EditText[] otpInputs = new EditText[OTP_LENGTH];
     private Button verifyButton;
     private TextView resendButton, otpErrorText, timerText;
-    private String generatedOTP, email, firstName, lastName;
+    private String generatedOTP, email, firstName, lastName, tempUserId, contactNum,password;
     private DatabaseReference databaseRef, auditRef;
     private CountDownTimer countDownTimer;
     private ProgressDialog progressDialog;
+    private boolean isOtpGenerated = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,22 +54,70 @@ public class Otpverification extends AppCompatActivity {
 
         setupOtpAutoMove();
 
-        startOtpTimer();
-
         setupButtonListeners();
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Verifying, please wait...");
         progressDialog.setCancelable(false);
+
+        loadUserDataAndGenerateOTP();
     }
+
+
 
     private void initializeFromIntent() {
         Intent intent = getIntent();
-        email = intent.getStringExtra("email");
-        firstName = intent.getStringExtra("firstName");
-        lastName = intent.getStringExtra("lastName");
-        generatedOTP = intent.getStringExtra("otp");
+        tempUserId = intent.getStringExtra("tempUserId");
     }
+
+    private void loadUserDataAndGenerateOTP() {
+        progressDialog.setMessage("Loading data...");
+        progressDialog.show();
+
+        databaseRef.child("temp_registrations").child(tempUserId).get()
+                .addOnCompleteListener(task -> {
+                    progressDialog.dismiss();
+                    if (!task.isSuccessful() || !task.getResult().exists()) {
+                        Toast.makeText(this, "Registration data not found", Toast.LENGTH_SHORT).show();
+                        finish();
+                        return;
+                    }
+
+                    HashMap<String, Object> tempData = (HashMap<String, Object>) task.getResult().getValue();
+                    firstName = (String) tempData.get("firstName");
+                    lastName = (String) tempData.get("lastName");
+                    email = (String) tempData.get("email");
+                    contactNum = (String) tempData.get("contactNum");
+                    password = (String) tempData.get("password");
+
+                    generateAndSendOTP();
+                });
+    }
+
+    private void generateAndSendOTP() {
+        if (isOtpGenerated) return;
+
+        generatedOTP = String.valueOf(new Random().nextInt(899999) + 100000);
+
+        String formattedEmail = email.replace(".", ",");
+        DatabaseReference otpRef = databaseRef.child("otp_requests").child(formattedEmail);
+
+        HashMap<String, Object> otpData = new HashMap<>();
+        otpData.put("otp", generatedOTP);
+        otpData.put("timestamp", System.currentTimeMillis());
+        otpData.put("tempUserId", tempUserId);
+
+        otpRef.setValue(otpData)
+                .addOnSuccessListener(aVoid -> {
+                    sendOtpEmail(generatedOTP);
+                    isOtpGenerated = true;
+                    startOtpTimer();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to generate OTP", Toast.LENGTH_SHORT).show();
+                });
+    }
+
 
     private void initializeViews() {
         otpInputs[0] = findViewById(R.id.otp_1);
@@ -135,11 +184,9 @@ public class Otpverification extends AppCompatActivity {
             }
 
             Toast.makeText(Otpverification.this, "OTP Verified!", Toast.LENGTH_SHORT).show();
-            logActivity("OTP Verification", "Success", "OTP Verified successfully");
-            saveUserToFirebase(email, firstName, lastName, savedOTP, otpRef);
+            saveUserToFirebase(otpRef);
         });
     }
-
 
     private void handleOtpError(String message, String logMessage) {
         otpErrorText.setText(message);
@@ -154,41 +201,55 @@ public class Otpverification extends AppCompatActivity {
         return otp.toString();
     }
 
+    private void saveUserToFirebase(DatabaseReference otpRef) {
+        FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(authTask -> {
+                    if (authTask.isSuccessful()) {
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null) {
+                            String userId = user.getUid();
 
-    //here is where user creation should be
-    private void saveUserToFirebase(String email, String firstName, String lastName,
-                                    String otp, DatabaseReference otpRef) {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "User authentication failed.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+                            HashMap<String, Object> userData = new HashMap<>();
+                            userData.put("firstName", firstName);
+                            userData.put("lastName", lastName);
+                            userData.put("email", email);
+                            userData.put("contactNum", contactNum);
+                            userData.put("timestamp", System.currentTimeMillis());
+                            userData.put("admin", 0);
+                            userData.put("status", "active");
 
-        String userId = user.getUid();
-        HashMap<String, Object> userData = new HashMap<>();
-        userData.put("userID", userId);
-        userData.put("firstName", firstName);
-        userData.put("lastName", lastName);
-        userData.put("email", email);
-        userData.put("timestamp", System.currentTimeMillis());
+                            databaseRef.child("Users").child(userId).setValue(userData)
+                                    .addOnSuccessListener(aVoid -> {
+                                        databaseRef.child("temp_registrations")
+                                                .child(tempUserId).removeValue();
+                                        otpRef.removeValue();
 
-        databaseRef.child("Users").child(userId).setValue(userData)
-                .addOnSuccessListener(aVoid -> {
-                    progressDialog.dismiss();
-                    otpRef.removeValue();
-                    logActivity("User Registration", "Success", "User registered");
-                    navigateToLogin();
-                })
-                .addOnFailureListener(e -> {
-                    progressDialog.dismiss();
-                    Toast.makeText(this, "Registration failed.", Toast.LENGTH_SHORT).show();
-                    logActivity("User Registration", "Failed", "Database error");
+                                        progressDialog.dismiss();
+                                        logActivity("User Registration", "Success", "User registered");
+                                        navigateToLogin();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        progressDialog.dismiss();
+                                        Toast.makeText(this,
+                                                "Failed to save user data.",
+                                                Toast.LENGTH_SHORT).show();
+                                    });
+                        }
+                    } else {
+                        progressDialog.dismiss();
+                        Toast.makeText(this,
+                                "Authentication failed: " + authTask.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
                 });
-
     }
 
     private void navigateToLogin() {
-        startActivity(new Intent(this, Login.class));
+        Intent intent = new Intent(this, Login.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
+                Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
         finish();
     }
 
@@ -235,10 +296,15 @@ public class Otpverification extends AppCompatActivity {
     }
 
     private void sendOtpEmail(String otp) {
-        String subject = "Your New OTP for Bacoor Connect";
+        String subject = "Your OTP for Bacoor Connect Registration";
         String message = String.format(Locale.getDefault(),
-                "Dear %s,\n\nYour new OTP is: %s\nValid for 3 minutes.\n\nRegards,\nBacoor Connect Team",
-                firstName, otp);
+                "Dear %s %s,\n\n" +
+                        "Thank you for registering with Bacoor Connect!\n\n" +
+                        "Your OTP is: %s\n" +
+                        "Valid for 3 minutes.\n\n" +
+                        "Please enter this code to complete your registration.\n\n" +
+                        "Regards,\nBacoor Connect Team",
+                firstName, lastName, otp);
 
         new JavaMailAPI(
                 "bacoorconnect@gmail.com",
@@ -249,12 +315,12 @@ public class Otpverification extends AppCompatActivity {
                 new JavaMailAPI.MailCallback() {
                     @Override
                     public void onSuccess() {
-                        Toast.makeText(Otpverification.this, "New OTP sent!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Otpverification.this, "OTP sent to your email!", Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
                     public void onFailure() {
-                        Toast.makeText(Otpverification.this, "Failed to send OTP", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(Otpverification.this, "Failed to send OTP email", Toast.LENGTH_SHORT).show();
                     }
                 }
         ).execute();

@@ -1,5 +1,7 @@
 package com.example.bacoorconnect.Emergency;
 
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -8,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -135,6 +138,7 @@ public class EarthquakeView extends Fragment {
                     strongest = mag;
                 }
             } catch (NumberFormatException e) {
+                Log.w("EarthquakeCalc", "Invalid magnitude format: " + quake.getMagnitude());
             }
         }
 
@@ -169,6 +173,36 @@ public class EarthquakeView extends Fragment {
         public void setLocation(String location) { this.location = location; }
         public void setMagnitude(String magnitude) { this.magnitude = magnitude; }
         public void setTime(String time) { this.time = time; }
+
+        public int getMagnitudeColor() {
+            try {
+                // Clean the magnitude string
+                String cleanMag = magnitude.replaceAll("[^0-9.]", "").trim();
+                double mag = Double.parseDouble(cleanMag);
+
+                if (mag < 3.0) {
+                    return R.color.magnitude_low; // Light green/blue
+                } else if (mag < 5.0) {
+                    return R.color.magnitude_medium; // Yellow
+                } else if (mag < 7.0) {
+                    return R.color.magnitude_high; // Orange
+                } else {
+                    return R.color.magnitude_extreme; // Red
+                }
+            } catch (NumberFormatException | NullPointerException e) {
+                return R.color.magnitude_default; // Gray for invalid
+            }
+        }
+
+        // Helper method to parse magnitude as double
+        public double getMagnitudeAsDouble() {
+            try {
+                String cleanMag = magnitude.replaceAll("[^0-9.]", "").trim();
+                return Double.parseDouble(cleanMag);
+            } catch (NumberFormatException | NullPointerException e) {
+                return 0.0;
+            }
+        }
     }
 
     // Weekly Summary Model
@@ -265,6 +299,13 @@ public class EarthquakeView extends Fragment {
                     todayHolder.magnitudeText.setText("M " + todayQuake.getMagnitude());
                     todayHolder.locationText.setText(todayQuake.getLocation());
                     todayHolder.timeText.setText(todayQuake.getTime());
+
+                    // DEBUG: Log the magnitude value
+                    Log.d("EarthquakeDebug", "Today Quake - Magnitude: " + todayQuake.getMagnitude() +
+                            ", Cleaned: " + todayQuake.getMagnitudeAsDouble());
+
+                    // Apply magnitude-based color
+                    applyMagnitudeColor(todayQuake, todayHolder.magnitudeText);
                     break;
 
                 case TYPE_WEEKLY_SUMMARY:
@@ -273,6 +314,9 @@ public class EarthquakeView extends Fragment {
                         summaryHolder.totalQuakesText.setText(String.valueOf(weeklySummary.totalQuakes));
                         summaryHolder.averageMagText.setText(String.format("%.1f", weeklySummary.averageMagnitude));
                         summaryHolder.strongestMagText.setText(String.format("%.1f", weeklySummary.strongestMagnitude));
+
+                        // Apply color to strongest magnitude
+                        applyMagnitudeColorToStrongest(weeklySummary.strongestMagnitude, summaryHolder.strongestMagText);
                     }
                     break;
 
@@ -281,6 +325,54 @@ public class EarthquakeView extends Fragment {
                     setupHorizontalRecyclerView(horizontalHolder.horizontalRecyclerView);
                     break;
             }
+        }
+
+        private void applyMagnitudeColor(Earthquake quake, TextView magnitudeText) {
+            try {
+                double mag = quake.getMagnitudeAsDouble();
+                int colorRes;
+
+                if (mag < 3.0) {
+                    colorRes = R.color.magnitude_low;
+                } else if (mag < 5.0) {
+                    colorRes = R.color.magnitude_medium;
+                } else if (mag < 7.0) {
+                    colorRes = R.color.magnitude_high;
+                } else {
+                    colorRes = R.color.magnitude_extreme;
+                }
+
+                // Get the actual color
+                int color = ContextCompat.getColor(magnitudeText.getContext(), colorRes);
+
+                // Change the background color
+                GradientDrawable background = (GradientDrawable) magnitudeText.getBackground();
+                if (background != null) {
+                    background.setColor(color);
+                }
+
+                // Keep text white for contrast
+                magnitudeText.setTextColor(Color.WHITE);
+
+                Log.d("EarthquakeColor", "Changed circle color for magnitude " + mag);
+
+            } catch (Exception e) {
+                Log.e("EarthquakeColor", "Error applying color: " + e.getMessage());
+            }
+        }
+
+        private void applyMagnitudeColorToStrongest(double magnitude, TextView magnitudeText) {
+            int colorRes;
+            if (magnitude < 3.0) {
+                colorRes = R.color.magnitude_low;
+            } else if (magnitude < 5.0) {
+                colorRes = R.color.magnitude_medium;
+            } else if (magnitude < 7.0) {
+                colorRes = R.color.magnitude_high;
+            } else {
+                colorRes = R.color.magnitude_extreme;
+            }
+            magnitudeText.setTextColor(ContextCompat.getColor(magnitudeText.getContext(), colorRes));
         }
 
         private void setupHorizontalRecyclerView(RecyclerView horizontalRecyclerView) {
@@ -368,14 +460,47 @@ public class EarthquakeView extends Fragment {
             Earthquake earthquake = earthquakeList.get(position);
             holder.magnitudeText.setText("M " + earthquake.getMagnitude());
 
-            // Shorten location for display
+            // Shorten location
             String location = earthquake.getLocation();
             if (location.length() > 30) {
                 location = location.substring(0, 27) + "...";
             }
             holder.locationText.setText(location);
-
             holder.dateText.setText(earthquake.getDate());
+
+            // Apply magnitude-based BACKGROUND color
+            try {
+                double mag = earthquake.getMagnitudeAsDouble();
+                int colorRes;
+
+                if (mag < 3.0) {
+                    colorRes = R.color.magnitude_low;
+                } else if (mag < 5.0) {
+                    colorRes = R.color.magnitude_medium;
+                } else if (mag < 7.0) {
+                    colorRes = R.color.magnitude_high;
+                } else {
+                    colorRes = R.color.magnitude_extreme;
+                }
+
+                int color = ContextCompat.getColor(holder.itemView.getContext(), colorRes);
+
+                // Change the circle background color
+                GradientDrawable background = (GradientDrawable) holder.magnitudeText.getBackground();
+                if (background != null) {
+                    background.setColor(color);
+                }
+
+                // Keep text white
+                holder.magnitudeText.setTextColor(Color.WHITE);
+
+            } catch (Exception e) {
+                // Default fallback
+                GradientDrawable background = (GradientDrawable) holder.magnitudeText.getBackground();
+                if (background != null) {
+                    background.setColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.magnitude_default));
+                }
+            }
         }
 
         @Override

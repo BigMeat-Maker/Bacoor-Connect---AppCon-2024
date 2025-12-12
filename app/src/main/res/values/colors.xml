@@ -21,10 +21,11 @@
     <color name="status_positive">#4CAF50</color> <!-- Green -->
     <color name="status_negative">#F44336</color> <!-- Red -->
 
-    <!-- Earthquake Magnitude Circle -->
-    <color name="magnitude_low">#f5c12e</color> <!-- Yellow -->
-    <color name="magnitude_medium">#ff7300</color> <!-- Orange -->
-    <color name="magnitude_high">#ce0000</color> <!-- Red -->
+    <color name="magnitude_low">#4CAF50</color>      <!-- Green for low (< 3.0) -->
+    <color name="magnitude_medium">#FFC107</color>   <!-- Yellow for medium (3.0-5.0) -->
+    <color name="magnitude_high">#FF9800</color>     <!-- Orange for high (5.0-7.0) -->
+    <color name="magnitude_extreme">#F44336</color>  <!-- Red for extreme (> 7.0) -->
+    <color name="magnitude_default">#9E9E9E</color>  <!-- Gray default -->
 
     <color name="light_gray_background">#F5F5F5</color>
     <color name="dark_gray">#666666</color>

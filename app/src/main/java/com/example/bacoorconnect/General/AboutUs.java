@@ -31,6 +31,15 @@ public class AboutUs extends AppCompatActivity {
         } else {
             android.util.Log.e("ServicesActivity", "BottomNavigationView not found. Check layout ID.");
         }
+
+        ImageView backButton = findViewById(R.id.backButton);
+        backButton.setOnClickListener(v -> {
+            Intent intent = new Intent(AboutUs.this, FrontpageActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        });
+
     }
 
 }

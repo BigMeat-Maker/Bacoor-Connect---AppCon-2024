@@ -21,7 +21,7 @@ public class PrivacyPolicy extends AppCompatActivity {
 
     private NestedScrollView scrollView;
     private TextView termsTextView;
-    private CheckBox agreeCheckBox;
+    private CheckBox PrivacyCheckBox;
     private Button proceedButton;
     private boolean hasScrolledToBottom = false;
 
@@ -38,7 +38,7 @@ public class PrivacyPolicy extends AppCompatActivity {
 
                 scrollView = findViewById(R.id.termsScrollView);
                 termsTextView = findViewById(R.id.termsTextView);
-                agreeCheckBox = findViewById(R.id.agreeCheckBox);
+                PrivacyCheckBox = findViewById(R.id.PrivacyCheckBox);
                 proceedButton = findViewById(R.id.proceedButton);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -47,7 +47,7 @@ public class PrivacyPolicy extends AppCompatActivity {
             termsTextView.setText(Html.fromHtml(getString(R.string.privacypolicy)));
         }
 
-                agreeCheckBox.setEnabled(false);
+                PrivacyCheckBox.setEnabled(false);
                 proceedButton.setEnabled(false);
 
                 scrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
@@ -56,14 +56,14 @@ public class PrivacyPolicy extends AppCompatActivity {
                         if (scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
                             if (!hasScrolledToBottom) {
                                 hasScrolledToBottom = true;
-                                agreeCheckBox.setEnabled(true);
+                                PrivacyCheckBox.setEnabled(true);
                                 Toast.makeText(PrivacyPolicy.this, "You can now accept the Privacy Policy.", Toast.LENGTH_SHORT).show();
                             }
                         }
                     }
                 });
 
-                agreeCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    PrivacyCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     proceedButton.setEnabled(isChecked);
                 });
 

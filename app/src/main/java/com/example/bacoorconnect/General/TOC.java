@@ -21,7 +21,7 @@ public class TOC extends AppCompatActivity {
 
     private NestedScrollView scrollView;
     private TextView termsTextView;
-    private CheckBox agreeCheckBox;
+    private CheckBox TOCCheckBox;
     private Button proceedButton;
     private boolean hasScrolledToBottom = false;
 
@@ -38,10 +38,10 @@ public class TOC extends AppCompatActivity {
         // Initialize views
         scrollView = findViewById(R.id.termsScrollView);
         termsTextView = findViewById(R.id.termsTextView);
-        agreeCheckBox = findViewById(R.id.agreeCheckBox);
+        TOCCheckBox = findViewById(R.id.TOCCheckBox);
         proceedButton = findViewById(R.id.proceedButton);
 
-        agreeCheckBox.setEnabled(false);
+        TOCCheckBox.setEnabled(false);
         proceedButton.setEnabled(false);
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -58,14 +58,14 @@ public class TOC extends AppCompatActivity {
                 if (scrollY >= (v.getChildAt(0).getMeasuredHeight() - v.getMeasuredHeight())) {
                     if (!hasScrolledToBottom) {
                         hasScrolledToBottom = true;
-                        agreeCheckBox.setEnabled(true);
+                        TOCCheckBox.setEnabled(true);
                         Toast.makeText(TOC.this, "You can now accept the Terms and Conditions.", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
         });
 
-        agreeCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        TOCCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             proceedButton.setEnabled(isChecked);
         });
 

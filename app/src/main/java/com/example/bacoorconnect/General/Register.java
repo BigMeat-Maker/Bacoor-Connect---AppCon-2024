@@ -23,6 +23,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
+import java.util.Random;
 
 public class
 
@@ -44,6 +45,23 @@ Register extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+
+        CheckBox tocCheckbox = findViewById(R.id.TOCCheckBox);
+        CheckBox privacyCheckbox = findViewById(R.id.PrivacyCheckBox);
+        if (tocCheckbox != null) tocCheckbox.setChecked(tocAccepted);
+        if (privacyCheckbox != null) privacyCheckbox.setChecked(privacyAccepted);
+
+        if (tocCheckbox != null) {
+            tocCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                tocAccepted = isChecked;
+            });
+        }
+
+        if (privacyCheckbox != null) {
+            privacyCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                privacyAccepted = isChecked;
+            });
+        }
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
@@ -94,41 +112,24 @@ Register extends AppCompatActivity {
 
         loginText.setOnClickListener(v -> {
             startActivity(new Intent(Register.this, Login.class));
-            finish(); // Add finish() to prevent going back to register
+            finish();
         });
 
         ImageView backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Instead of starting a new FrontpageActivity, just finish this one
-                // to go back to the previous activity (which should be FrontpageActivity)
                 finish();
             }
         });
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (resultCode == RESULT_OK) {
-            if (requestCode == TOC_REQUEST_CODE) {
-                tocAccepted = data.getBooleanExtra("tocAccepted", false);
-            } else if (requestCode == PRIVACY_REQUEST_CODE) {
-                privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
-            }
-        }
-    }
-
-    @Override
     public void onBackPressed() {
-        // Override back button to go back to FrontpageActivity
         super.onBackPressed();
         finish();
     }
 
-    // ... rest of your methods remain the same ...
     private void togglePasswordVisibility(EditText editText, ImageView toggleIcon) {
         if (editText.getTransformationMethod() instanceof PasswordTransformationMethod) {
             editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
@@ -213,45 +214,74 @@ Register extends AppCompatActivity {
                                       String contactNum, String password) {
         progressDialog.show();
 
-        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        String userID = mAuth.getCurrentUser().getUid();
+        String tempUserId = "temp_" + System.currentTimeMillis() + "_" + new Random().nextInt(1000);
 
-                        HashMap<String, Object> userData = new HashMap<>();
-                        userData.put("firstName", firstName);
-                        userData.put("lastName", lastName);
-                        userData.put("email", email);
-                        userData.put("contactNum", contactNum);
-                        userData.put("timestamp", System.currentTimeMillis());
+        HashMap<String, Object> userData = new HashMap<>();
+        userData.put("firstName", firstName);
+        userData.put("lastName", lastName);
+        userData.put("email", email);
+        userData.put("contactNum", contactNum);
+        userData.put("password", password);
+        userData.put("timestamp", System.currentTimeMillis());
 
-                        mDatabase.child("temp_registrations").child(userID).setValue(userData)
-                                .addOnSuccessListener(aVoid -> {
-                                    progressDialog.dismiss();
-                                    Intent intent = new Intent(Register.this, UploadID.class);
-                                    intent.putExtra("userID", userID);
-                                    intent.putExtra("firstName", firstName);
-                                    intent.putExtra("lastName", lastName);
-                                    intent.putExtra("email", email);
-                                    startActivity(intent);
-                                    finish();
-                                })
-                                .addOnFailureListener(e -> {
-                                    progressDialog.dismiss();
-                                    Toast.makeText(Register.this,
-                                            "Failed to save registration: " + e.getMessage(),
-                                            Toast.LENGTH_SHORT).show();
-                                    Log.e("Registration", "Database error", e);
-                                });
-                    } else {
-                        progressDialog.dismiss();
-                        Toast.makeText(Register.this,
-                                "Registration failed: " + task.getException().getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                        Log.e("Registration", "Auth error", task.getException());
-                    }
+        mDatabase.child("temp_registrations").child(tempUserId).setValue(userData)
+                .addOnSuccessListener(aVoid -> {
+                    progressDialog.dismiss();
+                    Intent intent = new Intent(Register.this, UploadID.class);
+                    intent.putExtra("tempUserId", tempUserId);
+                    intent.putExtra("firstName", firstName);
+                    intent.putExtra("lastName", lastName);
+                    intent.putExtra("email", email);
+                    intent.putExtra("contactNum", contactNum);
+                    intent.putExtra("password", password);
+                    intent.putExtra("tocAccepted", tocAccepted);
+                    intent.putExtra("privacyAccepted", privacyAccepted);
+                    startActivityForResult(intent, REQUEST_ID_VERIFICATION);
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(Register.this,
+                            "Failed to save registration: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                    Log.e("Registration", "Database error", e);
                 });
     }
+
+    private void updateCheckboxUI() {
+        CheckBox tocCheckbox = findViewById(R.id.TOCCheckBox);
+        CheckBox privacyCheckbox = findViewById(R.id.PrivacyCheckBox);
+
+        if (tocCheckbox != null) tocCheckbox.setChecked(tocAccepted);
+        if (privacyCheckbox != null) privacyCheckbox.setChecked(privacyAccepted);
+    }
+    private static final int REQUEST_ID_VERIFICATION = 100;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_ID_VERIFICATION) {
+            if (resultCode == RESULT_CANCELED) {
+                Toast.makeText(this, "Registration cancelled", Toast.LENGTH_SHORT).show();
+            } else if (resultCode == RESULT_OK && data != null) {
+                tocAccepted = data.getBooleanExtra("tocAccepted", false);
+                privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
+                updateCheckboxUI();
+                Toast.makeText(this, "You can edit your information", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (resultCode == RESULT_OK) {
+            if (requestCode == TOC_REQUEST_CODE) {
+                tocAccepted = data.getBooleanExtra("tocAccepted", false);
+                updateCheckboxUI();
+            } else if (requestCode == PRIVACY_REQUEST_CODE) {
+                privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
+                updateCheckboxUI();
+            }
+        }
+    }
+
+
 
 }
