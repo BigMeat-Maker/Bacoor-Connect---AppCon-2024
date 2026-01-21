@@ -111,7 +111,9 @@ Register extends AppCompatActivity {
         });
 
         loginText.setOnClickListener(v -> {
-            startActivity(new Intent(Register.this, Login.class));
+            Intent intent = new Intent(Register.this, FrontpageActivity.class);
+            intent.putExtra("OPEN_LOGIN_FRAGMENT", true);
+            startActivity(intent);
             finish();
         });
 

@@ -133,9 +133,7 @@
         <activity
             android:name=".General.Register"
             android:exported="false" />
-        <activity
-            android:name=".General.Login"
-            android:exported="false" />
+
         <activity
             android:name=".Helpers.Otpverification"
             android:exported="false" />

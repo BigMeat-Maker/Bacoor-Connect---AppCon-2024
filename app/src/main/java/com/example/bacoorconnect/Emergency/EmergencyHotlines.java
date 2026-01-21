@@ -14,7 +14,7 @@ import androidx.annotation.NonNull;
 
 import com.example.bacoorconnect.General.AboutUs;
 import com.example.bacoorconnect.General.Dashboard;
-import com.example.bacoorconnect.General.Login;
+import com.example.bacoorconnect.General.FrontpageActivity;
 import com.example.bacoorconnect.General.MapDash;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportIncident;
@@ -117,9 +117,10 @@ public class EmergencyHotlines extends Fragment {
         // Logout
         view.findViewById(R.id.quick_logout).setOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(getActivity(), Login.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
+
+            if (requireActivity() instanceof FrontpageActivity) {
+                ((FrontpageActivity) requireActivity()).showWelcomeScreen();
+            }
         });
     }
 

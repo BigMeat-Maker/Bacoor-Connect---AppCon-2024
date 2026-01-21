@@ -18,6 +18,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.bumptech.glide.Glide;
@@ -56,7 +57,6 @@ public class FrontpageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_frontpage);
-
         backButton = findViewById(R.id.backButton);
         welcomeLayout = findViewById(R.id.welcomeLayout);
         loggedInLayout = findViewById(R.id.loggedInLayout);
@@ -69,6 +69,9 @@ public class FrontpageActivity extends AppCompatActivity {
         Logindirect = findViewById(R.id.Logindirect);
         Registerdirect = findViewById(R.id.RegisterButton);
         Guestdirect = findViewById(R.id.LoginGuest);
+        if (getIntent().getBooleanExtra("OPEN_LOGIN_FRAGMENT", false)) {
+            loadLoginFragment();
+        }
 
         profileIcon.setOnClickListener(v -> {
         });
@@ -366,9 +369,19 @@ public class FrontpageActivity extends AppCompatActivity {
     public void showWelcomeScreen() {
         welcomeLayout.setVisibility(View.VISIBLE);
         loggedInLayout.setVisibility(View.GONE);
-        getSupportFragmentManager().popBackStack();
+        backButton.setVisibility(View.GONE);
+        headerLayout.setVisibility(View.GONE);
+        bottomNavigation.setVisibility(View.GONE);
+
+        Fragment loginFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (loginFragment instanceof LoginFragment) {
+            getSupportFragmentManager().beginTransaction().remove(loginFragment).commit();
+        }
+
         profileIcon.setImageResource(R.drawable.profile);
     }
+
+
     public void loadDashboardFragment() {
         welcomeLayout.setVisibility(View.GONE);
         loggedInLayout.setVisibility(View.VISIBLE);

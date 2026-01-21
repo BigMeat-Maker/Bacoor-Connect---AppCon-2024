@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -66,9 +67,8 @@ public class LoginFragment extends Fragment {
         backButton = view.findViewById(R.id.backButton);
 
         backButton.setOnClickListener(v -> {
-            // Navigate back to welcome screen
-            if (getActivity() instanceof FrontpageActivity) {
-                ((FrontpageActivity) getActivity()).showWelcomeScreen();
+            if (requireActivity() instanceof FrontpageActivity) {
+                ((FrontpageActivity) requireActivity()).showWelcomeScreen();
             }
         });
 

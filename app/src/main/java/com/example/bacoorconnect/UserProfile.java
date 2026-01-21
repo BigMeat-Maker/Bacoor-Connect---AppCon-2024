@@ -157,25 +157,25 @@ public class UserProfile extends AppCompatActivity {
                     .setValue("offline");
         }
 
-        SharedPreferences preferences = getSharedPreferences("UserProfilePrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("keepLoggedIn", false);
-        editor.apply();
+        SharedPreferences prefs =
+                android.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.edit().putBoolean("keepLoggedIn", false).apply();
 
-        SharedPreferences defaultPrefs = android.preference.PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor defaultEditor = defaultPrefs.edit();
-        defaultEditor.remove("userFirstName");
-        defaultEditor.remove("userLastName");
-        defaultEditor.remove("userEmail");
-        defaultEditor.remove("userPhone");
-        defaultEditor.remove("userProfileImage");
-        defaultEditor.apply();
+        prefs.edit()
+                .remove("userFirstName")
+                .remove("userLastName")
+                .remove("userEmail")
+                .remove("userPhone")
+                .remove("userProfileImage")
+                .apply();
 
         FirebaseAuth.getInstance().signOut();
 
-        Intent intent = new Intent(UserProfile.this, FrontpageActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        Intent intent = new Intent(this, FrontpageActivity.class);
+        intent.putExtra("LOGOUT", true);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
+
         finish();
     }
 
