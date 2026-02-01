@@ -43,6 +43,8 @@ import java.util.Map;
 public class UploadID extends AppCompatActivity {
 
     private static final int REQUEST_GALLERY = 1;
+    private Uri cameraImageUri;
+    private static final int REQUEST_CAMERA = 2;
     private static final String TAG = "UploadID";
 
     private TextView userDetailsText;
@@ -105,6 +107,19 @@ public class UploadID extends AppCompatActivity {
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
+        try {
+            File tempFile = File.createTempFile("camera_temp_", ".jpg", getCacheDir());
+            cameraImageUri = FileProvider.getUriForFile(this,
+                    "com.example.bacoorconnect.fileprovider",
+                    tempFile);
+
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri);
+        } catch (IOException e) {
+            Log.e(TAG, "Error creating temp file", e);
+            Toast.makeText(this, "Cannot access camera", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent chooserIntent = Intent.createChooser(galleryIntent, "Select ID Image");
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] {cameraIntent});
 
@@ -134,10 +149,20 @@ public class UploadID extends AppCompatActivity {
                             Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show();
                         }
                     }
-                } else if (data.getExtras() != null && data.getExtras().get("data") != null) {
-                    Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
-                    idImageView.setImageBitmap(imageBitmap);
-                    idImageUri = saveBitmapToFile(imageBitmap);
+                }
+                else if (cameraImageUri != null) {
+                    try {
+                        InputStream inputStream = getContentResolver().openInputStream(cameraImageUri);
+                        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                        inputStream.close();
+
+                        idImageView.setImageBitmap(bitmap);
+                        idImageUri = cameraImageUri;
+
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error loading camera image", e);
+                        Toast.makeText(this, "Error loading camera image", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }

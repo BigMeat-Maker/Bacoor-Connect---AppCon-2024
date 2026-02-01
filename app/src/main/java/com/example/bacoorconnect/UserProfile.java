@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
@@ -147,7 +148,6 @@ public class UserProfile extends AppCompatActivity {
     }
 
     private void logoutUser() {
-
         String uid = FirebaseAuth.getInstance().getUid();
         if (uid != null) {
             FirebaseDatabase.getInstance()
@@ -157,25 +157,22 @@ public class UserProfile extends AppCompatActivity {
                     .setValue("offline");
         }
 
-        SharedPreferences prefs =
-                android.preference.PreferenceManager.getDefaultSharedPreferences(this);
-        prefs.edit().putBoolean("keepLoggedIn", false).apply();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = prefs.edit();
 
-        prefs.edit()
-                .remove("userFirstName")
-                .remove("userLastName")
-                .remove("userEmail")
-                .remove("userPhone")
-                .remove("userProfileImage")
-                .apply();
+        editor.clear();
+        editor.apply();
 
         FirebaseAuth.getInstance().signOut();
 
         Intent intent = new Intent(this, FrontpageActivity.class);
-        intent.putExtra("LOGOUT", true);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
 
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
+                Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        intent.putExtra("SHOW_WELCOME", true);
+
+        startActivity(intent);
         finish();
     }
 

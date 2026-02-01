@@ -97,7 +97,10 @@ public class FrontpageActivity extends AppCompatActivity {
         Guestdirect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                navigateToActivity(3);
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(FrontpageActivity.this);
+                preferences.edit().clear().apply();
+                FirebaseAuth.getInstance().signOut();
+                loadDashboardFragment();
             }
         });
 
@@ -105,6 +108,10 @@ public class FrontpageActivity extends AppCompatActivity {
             loadDashboardFragment();
         } else {
             checkAutoLogin();
+        }
+
+        if (getIntent().getBooleanExtra("SHOW_WELCOME", false)) {
+            showWelcomeScreen();
         }
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
@@ -245,16 +252,30 @@ public class FrontpageActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (loggedInLayout.getVisibility() == View.VISIBLE) {
-            Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
 
-            if (currentFragment instanceof Dashboard) {
-                super.onBackPressed();
+        if (currentFragment instanceof LoginFragment) {
+            showWelcomeScreen();
+            return;
+        }
+
+        if (loggedInLayout.getVisibility() == View.VISIBLE) {
+            Fragment currentFragment2 = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+            if (currentFragment2 instanceof Dashboard) {
+                backButton.animate().alpha(0f).setDuration(150).withEndAction(() -> {
+                    backButton.setVisibility(View.GONE);
+                    super.onBackPressed();
+                }).start();
             } else {
                 if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
-                    getSupportFragmentManager().popBackStackImmediate();
+                    updateGreetingTextFromPrefs();
+                    backButton.animate().alpha(0f).setDuration(150).start();
 
-                    updateUIForCurrentFragment();
+                    new Handler().postDelayed(() -> {
+                        getSupportFragmentManager().popBackStackImmediate();
+                        updateUIForCurrentFragment();
+                    }, 150);
                 } else {
                     loadDashboardFragment();
                 }
@@ -354,28 +375,67 @@ public class FrontpageActivity extends AppCompatActivity {
     }
 
     public void loadLoginFragment() {
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (currentFragment instanceof LoginFragment) {
+            return;
+        }
+
         welcomeLayout.setVisibility(View.GONE);
         loggedInLayout.setVisibility(View.VISIBLE);
 
         headerLayout.setVisibility(View.GONE);
         bottomNavigation.setVisibility(View.GONE);
 
+        greetingText.setText("Login");
+
+        if (currentFragment != null) {
+            getSupportFragmentManager().beginTransaction()
+                    .remove(currentFragment)
+                    .commitNow();
+        }
+
+        getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container, new LoginFragment());
-        transaction.addToBackStack(null);
+        transaction.setCustomAnimations(
+                R.anim.fade_in,
+                R.anim.fade_out,
+                R.anim.fade_in,
+                R.anim.fade_out
+        );
+
+        LoginFragment loginFragment = new LoginFragment();
+        transaction.replace(R.id.fragment_container, loginFragment);
+        transaction.addToBackStack("login");
         transaction.commit();
     }
 
     public void showWelcomeScreen() {
-        welcomeLayout.setVisibility(View.VISIBLE);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        preferences.edit().putBoolean("keepLoggedIn", false).apply();
+
+        FirebaseAuth.getInstance().signOut();
+
+        loggedInLayout.clearAnimation();
+        welcomeLayout.clearAnimation();
+
         loggedInLayout.setVisibility(View.GONE);
+        welcomeLayout.setVisibility(View.VISIBLE);
+
+        loggedInLayout.setAlpha(1f);
+        welcomeLayout.setAlpha(1f);
+
         backButton.setVisibility(View.GONE);
         headerLayout.setVisibility(View.GONE);
         bottomNavigation.setVisibility(View.GONE);
 
-        Fragment loginFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-        if (loginFragment instanceof LoginFragment) {
-            getSupportFragmentManager().beginTransaction().remove(loginFragment).commit();
+        getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (currentFragment != null) {
+            getSupportFragmentManager().beginTransaction()
+                    .remove(currentFragment)
+                    .commitNow();
         }
 
         profileIcon.setImageResource(R.drawable.profile);
@@ -383,6 +443,11 @@ public class FrontpageActivity extends AppCompatActivity {
 
 
     public void loadDashboardFragment() {
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (currentFragment instanceof Dashboard) {
+            return;
+        }
+
         welcomeLayout.setVisibility(View.GONE);
         loggedInLayout.setVisibility(View.VISIBLE);
 
@@ -393,9 +458,15 @@ public class FrontpageActivity extends AppCompatActivity {
 
         updateGreetingTextFromPrefs();
 
-        getSupportFragmentManager().popBackStack(null, getSupportFragmentManager().POP_BACK_STACK_INCLUSIVE);
+        getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(
+                R.anim.fade_in,
+                R.anim.fade_out,
+                R.anim.fade_in,
+                R.anim.fade_out
+        );
         transaction.replace(R.id.fragment_container, new Dashboard());
         transaction.commit();
 
@@ -404,15 +475,26 @@ public class FrontpageActivity extends AppCompatActivity {
             bottomNav.setSelectedItemId(R.id.nav_home);
         }
     }
+
     public void loadEmergencyFragment(Fragment fragment, String title) {
         welcomeLayout.setVisibility(View.GONE);
         loggedInLayout.setVisibility(View.VISIBLE);
         headerLayout.setVisibility(View.VISIBLE);
         bottomNavigation.setVisibility(View.VISIBLE);
-        backButton.setVisibility(View.VISIBLE);
+
         greetingText.setText(title);
 
+        backButton.setVisibility(View.VISIBLE);
+        backButton.setAlpha(0f);
+        backButton.animate().alpha(1f).setDuration(200).start();
+
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(
+                R.anim.fade_in,
+                R.anim.fade_out,
+                R.anim.fade_in,
+                R.anim.fade_out
+        );
         transaction.replace(R.id.fragment_container, fragment);
         transaction.addToBackStack("emergency_fragment");
         transaction.commit();

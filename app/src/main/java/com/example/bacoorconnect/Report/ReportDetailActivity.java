@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -22,6 +23,8 @@ public class ReportDetailActivity extends AppCompatActivity {
 
     private RecyclerView rvReportHistory;
     private Button btnPrintReport, btnExportReport;
+    private ImageView backButton;
+    private TextView toolbarTitle;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,10 +35,22 @@ public class ReportDetailActivity extends AppCompatActivity {
         rvReportHistory = findViewById(R.id.rvReportHistory);
         btnPrintReport = findViewById(R.id.btnPrintReport);
         btnExportReport = findViewById(R.id.btnExportReport);
+        backButton = findViewById(R.id.back_button);
+
+        // Set up back button click listener
+        backButton.setOnClickListener(v -> {
+            onBackPressed();
+        });
+
+        // Set title if passed from intent
+        String title = getIntent().getStringExtra("title");
+        if (title != null) {
+            toolbarTitle.setText(title);
+        }
 
         // Set up RecyclerView
         rvReportHistory.setLayoutManager(new LinearLayoutManager(this));
-        List<ReportItem> reportItems = getDummyReports(); // Replace with actual data
+        List<ReportItem> reportItems = getDummyReports();
         ReportHistoryAdapter adapter = new ReportHistoryAdapter(reportItems);
         rvReportHistory.setAdapter(adapter);
 
@@ -51,13 +66,18 @@ public class ReportDetailActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
     private void printReport() {
-        // Add logic to generate and print a PDF
         Toast.makeText(this, "Print functionality is under development.", Toast.LENGTH_SHORT).show();
     }
 
     private void exportReport() {
-        // Add logic to generate and export a PDF
         Toast.makeText(this, "Export functionality is under development.", Toast.LENGTH_SHORT).show();
     }
 
@@ -66,37 +86,6 @@ public class ReportDetailActivity extends AppCompatActivity {
         reports.add(new ReportItem("Type A", "Location 1", "2023-10-01", "Resolved"));
         reports.add(new ReportItem("Type B", "Location 2", "2023-10-02", "Pending"));
         return reports;
-    }
-
-    // Fixed ReportItem class
-    public static class ReportItem {
-        private final String type;
-        private final String location;
-        private final String date;
-        private final String status;
-
-        public ReportItem(String type, String location, String date, String status) {
-            this.type = type;
-            this.location = location;
-            this.date = date;
-            this.status = status;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public String getLocation() {
-            return location;
-        }
-
-        public String getDate() {
-            return date;
-        }
-
-        public String getStatus() {
-            return status;
-        }
     }
 
     // Adapter for RecyclerView
@@ -124,7 +113,7 @@ public class ReportDetailActivity extends AppCompatActivity {
             holder.dateTextView.setText(item.getDate());
             holder.statusTextView.setText(item.getStatus());
 
-            // Set status background color based on status
+            // Set status background color
             int statusColor;
             switch(item.getStatus()) {
                 case "Positive":
@@ -137,7 +126,6 @@ public class ReportDetailActivity extends AppCompatActivity {
                     statusColor = ContextCompat.getColor(ReportDetailActivity.this, R.color.gray);
             }
 
-            // Apply status color
             holder.statusTextView.setBackgroundColor(statusColor);
         }
 
@@ -157,5 +145,25 @@ public class ReportDetailActivity extends AppCompatActivity {
                 statusTextView = itemView.findViewById(R.id.text_report_status);
             }
         }
+    }
+
+    // ReportItem class stays the same
+    public static class ReportItem {
+        private final String type;
+        private final String location;
+        private final String date;
+        private final String status;
+
+        public ReportItem(String type, String location, String date, String status) {
+            this.type = type;
+            this.location = location;
+            this.date = date;
+            this.status = status;
+        }
+
+        public String getType() { return type; }
+        public String getLocation() { return location; }
+        public String getDate() { return date; }
+        public String getStatus() { return status; }
     }
 }

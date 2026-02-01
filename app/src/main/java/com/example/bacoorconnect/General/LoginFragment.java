@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,6 +76,23 @@ public class LoginFragment extends Fragment {
         loginButton.setOnClickListener(v -> loginUser());
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        requireView().setFocusableInTouchMode(true);
+        requireView().requestFocus();
+        requireView().setOnKeyListener((v, keyCode, event) -> {
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
+                if (requireActivity() instanceof FrontpageActivity) {
+                    ((FrontpageActivity) requireActivity()).showWelcomeScreen();
+                }
+                return true;
+            }
+            return false;
+        });
     }
 
     private void requestAppPermissions() {
@@ -156,8 +174,32 @@ public class LoginFragment extends Fragment {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(requireContext());
         preferences.edit().putBoolean("keepLoggedIn", keepLoggedInCheckbox.isChecked()).apply();
 
-        logActivity(userID, "Authentication", "User Login", "User", "Success", "User logged in", "N/A", false);
-        navigateToDashboard();
+        mDatabase.child(userID).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    String firstName = snapshot.child("firstName").getValue(String.class);
+                    String lastName = snapshot.child("lastName").getValue(String.class);
+                    String email = snapshot.child("email").getValue(String.class);
+
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString("userFirstName", firstName != null ? firstName : "");
+                    editor.putString("userLastName", lastName != null ? lastName : "");
+                    editor.putString("userEmail", email != null ? email : "");
+                    editor.apply();
+
+                    logActivity(userID, "Authentication", "User Login", "User", "Success", "User logged in", "N/A", false);
+
+                    navigateToDashboard();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                logActivity(userID, "Authentication", "User Login", "User", "Success", "User logged in", "N/A", false);
+                navigateToDashboard();
+            }
+        });
     }
 
     private void navigateToDashboard() {
