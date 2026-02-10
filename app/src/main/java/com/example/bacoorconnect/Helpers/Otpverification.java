@@ -39,6 +39,16 @@ public class Otpverification extends AppCompatActivity {
     private CountDownTimer countDownTimer;
     private ProgressDialog progressDialog;
     private boolean isOtpGenerated = false;
+    private String otpId;
+    private DatabaseReference otpRef;
+    private int verificationAttempts = 0;
+    private long lastVerificationAttempt = 0;
+    private static final int MAX_ATTEMPTS = 5;
+    private static final long ATTEMPT_WINDOW_MS = 300000;
+    private int resendAttempts = 0;
+    private long lastResendAttempt = 0;
+    private static final int MAX_RESEND_ATTEMPTS = 3;
+    private static final long RESEND_WINDOW_MS = 300000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,36 +98,18 @@ public class Otpverification extends AppCompatActivity {
                     lastName = (String) tempData.get("lastName");
                     email = (String) tempData.get("email");
                     contactNum = (String) tempData.get("contactNum");
-                    password = (String) tempData.get("password");
+
+                    password = PasswordManager.getTempPassword(this, tempUserId);
+
+                    if (password == null) {
+                        Toast.makeText(this, "Registration expired. Please start over.", Toast.LENGTH_SHORT).show();
+                        finish();
+                        return;
+                    }
 
                     generateAndSendOTP();
                 });
     }
-
-    private void generateAndSendOTP() {
-        if (isOtpGenerated) return;
-
-        generatedOTP = String.valueOf(new Random().nextInt(899999) + 100000);
-
-        String formattedEmail = email.replace(".", ",");
-        DatabaseReference otpRef = databaseRef.child("otp_requests").child(formattedEmail);
-
-        HashMap<String, Object> otpData = new HashMap<>();
-        otpData.put("otp", generatedOTP);
-        otpData.put("timestamp", System.currentTimeMillis());
-        otpData.put("tempUserId", tempUserId);
-
-        otpRef.setValue(otpData)
-                .addOnSuccessListener(aVoid -> {
-                    sendOtpEmail(generatedOTP);
-                    isOtpGenerated = true;
-                    startOtpTimer();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Failed to generate OTP", Toast.LENGTH_SHORT).show();
-                });
-    }
-
 
     private void initializeViews() {
         otpInputs[0] = findViewById(R.id.otp_1);
@@ -143,6 +135,14 @@ public class Otpverification extends AppCompatActivity {
     private void verifyOtp() {
         String enteredOTP = getEnteredOTP();
 
+        if (!checkRateLimit()) {
+            otpErrorText.setText("Too many attempts. Please wait 5 minutes.");
+            return;
+        }
+
+        verificationAttempts++;
+        lastVerificationAttempt = System.currentTimeMillis();
+
         if (TextUtils.isEmpty(enteredOTP) || enteredOTP.length() != OTP_LENGTH) {
             otpErrorText.setText("Please enter a complete OTP.");
             return;
@@ -150,8 +150,11 @@ public class Otpverification extends AppCompatActivity {
 
         progressDialog.show();
 
-        String formattedEmail = email.replace(".", ",");
-        DatabaseReference otpRef = databaseRef.child("otp_requests").child(formattedEmail);
+        if (otpRef == null) {
+            progressDialog.dismiss();
+            handleOtpError("OTP session expired. Request a new OTP.", "No OTP session");
+            return;
+        }
 
         otpRef.get().addOnCompleteListener(task -> {
             if (!task.isSuccessful() || !task.getResult().exists()) {
@@ -186,6 +189,27 @@ public class Otpverification extends AppCompatActivity {
             Toast.makeText(Otpverification.this, "OTP Verified!", Toast.LENGTH_SHORT).show();
             saveUserToFirebase(otpRef);
         });
+    }
+
+    private boolean checkRateLimit() {
+        long currentTime = System.currentTimeMillis();
+
+        if (currentTime - lastVerificationAttempt > ATTEMPT_WINDOW_MS) {
+            verificationAttempts = 0;
+        }
+
+        if (verificationAttempts >= MAX_ATTEMPTS) {
+            return false;
+        }
+
+        if (verificationAttempts > 0) {
+            long delay = Math.min(1000 * (long)Math.pow(2, verificationAttempts - 1), 30000);
+            if (currentTime - lastVerificationAttempt < delay) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void handleOtpError(String message, String logMessage) {
@@ -223,6 +247,8 @@ public class Otpverification extends AppCompatActivity {
                                         databaseRef.child("temp_registrations")
                                                 .child(tempUserId).removeValue();
                                         otpRef.removeValue();
+
+                                        PasswordManager.clearTempPassword(this, tempUserId);
 
                                         progressDialog.dismiss();
                                         logActivity("User Registration", "Success", "User registered");
@@ -273,28 +299,117 @@ public class Otpverification extends AppCompatActivity {
     }
 
     private void resendOTP() {
-        String formattedEmail = email.replace(".", ",");
-        DatabaseReference otpRef = databaseRef.child("otp_requests").child(formattedEmail);
-        otpRef.removeValue();
+        if (!checkResendLimit()) {
+            Toast.makeText(this, "Too many resend requests. Please wait.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        generatedOTP = String.valueOf(new Random().nextInt(899999) + 100000);
+        // Increment resend attempts
+        resendAttempts++;
+        lastResendAttempt = System.currentTimeMillis();
+
+        // Clean up old OTP
+        if (otpRef != null) {
+            otpRef.removeValue();
+        }
+
+        generatedOTP = generateSecureOTP();
+
+        otpId = "otp_" + System.currentTimeMillis() + "_" + new Random().nextInt(10000);
+        otpRef = databaseRef.child("otp_requests").child(otpId);
+
         long newTimestamp = System.currentTimeMillis();
-
-        sendOtpEmail(generatedOTP);
 
         HashMap<String, Object> otpData = new HashMap<>();
         otpData.put("otp", generatedOTP);
         otpData.put("timestamp", newTimestamp);
-        otpRef.setValue(otpData);
+        otpData.put("tempUserId", tempUserId);
+        otpData.put("email", email);
 
-        resetOtpInputs();
-        startOtpTimer();
-        verifyButton.setEnabled(true);
-        resendButton.setEnabled(false);
-        new android.os.Handler().postDelayed(() -> resendButton.setEnabled(true), RESEND_DELAY_MS);
+        otpRef.setValue(otpData)
+                .addOnSuccessListener(aVoid -> {
+                    sendOtpEmail(generatedOTP);
+                    resetOtpInputs();
+                    startOtpTimer();
+                    verifyButton.setEnabled(true);
+
+                    resendButton.setEnabled(false);
+                    new android.os.Handler().postDelayed(() -> resendButton.setEnabled(true), RESEND_DELAY_MS);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to resend OTP", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+
+    private boolean checkResendLimit() {
+        long currentTime = System.currentTimeMillis();
+
+        if (currentTime - lastResendAttempt > RESEND_WINDOW_MS) {
+            resendAttempts = 0;
+        }
+
+        if (resendAttempts >= MAX_RESEND_ATTEMPTS) {
+            long timeLeft = (RESEND_WINDOW_MS - (currentTime - lastResendAttempt)) / 1000;
+            if (timeLeft > 0) {
+                timerText.setText("Resend limit reached. Try again in " + timeLeft + " seconds");
+            }
+            return false;
+        }
+
+        if (resendAttempts > 0 && (currentTime - lastResendAttempt < 30000)) {
+            long timeLeft = (30000 - (currentTime - lastResendAttempt)) / 1000;
+            timerText.setText("Wait " + timeLeft + " seconds before resending");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void generateAndSendOTP() {
+        if (isOtpGenerated) return;
+        generatedOTP = generateSecureOTP();
+
+        otpId = "otp_" + System.currentTimeMillis() + "_" + new Random().nextInt(10000);
+        otpRef = databaseRef.child("otp_requests").child(otpId);
+
+        HashMap<String, Object> otpData = new HashMap<>();
+        otpData.put("otp", generatedOTP);
+        otpData.put("timestamp", System.currentTimeMillis());
+        otpData.put("tempUserId", tempUserId);
+        otpData.put("email", email);
+
+        otpRef.setValue(otpData)
+                .addOnSuccessListener(aVoid -> {
+                    sendOtpEmail(generatedOTP);
+                    isOtpGenerated = true;
+                    startOtpTimer();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to generate OTP", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private String generateSecureOTP() {
+        try {
+            java.security.SecureRandom secureRandom = new java.security.SecureRandom();
+            int num = secureRandom.nextInt(1000000);
+            return String.format("%06d", num);
+        } catch (Exception e) {
+            // Fallback to Random if SecureRandom fails
+            return String.valueOf(new Random().nextInt(899999) + 100000);
+        }
     }
 
     private void sendOtpEmail(String otp) {
+        String emailAddress = EmailConfig.getEmailAddress(this);
+        String emailPassword = EmailConfig.getEmailPassword(this);
+
+        if (emailAddress == null || emailPassword == null) {
+            Toast.makeText(this, "Email configuration error", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String subject = "Your OTP for Bacoor Connect Registration";
         String message = String.format(Locale.getDefault(),
                 "Dear %s %s,\n\n" +
@@ -306,8 +421,8 @@ public class Otpverification extends AppCompatActivity {
                 firstName, lastName, otp);
 
         new JavaMailAPI(
-                "bacoorconnect@gmail.com",
-                "epzh fnit cvyw vnen",
+                emailAddress,
+                emailPassword,
                 email,
                 subject,
                 message,

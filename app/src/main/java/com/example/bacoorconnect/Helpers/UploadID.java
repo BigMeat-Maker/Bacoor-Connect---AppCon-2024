@@ -30,6 +30,7 @@ import com.example.bacoorconnect.R;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.ByteArrayOutputStream;
@@ -39,6 +40,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.example.bacoorconnect.Helpers.PasswordManager;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 
 public class UploadID extends AppCompatActivity {
 
@@ -75,21 +81,15 @@ public class UploadID extends AppCompatActivity {
         mStorage = FirebaseStorage.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        formRecognizerClient = new DocumentAnalysisClientBuilder()
-                .credential(new AzureKeyCredential("AIgoBXCotRsQwzg4Wiq7PBIj6ApIt8thtJuK6RXHQGbzNK2MCit8JQQJ99BDACqBBLyXJ3w3AAALACOGKCoG"))
-                .endpoint("https://bacconformrecognizer.cognitiveservices.azure.com/")
-                .buildClient();
+        initializeAzureClient();
 
         Intent intent = getIntent();
         tempUserId = intent.getStringExtra("tempUserId");
-        firstName = intent.getStringExtra("firstName");
-        lastName = intent.getStringExtra("lastName");
-        email = intent.getStringExtra("email");
-        contactNum = intent.getStringExtra("contactNum");
+
         tocAccepted = intent.getBooleanExtra("tocAccepted", false);
         privacyAccepted = intent.getBooleanExtra("privacyAccepted", false);
 
-        userDetailsText.setText(String.format("Hello, %s %s", firstName, lastName));
+        loadUserDataFromDatabase();
 
         uploadIdButton.setOnClickListener(v -> selectImageFromGallery());
         submitButton.setOnClickListener(v -> {
@@ -166,6 +166,55 @@ public class UploadID extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private void initializeAzureClient() {
+        String azureKey = AzureConfig.getAzureKey(this);
+
+        if (azureKey == null || azureKey.isEmpty()) {
+            Toast.makeText(this,
+                    "ID verification service not available. Please restart the app.",
+                    Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Azure key not available");
+            finish();
+            return;
+        }
+
+        try {
+            formRecognizerClient = new DocumentAnalysisClientBuilder()
+                    .credential(new AzureKeyCredential(azureKey))
+                    .endpoint("https://bacconformrecognizer.cognitiveservices.azure.com/")
+                    .buildClient();
+            Log.d(TAG, "Azure client initialized successfully");
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "Failed to initialize ID verification service",
+                    Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Failed to initialize Azure client", e);
+            finish();
+        }
+    }
+
+    private void loadUserDataFromDatabase() {
+        progressDialog.setMessage("Loading user data...");
+        progressDialog.show();
+
+        mDatabase.child("temp_registrations").child(tempUserId).get()
+                .addOnCompleteListener(task -> {
+                    progressDialog.dismiss();
+                    if (task.isSuccessful() && task.getResult().exists()) {
+                        HashMap<String, Object> userData = (HashMap<String, Object>) task.getResult().getValue();
+                        firstName = (String) userData.get("firstName");
+                        lastName = (String) userData.get("lastName");
+                        email = (String) userData.get("email");
+                        contactNum = (String) userData.get("contactNum");
+
+                        userDetailsText.setText(String.format("Hello, %s %s", firstName, lastName));
+                    } else {
+                        Toast.makeText(this, "Failed to load user data", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
     }
 
     private Uri saveBitmapToFile(Bitmap bitmap) {
@@ -334,71 +383,67 @@ public class UploadID extends AppCompatActivity {
     }
 
     private void uploadIdImage() {
-        progressDialog.setMessage("Uploading ID...");
+        progressDialog.setMessage("Encrypting and uploading ID...");
         progressDialog.show();
 
-        String storagePath = "temp_ids/" + tempUserId + "_id.jpg";
-        Log.d(TAG, "Attempting to upload to path: " + storagePath);
-        Log.d(TAG, "Image URI: " + idImageUri.toString());
+        byte[] imageBytes = readUriToBytes(idImageUri);
 
+        byte[] encryptedImage = encryptImage(imageBytes);
+
+        String storagePath = "temp_ids/" + tempUserId + "_id_encrypted.dat";
         StorageReference idRef = mStorage.getReference(storagePath);
 
-        idRef.putFile(idImageUri)
-                .addOnProgressListener(taskSnapshot -> {
-                    double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                    Log.d(TAG, "Upload progress: " + progress + "%");
-                })
+        StorageMetadata metadata = new StorageMetadata.Builder()
+                .setCustomMetadata("encrypted", "true")
+                .setCustomMetadata("algorithm", "AES/GCM/NoPadding")
+                .build();
+
+        idRef.putBytes(encryptedImage, metadata)
                 .addOnSuccessListener(taskSnapshot -> {
-                    Log.d(TAG, "Upload successful!");
                     idRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                        Log.d(TAG, "Download URL: " + uri.toString());
-                        updateVerificationStatus(uri.toString());
+                        updateVerificationStatus(uri.toString(), true);
                     });
                 })
                 .addOnFailureListener(e -> {
                     progressDialog.dismiss();
-                    Log.e(TAG, "Upload failed with error: ", e);
-                    Toast.makeText(this, "ID upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-
-                    tryAlternativeUpload();
+                    Toast.makeText(this, "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
-    private void tryAlternativeUpload() {
-        progressDialog.setMessage("Trying alternative upload...");
-        progressDialog.show();
-
-        StorageReference altRef = mStorage.getReference()
-                .child("test_uploads")
-                .child("test_" + System.currentTimeMillis() + ".jpg");
-
-        altRef.putFile(idImageUri)
-                .addOnSuccessListener(taskSnapshot -> {
-                    altRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                        Log.d(TAG, "Alternative upload successful: " + uri.toString());
-                        updateVerificationStatus(uri.toString());
-                    });
-                })
-                .addOnFailureListener(e -> {
-                    progressDialog.dismiss();
-                    Log.e(TAG, "Alternative upload also failed", e);
-                    Toast.makeText(this,
-                            "All upload attempts failed. Check Firebase Storage rules.\n" +
-                                    "Error: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
+    private byte[] readUriToBytes(Uri uri) {
+        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
+            ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buffer)) != -1) {
+                byteBuffer.write(buffer, 0, len);
+            }
+            return byteBuffer.toByteArray();
+        } catch (IOException e) {
+            Log.e(TAG, "Error reading image bytes", e);
+            return null;
+        }
     }
 
-    @Override
-    public void onBackPressed() {
-        showCancelConfirmation();
+    private SecretKey getImageEncryptionKey() throws Exception {
+        // God forbid do not delete this shit i did this shit at 4am full of coffee, somehow thhis works so dont change it!
+        String keyMaterial = tempUserId + "_image_key_2024";
+
+        java.security.MessageDigest sha = java.security.MessageDigest.getInstance("SHA-256");
+        byte[] keyBytes = sha.digest(keyMaterial.getBytes("UTF-8"));
+
+        byte[] aesKeyBytes = new byte[32];
+        System.arraycopy(keyBytes, 0, aesKeyBytes, 0, 32);
+
+        return new javax.crypto.spec.SecretKeySpec(aesKeyBytes, "AES");
     }
 
-    private void updateVerificationStatus(String imageUrl) {
+    private void updateVerificationStatus(String imageUrl, boolean isEncrypted) {
         HashMap<String, Object> updates = new HashMap<>();
         updates.put("idImage", imageUrl);
         updates.put("verificationStatus", "pending_otp");
-        updates.put("idImagePath", "temp_ids/" + tempUserId + "_id.jpg");
+        updates.put("idImagePath", "temp_ids/" + tempUserId + "_id_encrypted.dat");
+        updates.put("encrypted", isEncrypted);
 
         mDatabase.child("temp_registrations").child(tempUserId).updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
@@ -416,6 +461,58 @@ public class UploadID extends AppCompatActivity {
                     progressDialog.dismiss();
                     Toast.makeText(this, "Verification update failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private byte[] encryptImage(byte[] imageBytes) {
+        try {
+            SecretKey secretKey = getImageEncryptionKey();
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+
+            byte[] iv = cipher.getIV();
+            byte[] encrypted = cipher.doFinal(imageBytes);
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            outputStream.write(iv);
+            outputStream.write(encrypted);
+
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            Log.e(TAG, "Image encryption failed", e);
+            return imageBytes;
+        }
+    }
+
+    private void tryAlternativeUpload() {
+        progressDialog.setMessage("Trying alternative upload...");
+        progressDialog.show();
+
+        StorageReference altRef = mStorage.getReference()
+                .child("test_uploads")
+                .child("test_" + System.currentTimeMillis() + ".jpg");
+
+        altRef.putFile(idImageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    altRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        Log.d(TAG, "Alternative upload successful: " + uri.toString());
+                        updateVerificationStatus(uri.toString(), false);
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Log.e(TAG, "Alternative upload also failed", e);
+                    Toast.makeText(this,
+                            "All upload attempts failed. Check Firebase Storage rules.\n" +
+                                    "Error: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                });
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        showCancelConfirmation();
     }
 
     private void showCancelConfirmation() {

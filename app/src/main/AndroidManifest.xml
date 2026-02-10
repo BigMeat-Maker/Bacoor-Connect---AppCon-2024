@@ -49,19 +49,10 @@
             android:name=".Helpers.id_guideline"
             android:exported="false" />
         <activity
-            android:name=".Helpers.face_liveness"
-            android:exported="false" />
-        <activity
-            android:name=".Helpers.upload_face"
-            android:exported="false" />
-        <activity
             android:name=".General.PrivacyPolicy"
             android:exported="false" />
         <activity
             android:name=".General.TOC"
-            android:exported="false" />
-        <activity
-            android:name=".Helpers.FaceVerification"
             android:exported="false" />
         <activity
             android:name=".Helpers.UploadID"

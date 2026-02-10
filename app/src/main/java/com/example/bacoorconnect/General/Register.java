@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.bacoorconnect.Helpers.PasswordManager;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Helpers.UploadID;
 import com.google.firebase.auth.FirebaseAuth;
@@ -223,21 +224,15 @@ Register extends AppCompatActivity {
         userData.put("lastName", lastName);
         userData.put("email", email);
         userData.put("contactNum", contactNum);
-        userData.put("password", password);
         userData.put("timestamp", System.currentTimeMillis());
 
         mDatabase.child("temp_registrations").child(tempUserId).setValue(userData)
                 .addOnSuccessListener(aVoid -> {
                     progressDialog.dismiss();
+                    savePasswordTemporarily(tempUserId, password);
+
                     Intent intent = new Intent(Register.this, UploadID.class);
                     intent.putExtra("tempUserId", tempUserId);
-                    intent.putExtra("firstName", firstName);
-                    intent.putExtra("lastName", lastName);
-                    intent.putExtra("email", email);
-                    intent.putExtra("contactNum", contactNum);
-                    intent.putExtra("password", password);
-                    intent.putExtra("tocAccepted", tocAccepted);
-                    intent.putExtra("privacyAccepted", privacyAccepted);
                     startActivityForResult(intent, REQUEST_ID_VERIFICATION);
                 })
                 .addOnFailureListener(e -> {
@@ -247,6 +242,10 @@ Register extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     Log.e("Registration", "Database error", e);
                 });
+    }
+
+    private void savePasswordTemporarily(String tempUserId, String password) {
+        PasswordManager.saveTempPassword(this, tempUserId, password);
     }
 
     private void updateCheckboxUI() {
@@ -265,6 +264,10 @@ Register extends AppCompatActivity {
         if (requestCode == REQUEST_ID_VERIFICATION) {
             if (resultCode == RESULT_CANCELED) {
                 Toast.makeText(this, "Registration cancelled", Toast.LENGTH_SHORT).show();
+                if (data != null && data.hasExtra("tempUserId")) {
+                    String cancelledUserId = data.getStringExtra("tempUserId");
+                    PasswordManager.clearTempPassword(this, cancelledUserId);
+                }
             } else if (resultCode == RESULT_OK && data != null) {
                 tocAccepted = data.getBooleanExtra("tocAccepted", false);
                 privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
@@ -272,18 +275,7 @@ Register extends AppCompatActivity {
                 Toast.makeText(this, "You can edit your information", Toast.LENGTH_SHORT).show();
             }
         }
-
-        if (resultCode == RESULT_OK) {
-            if (requestCode == TOC_REQUEST_CODE) {
-                tocAccepted = data.getBooleanExtra("tocAccepted", false);
-                updateCheckboxUI();
-            } else if (requestCode == PRIVACY_REQUEST_CODE) {
-                privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
-                updateCheckboxUI();
-            }
-        }
     }
-
 
 
 }

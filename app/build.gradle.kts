@@ -60,6 +60,9 @@ android {
 
 dependencies {
 
+    implementation("com.google.firebase:firebase-config:21.6.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("com.google.firebase:firebase-auth:22.3.0")
     implementation (libs.azure.ai.vision.imageanalysis)
     implementation ("com.google.cloud:google-cloud-vision:3.11.0")
     implementation (libs.azure.azure.ai.formrecognizer)
