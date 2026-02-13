@@ -57,7 +57,6 @@ public class PrivacyPolicy extends AppCompatActivity {
                             if (!hasScrolledToBottom) {
                                 hasScrolledToBottom = true;
                                 PrivacyCheckBox.setEnabled(true);
-                                Toast.makeText(PrivacyPolicy.this, "You can now accept the Privacy Policy.", Toast.LENGTH_SHORT).show();
                             }
                         }
                     }

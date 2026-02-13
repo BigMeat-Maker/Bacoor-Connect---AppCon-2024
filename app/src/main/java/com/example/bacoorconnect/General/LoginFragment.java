@@ -121,6 +121,11 @@ public class LoginFragment extends Fragment {
             inputEmail.requestFocus();
             return;
         }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            inputEmail.setError("Enter a valid email address");
+            inputEmail.requestFocus();
+            return;
+        }
 
         if (TextUtils.isEmpty(password)) {
             inputPassword.setError("Password is required");
@@ -196,7 +201,6 @@ public class LoginFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                logActivity(userID, "Authentication", "User Login", "User", "Success", "User logged in", "N/A", false);
                 navigateToDashboard();
             }
         });

@@ -59,7 +59,6 @@ public class TOC extends AppCompatActivity {
                     if (!hasScrolledToBottom) {
                         hasScrolledToBottom = true;
                         TOCCheckBox.setEnabled(true);
-                        Toast.makeText(TOC.this, "You can now accept the Terms and Conditions.", Toast.LENGTH_SHORT).show();
                     }
                 }
             }

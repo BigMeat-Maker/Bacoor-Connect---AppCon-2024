@@ -49,18 +49,19 @@ Register extends AppCompatActivity {
 
         CheckBox tocCheckbox = findViewById(R.id.TOCCheckBox);
         CheckBox privacyCheckbox = findViewById(R.id.PrivacyCheckBox);
-        if (tocCheckbox != null) tocCheckbox.setChecked(tocAccepted);
-        if (privacyCheckbox != null) privacyCheckbox.setChecked(privacyAccepted);
 
+        // Set initial states
         if (tocCheckbox != null) {
-            tocCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                tocAccepted = isChecked;
+            tocCheckbox.setChecked(tocAccepted);
+            tocCheckbox.setOnClickListener(v -> {
+                tocAccepted = tocCheckbox.isChecked();
             });
         }
 
         if (privacyCheckbox != null) {
-            privacyCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                privacyAccepted = isChecked;
+            privacyCheckbox.setChecked(privacyAccepted);
+            privacyCheckbox.setOnClickListener(v -> {
+                privacyAccepted = privacyCheckbox.isChecked();
             });
         }
 
@@ -80,9 +81,6 @@ Register extends AppCompatActivity {
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Please wait...");
         progressDialog.setCancelable(false);
-
-        termsLink = findViewById(R.id.termsLink);
-        privacyLink = findViewById(R.id.privacyLink);
 
         termsLink.setOnClickListener(v -> {
             Intent intent = new Intent(Register.this, TOC.class);
@@ -125,6 +123,13 @@ Register extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("tocAccepted", tocAccepted);
+        outState.putBoolean("privacyAccepted", privacyAccepted);
     }
 
     @Override
@@ -269,10 +274,27 @@ Register extends AppCompatActivity {
                     PasswordManager.clearTempPassword(this, cancelledUserId);
                 }
             } else if (resultCode == RESULT_OK && data != null) {
-                tocAccepted = data.getBooleanExtra("tocAccepted", false);
-                privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
-                updateCheckboxUI();
                 Toast.makeText(this, "You can edit your information", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        if (resultCode == RESULT_OK) {
+            if (requestCode == TOC_REQUEST_CODE && data != null) {
+                if (data.hasExtra("tocAccepted")) {
+                    tocAccepted = data.getBooleanExtra("tocAccepted", false);
+                } else {
+                    tocAccepted = true;
+                }
+                updateCheckboxUI();
+                Toast.makeText(this, "Terms accepted", Toast.LENGTH_SHORT).show();
+            } else if (requestCode == PRIVACY_REQUEST_CODE && data != null) {
+                if (data.hasExtra("privacyAccepted")) {
+                    privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
+                } else {
+                    privacyAccepted = true;
+                }
+                updateCheckboxUI();
+                Toast.makeText(this, "Privacy Policy accepted", Toast.LENGTH_SHORT).show();
             }
         }
     }
