@@ -31,6 +31,13 @@ public class ImageContentAnalyzer {
     public static void analyzeImage(Context context, Uri imageUri, ImageAnalysisCallback callback) {
         Log.d("ImageContentAnalyzer", "Starting image analysis");
 
+        String apiKey = ContentSafetyConfig.getContentSafetyKey(context);
+
+        if (apiKey == null || apiKey.isEmpty()) {
+            callback.onContentCheckFailed("Content Safety service not configured");
+            return;
+        }
+
         try {
             InputStream imageStream = context.getContentResolver().openInputStream(imageUri);
             byte[] imageBytes = getBytesFromInputStream(imageStream);
@@ -47,7 +54,7 @@ public class ImageContentAnalyzer {
             Request request = new Request.Builder()
                     .url("https://japaneast.api.cognitive.microsoft.com/contentsafety/image:analyze?api-version=2023-10-01")
                     .post(requestBody)
-                    .addHeader("Ocp-Apim-Subscription-Key", "CbSF1NDTzzTa1ZAUAHxfOBM7VW3QNwWiE6gLheiXeUdUlrQ8xoKQJQQJ99BDACi0881XJ3w3AAAHACOGLPIj")
+                    .addHeader("Ocp-Apim-Subscription-Key", apiKey)
                     .addHeader("Content-Type", "application/json")
                     .build();
 

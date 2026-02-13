@@ -27,6 +27,13 @@ public class TextContentAnalyzer {
     public static void analyzeText(Context context, String description, TextAnalysisCallback callback) {
         Log.d("TextContentAnalyzer", "Starting text analysis");
 
+        String apiKey = ContentSafetyConfig.getContentSafetyKey(context);
+
+        if (apiKey == null || apiKey.isEmpty()) {
+            callback.onContentCheckFailed("Content Safety service not configured");
+            return;
+        }
+
         OkHttpClient client = new OkHttpClient();
 
         String jsonBody = "{\n" +
@@ -38,7 +45,7 @@ public class TextContentAnalyzer {
         Request request = new Request.Builder()
                 .url("https://japaneast.api.cognitive.microsoft.com/contentsafety/text:analyze?api-version=2023-10-01")
                 .post(requestBody)
-                .addHeader("Ocp-Apim-Subscription-Key", "CbSF1NDTzzTa1ZAUAHxfOBM7VW3QNwWiE6gLheiXeUdUlrQ8xoKQJQQJ99BDACi0881XJ3w3AAAHACOGLPIj")
+                .addHeader("Ocp-Apim-Subscription-Key", apiKey)
                 .addHeader("Content-Type", "application/json")
                 .build();
 

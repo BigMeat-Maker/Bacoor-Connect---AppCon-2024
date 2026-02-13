@@ -7,17 +7,21 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.Nullable;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -28,10 +32,8 @@ import okhttp3.Response;
 
 public class ContentCheckService extends IntentService {
     private static final String TAG = "ContentCheckService";
-    private static final String API_KEY = "CbSF1NDTzzTa1ZAUAHxfOBM7VW3QNwWiE6gLheiXeUdUlrQ8xoKQJQQJ99BDACi0881XJ3w3AAAHACOGLPIj";
     private static final String API_URL = "https://japaneast.api.cognitive.microsoft.com/contentsafety/";
 
-    // Result broadcast constants
     public static final String ACTION_CHECK_RESULT = "com.example.bacoorconnect.CONTENT_CHECK_RESULT";
     public static final String EXTRA_IS_SAFE = "is_safe";
     public static final String EXTRA_CONTENT_TYPE = "content_type";
@@ -109,13 +111,21 @@ public class ContentCheckService extends IntentService {
 
     private void makeAzureRequest(String endpoint, String jsonBody,
                                   ResultHandler successHandler, ErrorHandler errorHandler) {
+
+        String apiKey = ContentSafetyConfig.getContentSafetyKey(this);
+
+        if (apiKey == null || apiKey.isEmpty()) {
+            errorHandler.handle("Content Safety service not configured");
+            return;
+        }
+
         OkHttpClient client = new OkHttpClient();
         RequestBody body = RequestBody.create(jsonBody, MediaType.get("application/json"));
 
         Request request = new Request.Builder()
                 .url(API_URL + endpoint)
                 .post(body)
-                .addHeader("Ocp-Apim-Subscription-Key", API_KEY)
+                .addHeader("Ocp-Apim-Subscription-Key", apiKey)
                 .addHeader("Content-Type", "application/json")
                 .build();
 

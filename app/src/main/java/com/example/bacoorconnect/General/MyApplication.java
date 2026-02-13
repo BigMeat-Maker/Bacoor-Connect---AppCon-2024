@@ -6,6 +6,8 @@ import androidx.annotation.NonNull;
 import androidx.work.Configuration;
 
 import com.example.bacoorconnect.Helpers.AzureConfig;
+import com.example.bacoorconnect.Helpers.AzureVisionConfig;
+import com.example.bacoorconnect.Helpers.ContentSafetyConfig;
 import com.example.bacoorconnect.Helpers.EmailConfig;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -31,6 +33,28 @@ public class MyApplication extends Application implements Configuration.Provider
 
         setupEmailFromRemoteConfig();
         setupAzureFromRemoteConfig();
+        setupContentSafetyFromRemoteConfig();
+        setupAzureVisionFromRemoteConfig();
+    }
+    private void setupAzureVisionFromRemoteConfig() {
+        FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+
+        java.util.Map<String, Object> defaults = new java.util.HashMap<>();
+        defaults.put("vision_key", "");
+        remoteConfig.setDefaultsAsync(defaults);
+
+        remoteConfig.fetchAndActivate()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String visionKey = remoteConfig.getString("vision_key");
+                        if (!visionKey.isEmpty()) {
+                            AzureVisionConfig.setCredentials(this, visionKey);
+                            Log.d(TAG, "Azure Vision credentials saved");
+                        } else {
+                            Log.e(TAG, "Azure Vision key not found in Remote Config");
+                        }
+                    }
+                });
     }
 
     private void setupEmailFromRemoteConfig() {
@@ -96,6 +120,28 @@ public class MyApplication extends Application implements Configuration.Provider
                     } else {
                         Log.e(TAG, "ERROR: Failed to fetch Azure Remote Config", task.getException());
                         Log.e(TAG, "App cannot process ID verification without Azure key!");
+                    }
+                });
+    }
+
+    private void setupContentSafetyFromRemoteConfig() {
+        FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+
+        java.util.Map<String, Object> defaults = new java.util.HashMap<>();
+        defaults.put("content_safety_key", "");
+        remoteConfig.setDefaultsAsync(defaults);
+
+        remoteConfig.fetchAndActivate()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String contentSafetyKey = remoteConfig.getString("content_safety_key");
+
+                        if (!contentSafetyKey.isEmpty()) {
+                            ContentSafetyConfig.setCredentials(this, contentSafetyKey);
+                            Log.d(TAG, "Content Safety credentials saved");
+                        } else {
+                            Log.e(TAG, "Content Safety key not found in Remote Config");
+                        }
                     }
                 });
     }

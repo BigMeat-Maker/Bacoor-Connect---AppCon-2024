@@ -28,10 +28,17 @@ public class CategoryVerifier {
 
             RequestBody requestBody = RequestBody.create(imageBytes, MediaType.parse("application/octet-stream"));
 
+            String apiKey = AzureVisionConfig.getVisionKey(context);
+
+            if (apiKey == null || apiKey.isEmpty()) {
+                callback.onVerificationFailed("Azure Vision service not configured");
+                return;
+            }
+
             Request request = new Request.Builder()
                     .url("https://southeastasia.api.cognitive.microsoft.com/vision/v3.2/analyze?visualFeatures=Tags,Description")
                     .post(requestBody)
-                    .addHeader("Ocp-Apim-Subscription-Key", "C6yDeKezjgqt3NGoeoe3oO0ehz2ex65NYI13ipSUrcREyFFOKNV6JQQJ99BDACqBBLyXJ3w3AAAFACOG3Lis")
+                    .addHeader("Ocp-Apim-Subscription-Key", apiKey)
                     .addHeader("Content-Type", "application/octet-stream")
                     .build();
 
@@ -111,7 +118,6 @@ public class CategoryVerifier {
         return map;
     }
 
-    // VisionResponse is an inner class, same as before
     public static class VisionResponse {
         public List<Tag> tags;
         public Description description;
