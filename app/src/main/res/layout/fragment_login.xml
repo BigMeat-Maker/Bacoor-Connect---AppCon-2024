@@ -12,17 +12,7 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/bacoor_aerial"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Semi-transparent white overlay -->
-    <View
-        android:id="@+id/whiteOverlay"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:background="#36FFFFFF"
+        android:tint="#7208144A"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -64,13 +54,14 @@
             android:layout_marginBottom="100dp"
             android:layout_marginTop="20dp"
             android:padding="8dp"
+            app:layout_constraintBottom_toBottomOf="@id/backButton"
             android:src="@drawable/logo_baconnect_nobg" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/lowerCard"
-            android:layout_width="match_parent"
+            android:layout_width="360dp"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="#CCFFFFFF"
+            app:cardBackgroundColor="#e8e8e8"
             app:cardCornerRadius="30dp"
             app:cardElevation="8dp">
 
@@ -138,21 +129,21 @@
                         android:textColor="@color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp" />
+
                 <CheckBox
                     android:id="@+id/keepLogIn"
                     android:layout_width="220dp"
                     android:layout_height="33dp"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="10dp"
-                    android:buttonTint="#2B3381"
+                    android:buttonTint="@color/baconnect_dark_blue"
                     android:fontFamily="@font/poppins_regular"
                     android:text=" Keep me logged in."
                     android:textColor="@color/black"
-                    android:textSize="15sp" />
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="20dp" />
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/LoginButton"

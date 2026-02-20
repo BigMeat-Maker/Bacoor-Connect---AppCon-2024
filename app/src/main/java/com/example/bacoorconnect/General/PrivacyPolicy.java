@@ -34,6 +34,7 @@ public class PrivacyPolicy extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+
         });
 
                 scrollView = findViewById(R.id.termsScrollView);
@@ -49,6 +50,10 @@ public class PrivacyPolicy extends AppCompatActivity {
 
                 PrivacyCheckBox.setEnabled(false);
                 proceedButton.setEnabled(false);
+
+        Toast.makeText(PrivacyPolicy.this,
+                "You must scroll all the way to the bottom before proceeding.",
+                Toast.LENGTH_LONG).show();
 
                 scrollView.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
                     @Override

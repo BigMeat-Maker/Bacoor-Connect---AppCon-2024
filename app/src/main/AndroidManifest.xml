@@ -123,6 +123,7 @@
             android:theme="@style/Theme.BacoorVisual" />
         <activity
             android:name=".General.Register"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false" />
 
         <activity

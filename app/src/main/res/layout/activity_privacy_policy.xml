@@ -5,21 +5,15 @@
     android:id="@+id/PRIVPOL_ACT"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/baconnect_blue"
-    android:padding="24dp"
+    android:background="#E8E8E8"
     tools:context=".General.PrivacyPolicy">
 
-    <TextView
-        android:id="@+id/titleTextView"
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Privacy Policy"
-        android:fontFamily="@font/montserrat_extrabold"
-        android:textColor="@color/white"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="18sp"
+        android:id="@+id/topDiv">
+    </View>
+
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/termsScrollView"
@@ -27,41 +21,56 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
-        android:background="@android:drawable/edit_text"
-        app:layout_constraintBottom_toTopOf="@+id/PrivacyCheckBox"
-        app:layout_constraintTop_toBottomOf="@+id/titleTextView">
+        android:background="#E8E8E8"
+        android:padding="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/bottomDiv"
+        app:layout_constraintTop_toBottomOf="@+id/topDiv">
 
         <TextView
             android:id="@+id/termsTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"
+            android:textSize="14sp"
             android:fontFamily="@font/poppins_regular"
             android:text="@string/privacypolicy" />
     </androidx.core.widget.NestedScrollView>
 
-    <CheckBox
-        android:id="@+id/PrivacyCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:enabled="false"
-        android:text="I agree to the Privacy Policy."
-        android:textColor="@color/white"
-        android:buttonTint="#91A1FF"
-        app:layout_constraintBottom_toTopOf="@+id/proceedButton"
-        android:fontFamily="@font/poppins_regular"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <Button
-        android:id="@+id/proceedButton"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/poppins_bold"
-        android:enabled="false"
-        android:text="PROCEED"
-        android:backgroundTint="@color/white"
-        android:textColor="@color/baconnect_blue"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:id="@+id/bottomDiv"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="18dp"
+        android:background="@color/baconnect_blue"
+        app:layout_constraintTop_toTopOf="@+id/termsTextView"
+        app:layout_constraintBottom_toBottomOf="parent">
+        <CheckBox
+            android:id="@+id/PrivacyCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:textSize="18sp"
+            android:text="I agree to the Privacy Policy."
+            android:textColor="#e8e8e8"
+            android:buttonTint="#E5EAFF"
+            app:layout_constraintBottom_toTopOf="@+id/proceedButton"
+            android:fontFamily="@font/poppins_regular"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <Button
+            android:id="@+id/proceedButton"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/poppins_bold"
+            android:enabled="false"
+            android:text="PROCEED"
+            android:backgroundTint="@color/light_gray"
+            android:textColor="@color/baconnect_dark_blue"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </LinearLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

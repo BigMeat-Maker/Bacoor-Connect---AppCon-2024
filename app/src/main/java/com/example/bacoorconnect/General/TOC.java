@@ -43,6 +43,9 @@ public class TOC extends AppCompatActivity {
 
         TOCCheckBox.setEnabled(false);
         proceedButton.setEnabled(false);
+        Toast.makeText(TOC.this,
+                "You must scroll all the way to the bottom before proceeding.",
+                Toast.LENGTH_LONG).show();
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             termsTextView.setText(Html.fromHtml(getString(R.string.toc), Html.FROM_HTML_MODE_COMPACT));

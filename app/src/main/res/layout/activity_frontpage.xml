@@ -14,16 +14,11 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
         android:src="@drawable/bacoor_aerial"
+        android:tint="#7208144A"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-    <!-- Semi-transparent white overlay -->
-    <View
-        android:id="@+id/whiteOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#70000000"/>
 
     <!-- Welcome Layout (shown when not logged in) -->
     <LinearLayout
@@ -43,6 +38,7 @@
             android:text="Welcome to"
             android:textColor="@color/white"
             android:shadowColor="#80000000"
+            android:shadowRadius="12"
             android:textSize="34dp" />
 
         <ImageView
@@ -56,12 +52,12 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="50dp"
-            android:backgroundTint="#10176D"
+            android:backgroundTint="@color/light_gray"
             android:fontFamily="@font/poppins_bold"
             android:includeFontPadding="false"
             android:padding="12dp"
             android:text="LOG IN"
-            android:textColor="@color/white"
+            android:textColor="@color/baconnect_dark_blue"
             android:textSize="20dp"
             android:textStyle="bold" />
 
@@ -71,13 +67,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginTop="10dp"
-            android:backgroundTint="#10176D"
+            android:backgroundTint="#121951"
             android:fontFamily="@font/poppins_bold"
             android:includeFontPadding="false"
             android:padding="12dp"
             android:text="REGISTER"
-            android:textColor="@color/white"
-            android:textSize="20dp"
+            android:textColor="@color/light_gray"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <Button
