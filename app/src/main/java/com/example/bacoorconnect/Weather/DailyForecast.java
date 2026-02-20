@@ -147,7 +147,6 @@ public class DailyForecast implements Serializable {
         }
     }
 
-    // Get icon resource based on weatherCode
     public int getWeatherIcon() {
         switch (weatherCode) {
             case 0: return R.drawable.weather_sunny;

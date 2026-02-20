@@ -19,33 +19,37 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.bacoorconnect.Helpers.PasswordManager;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Helpers.UploadID;
-import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
 import java.util.Random;
 
-public class
-
-Register extends AppCompatActivity {
+public class Register extends AppCompatActivity {
 
     private EditText editTextFirstName, editTextLastName, editTextEmail, editTextContactNum, editTextPassword, editTextConfirmPassword;
     private Button register;
     private TextView loginText;
     private ProgressDialog progressDialog;
     private DatabaseReference mDatabase;
-    private CheckBox agreeToTermsCheckbox;
     private TextView termsLink, privacyLink;
     private static final int TOC_REQUEST_CODE = 1;
     private static final int PRIVACY_REQUEST_CODE = 2;
     private boolean tocAccepted = false;
     private boolean privacyAccepted = false;
+    private static final int REQUEST_ID_VERIFICATION = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
+
+        // Restore state if available
+        if (savedInstanceState != null) {
+            tocAccepted = savedInstanceState.getBoolean("tocAccepted", false);
+            privacyAccepted = savedInstanceState.getBoolean("privacyAccepted", false);
+        }
 
         CheckBox tocCheckbox = findViewById(R.id.TOCCheckBox);
         CheckBox privacyCheckbox = findViewById(R.id.PrivacyCheckBox);
@@ -93,10 +97,10 @@ Register extends AppCompatActivity {
         });
 
         register.setOnClickListener(v -> {
-            String firstName = editTextFirstName.getText().toString();
-            String lastName = editTextLastName.getText().toString();
-            String email = editTextEmail.getText().toString();
-            String contactNum = editTextContactNum.getText().toString();
+            String firstName = editTextFirstName.getText().toString().trim();
+            String lastName = editTextLastName.getText().toString().trim();
+            String email = editTextEmail.getText().toString().trim();
+            String contactNum = editTextContactNum.getText().toString().trim();
             String password = editTextPassword.getText().toString();
             String confirmPassword = editTextConfirmPassword.getText().toString();
 
@@ -104,8 +108,19 @@ Register extends AppCompatActivity {
                 Toast.makeText(Register.this, "You must accept both the Terms and Privacy Policy to continue.", Toast.LENGTH_SHORT).show();
                 return;
             }
+
             if (validateRegistration(firstName, lastName, email, contactNum, password, confirmPassword)) {
-                sendToIDVerification(firstName, lastName, email, contactNum, password);
+                // Check email availability directly in Users node
+                checkEmailAvailability(email, new EmailCheckCallback() {
+                    @Override
+                    public void onResult(boolean isAvailable, String errorMessage) {
+                        if (isAvailable) {
+                            sendToIDVerification(firstName, lastName, email, contactNum, password);
+                        } else {
+                            Toast.makeText(Register.this, errorMessage, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
             }
         });
 
@@ -123,6 +138,60 @@ Register extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+    // Callback interface for email check
+    interface EmailCheckCallback {
+        void onResult(boolean isAvailable, String errorMessage);
+    }
+
+    // Check email directly in Users node
+    private void checkEmailAvailability(String email, EmailCheckCallback callback) {
+        progressDialog.setMessage("Checking email availability...");
+        progressDialog.show();
+
+        // Search directly in Users node
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users");
+        usersRef.orderByChild("email").equalTo(email).get()
+                .addOnCompleteListener(task -> {
+                    progressDialog.dismiss();
+
+                    if (task.isSuccessful()) {
+                        if (task.getResult().exists()) {
+                            callback.onResult(false, "Email already registered. Please login or use a different email.");
+                        } else {
+                            checkTempRegistrations(email, callback);
+                        }
+                    } else {
+                        callback.onResult(false, "Error checking email. Please try again.");
+                    }
+                });
+    }
+
+    private void checkTempRegistrations(String email, EmailCheckCallback callback) {
+        DatabaseReference tempRef = FirebaseDatabase.getInstance().getReference("temp_registrations");
+        tempRef.orderByChild("email").equalTo(email).get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult().exists()) {
+                            long now = System.currentTimeMillis();
+                            for (DataSnapshot snap : task.getResult().getChildren()) {
+                                Long ts = snap.child("timestamp").getValue(Long.class);
+                                if (ts != null && (now - ts) < 24 * 60 * 60 * 1000) {
+                                    callback.onResult(false, "This email has a pending registration. Please complete it or wait 24 hours.");
+                                    return;
+                                }
+                            }
+                            // Old temp registration, allow new registration
+                            callback.onResult(true, null);
+                        } else {
+                            // Email is available
+                            callback.onResult(true, null);
+                        }
+                    } else {
+                        callback.onResult(false, "Error checking email. Please try again.");
+                    }
+                });
     }
 
     @Override
@@ -173,34 +242,35 @@ Register extends AppCompatActivity {
         }
 
         if (!(email.endsWith("@gmail.com") || email.endsWith("@sdca.edu.ph"))) {
-            editTextEmail.setError("Please use a valid email address");
+            editTextEmail.setError("Please use a valid email address (@gmail.com or @sdca.edu.ph)");
             editTextEmail.requestFocus();
             return false;
         }
+
         if (!contactNum.matches("^(09|\\+639)\\d{9}$")) {
-            editTextContactNum.setError("Enter valid PH number (09XXXXXXXXX)");
-            return false;
-        }
-        if (contactNum.length() < 11) {
-            editTextContactNum.setError("Enter a valid contact number");
+            editTextContactNum.setError("Enter valid PH number (09XXXXXXXXX or +639XXXXXXXXX)");
             editTextContactNum.requestFocus();
             return false;
         }
+
         if (password.isEmpty()) {
             editTextPassword.setError("Password is required");
             editTextPassword.requestFocus();
             return false;
         }
+
         if (!isValidPassword(password)) {
             editTextPassword.setError("Password must be at least 6 characters, include an uppercase, lowercase, number, and special character");
             editTextPassword.requestFocus();
             return false;
         }
+
         if (confirmPassword.isEmpty()) {
             editTextConfirmPassword.setError("Confirm password is required");
             editTextConfirmPassword.requestFocus();
             return false;
         }
+
         if (!password.equals(confirmPassword)) {
             editTextConfirmPassword.setError("Passwords do not match");
             editTextConfirmPassword.requestFocus();
@@ -260,7 +330,6 @@ Register extends AppCompatActivity {
         if (tocCheckbox != null) tocCheckbox.setChecked(tocAccepted);
         if (privacyCheckbox != null) privacyCheckbox.setChecked(privacyAccepted);
     }
-    private static final int REQUEST_ID_VERIFICATION = 100;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -286,7 +355,6 @@ Register extends AppCompatActivity {
                     tocAccepted = true;
                 }
                 updateCheckboxUI();
-                Toast.makeText(this, "Terms accepted", Toast.LENGTH_SHORT).show();
             } else if (requestCode == PRIVACY_REQUEST_CODE && data != null) {
                 if (data.hasExtra("privacyAccepted")) {
                     privacyAccepted = data.getBooleanExtra("privacyAccepted", false);
@@ -294,10 +362,7 @@ Register extends AppCompatActivity {
                     privacyAccepted = true;
                 }
                 updateCheckboxUI();
-                Toast.makeText(this, "Privacy Policy accepted", Toast.LENGTH_SHORT).show();
             }
         }
     }
-
-
 }

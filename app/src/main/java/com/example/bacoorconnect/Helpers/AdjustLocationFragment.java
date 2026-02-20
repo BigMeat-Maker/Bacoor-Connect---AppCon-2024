@@ -5,6 +5,7 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -47,7 +48,7 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
     private LinearLayout bottomPanel;
     private double selectedLat;
     private double selectedLon;
-
+    private BottomSheetBehavior<?> behavior;
 
     // Boundary limits
     private static final BoundingBox CameraBoundingBox = new BoundingBox(14.4779, 121.012, 14.356, 120.9249);
@@ -69,24 +70,49 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
         mapView = view.findViewById(R.id.mapView);
         locationText = view.findViewById(R.id.location_text);
         placePinButton = view.findViewById(R.id.change_location_button);
-        bottomPanel=view.findViewById(R.id.bottom_panel);
+        bottomPanel = view.findViewById(R.id.bottom_panel);
 
         View parent = (View) view.getParent();
         if (parent != null) {
-            BottomSheetBehavior<?> behavior = BottomSheetBehavior.from(parent);
-            behavior.setPeekHeight(600); // Adjust this value
+            behavior = BottomSheetBehavior.from(parent);
+            behavior.setPeekHeight(600);
             behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         }
 
+        mapView.setMinZoomLevel(15.0);
+        mapView.setMaxZoomLevel(19.5);
 
-        mapView.setMinZoomLevel(15.0); // Minimum zoom level
-        mapView.setMaxZoomLevel(19.5); // Maximum zoom level
-
-        mapView.post(() -> {
-            mapView.getLayoutParams().height = parent.getHeight() - bottomPanel.getHeight();
-            mapView.requestLayout();
+        // FIX: Add touch listener to map view to prevent bottom sheet from closing
+        mapView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // Disable bottom sheet dragging when touching the map
+                if (behavior != null) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                        case MotionEvent.ACTION_MOVE:
+                            behavior.setDraggable(false);
+                            break;
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL:
+                            behavior.setDraggable(true);
+                            break;
+                    }
+                }
+                // Return false to let the map handle the touch event
+                return false;
+            }
         });
 
+        mapView.post(() -> {
+            if (getView() != null && bottomPanel != null) {
+                View parentView = (View) mapView.getParent();
+                if (parentView != null) {
+                    mapView.getLayoutParams().height = parentView.getHeight() - bottomPanel.getHeight();
+                    mapView.requestLayout();
+                }
+            }
+        });
 
         setupMap();
 
@@ -119,7 +145,6 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
                 Toast.makeText(requireContext(), "Error fetching address", Toast.LENGTH_SHORT).show();
             }
         });
-
     }
 
     private void setupMap() {
@@ -127,7 +152,6 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
 
         IMapController mapController = mapView.getController();
         mapController.setZoom(17.5);
-
 
         Bundle arguments = getArguments();
         double userLat = 14.4450;
@@ -145,32 +169,38 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
 
         addFoggingOverlay();
 
+        // Simplified MapEventsReceiver
         mapView.getOverlays().add(new MapEventsOverlay(new MapEventsReceiver() {
             @Override
             public boolean singleTapConfirmedHelper(GeoPoint p) {
-                enforceCityBoundary();
-                selectedLat = p.getLatitude();
-                selectedLon = p.getLongitude();
-
-                Projection projection = mapView.getProjection();
-                if (projection != null) {
-                    GeoPoint centerPoint = (GeoPoint) mapView.getMapCenter();
-                    if (centerPoint != null) {
-                        GeoPoint currentCenter = new GeoPoint(centerPoint.getLatitude(), centerPoint.getLongitude());
-                        selectedLat = centerPoint.getLatitude();
-                        selectedLon = centerPoint.getLongitude();
-                        updateLocationText(currentCenter);
-                    } else {
-                        Toast.makeText(requireContext(), "Error: Map center not found.", Toast.LENGTH_SHORT).show();
-                    }
+                // When map is tapped, re-enable bottom sheet dragging
+                if (behavior != null) {
+                    behavior.setDraggable(true);
                 }
-
-                return true;
+                return false;
             }
 
             @Override
             public boolean longPressHelper(GeoPoint p) {
-                return false;
+                // Disable bottom sheet dragging during long press
+                if (behavior != null) {
+                    behavior.setDraggable(false);
+                }
+
+                // Move camera to long press location
+                mapView.getController().animateTo(p);
+                selectedLat = p.getLatitude();
+                selectedLon = p.getLongitude();
+                updateLocationText(p);
+
+                // Re-enable after a delay
+                mapView.postDelayed(() -> {
+                    if (behavior != null) {
+                        behavior.setDraggable(true);
+                    }
+                }, 500);
+
+                return true;
             }
         }));
     }
@@ -286,5 +316,14 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
             e.printStackTrace();
             locationText.setText("Error fetching location");
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        // Re-enable dragging when fragment is destroyed
+        if (behavior != null) {
+            behavior.setDraggable(true);
+        }
+        super.onDestroyView();
     }
 }

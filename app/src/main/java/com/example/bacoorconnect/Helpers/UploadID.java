@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -26,7 +27,9 @@ import com.azure.ai.formrecognizer.documentanalysis.models.DocumentField;
 import com.azure.ai.formrecognizer.documentanalysis.DocumentAnalysisClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
 
+import com.example.bacoorconnect.General.Register;
 import com.example.bacoorconnect.R;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
@@ -97,6 +100,99 @@ public class UploadID extends AppCompatActivity {
                 processIdVerification();
             } else {
                 Toast.makeText(this, "Please select an ID image first", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        ImageView backButton = findViewById(R.id.backButton);
+        backButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+
+    }
+
+    private void checkIfIdAlreadyUsed(String extractedFirstName, String extractedLastName, String registeredFirstName, String registeredLastName, Runnable onSuccess) {
+        progressDialog.setMessage("Checking for duplicate accounts...");
+
+        // Query Users node for anyone with similar names
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users");
+        usersRef.get().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                progressDialog.dismiss();
+                Toast.makeText(this, "Error checking existing accounts", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            boolean duplicateFound = false;
+            String duplicateInfo = "";
+
+            for (DataSnapshot userSnapshot : task.getResult().getChildren()) {
+                String existingFirstName = userSnapshot.child("firstName").getValue(String.class);
+                String existingLastName = userSnapshot.child("lastName").getValue(String.class);
+
+                if (existingFirstName == null || existingLastName == null) continue;
+
+                // Check if names match (case insensitive)
+                String existingFull = (existingFirstName + " " + existingLastName).toLowerCase().replaceAll("\\s+", "");
+                String extractedFull = (extractedFirstName + " " + extractedLastName).toLowerCase().replaceAll("\\s+", "");
+                String registeredFull = (registeredFirstName + " " + registeredLastName).toLowerCase().replaceAll("\\s+", "");
+
+                // Check if extracted name matches any existing user
+                if (existingFull.equals(extractedFull) ||
+                        existingFull.contains(extractedFull) ||
+                        extractedFull.contains(existingFull)) {
+
+                    // Calculate similarity for fuzzy match
+                    int distance = levenshteinDistance(existingFull, extractedFull);
+                    int maxLen = Math.max(existingFull.length(), extractedFull.length());
+                    double similarity = 1.0 - ((double)distance / maxLen);
+
+                    if (similarity >= 0.85) {
+                        duplicateFound = true;
+                        duplicateInfo = existingFirstName + " " + existingLastName;
+                        break;
+                    }
+                }
+
+                if (existingFull.equals(registeredFull) ||
+                        existingFull.contains(registeredFull) ||
+                        registeredFull.contains(existingFull)) {
+
+                    int distance = levenshteinDistance(existingFull, registeredFull);
+                    int maxLen = Math.max(existingFull.length(), registeredFull.length());
+                    double similarity = 1.0 - ((double)distance / maxLen);
+
+                    if (similarity >= 0.85) {
+                        duplicateFound = true;
+                        duplicateInfo = existingFirstName + " " + existingLastName;
+                        break;
+                    }
+                }
+            }
+
+            if (duplicateFound) {
+                progressDialog.dismiss();
+
+                cleanUpTempRegistration();
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Duplicate Account Detected")
+                        .setMessage("An account with the name '" + duplicateInfo + "' already exists in our system. " +
+                                "Each person can only have one account. Please go back and use a different account or login.")
+                        .setPositiveButton("Go Back", (dialog, which) -> {
+                            // Go back to Register activity
+                            Intent intent = new Intent(this, Register.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                            finish();
+                        })
+                        .setCancelable(false)
+                        .show();
+            } else {
+                // No duplicate found, proceed with upload
+                onSuccess.run();
             }
         });
     }
@@ -315,8 +411,8 @@ public class UploadID extends AppCompatActivity {
 
         mDatabase.child("temp_registrations").child(tempUserId).get()
                 .addOnCompleteListener(task -> {
-                    progressDialog.dismiss();
                     if (!task.isSuccessful() || !task.getResult().exists()) {
+                        progressDialog.dismiss();
                         Toast.makeText(this, "Registration data not found", Toast.LENGTH_SHORT).show();
                         return;
                     }
@@ -337,24 +433,32 @@ public class UploadID extends AppCompatActivity {
                             .replace("ci", "a")
                             .replace("cl", "d");
 
+                    boolean idMatches = false;
+
                     if (registeredNoSpace.equals(extractedNoSpace) ||
                             registeredNoSpace.contains(extractedNoSpace) ||
                             extractedNoSpace.contains(registeredNoSpace)) {
-                        uploadIdImage();
+                        idMatches = true;
                     } else {
                         int distance = levenshteinDistance(registeredNoSpace, extractedNoSpace);
                         int maxLen = Math.max(registeredNoSpace.length(), extractedNoSpace.length());
                         double similarity = 1.0 - ((double)distance / maxLen);
 
                         if (similarity >= 0.85) {
-                            uploadIdImage();
-                        } else {
-                            String errorMsg = String.format("ID doesn't match.\nExpected: %s %s\nFound: %s %s\nSimilarity: %.1f%%",
-                                    registeredFirstName, registeredLastName,
-                                    extractedFirstName, extractedLastName,
-                                    similarity * 100);
-                            Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+                            idMatches = true;
                         }
+                    }
+
+                    if (idMatches) {
+                        checkIfIdAlreadyUsed(extractedFirstName, extractedLastName,
+                                registeredFirstName, registeredLastName,
+                                () -> uploadIdImage());
+                    } else {
+                        progressDialog.dismiss();
+                        String errorMsg = String.format("ID doesn't match.\nExpected: %s %s\nFound: %s %s",
+                                registeredFirstName, registeredLastName,
+                                extractedFirstName, extractedLastName);
+                        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
                     }
                 });
     }

@@ -32,7 +32,7 @@
             tools:ignore="MissingConstraints">
 
             <ImageView
-                android:id="@+id/menu_icon"
+                android:id="@+id/back_button"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_marginTop="10dp"

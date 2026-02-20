@@ -56,7 +56,7 @@ public class ReportActivity extends AppCompatActivity {
     private RadioButton preciseRadioButton, generalRadioButton;
     private EditText descriptionEditText;
     private TextView locationText;
-    private ImageView selectImageButton, menuIcon;
+    private ImageView selectImageButton, backButton;
     private NavigationView navigationView;
     private ImageView imagePreview;
     private double lon;
@@ -71,7 +71,6 @@ public class ReportActivity extends AppCompatActivity {
         setContentView(R.layout.activity_report);
 
         initializeViews();
-        setupNavigation();
         setupCategorySelection();
         setupLocationHandling();
         setupImageSelection();
@@ -88,38 +87,12 @@ public class ReportActivity extends AppCompatActivity {
         locationText = findViewById(R.id.location_text_view);
         imagePreview = findViewById(R.id.image_preview);
         selectImageButton = findViewById(R.id.select_image_button);
-        menuIcon = findViewById(R.id.menu_icon);
+        backButton = findViewById(R.id.back_button);
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         DashNotif = findViewById(R.id.notification);
-    }
 
-    private void setupNavigation() {
-        NavigationHeader.setupNavigationHeader(this, navigationView);
-        boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-
-        menuIcon.setOnClickListener(v -> {
-            if (drawerLayout.isDrawerOpen(navigationView)) {
-                drawerLayout.closeDrawer(navigationView);
-            } else {
-                drawerLayout.openDrawer(navigationView);
-            }
-        });
-
-        navigationView.setNavigationItemSelectedListener(item -> {
-            if (isGuest && (item.getItemId() == R.id.nav_history || item.getItemId() == R.id.nav_profile)) {
-                Toast.makeText(this, "Feature unavailable in guest mode", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-            NavigationHandler navigationHandler = new NavigationHandler(this, drawerLayout);
-            navigationHandler.handleMenuSelection(item);
-            drawerLayout.closeDrawer(navigationView);
-            return true;
-        });
-
-        DashNotif.setOnClickListener(v -> {
-            startActivity(new Intent(ReportActivity.this, NotificationCenter.class));
-        });
+        backButton.setOnClickListener(v -> finish());
     }
 
     private void setupCategorySelection() {
