@@ -24,6 +24,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapEventsReceiver;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.views.Projection;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
@@ -32,6 +35,7 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Polygon;
+import org.osmdroid.events.DelayedMapListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -169,11 +173,28 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
 
         addFoggingOverlay();
 
-        // Simplified MapEventsReceiver
+        // Add DelayedMapListener to update location when map moves
+        mapView.addMapListener(new DelayedMapListener(new MapListener() {
+            @Override
+            public boolean onScroll(ScrollEvent event) {
+                IGeoPoint center = mapView.getMapCenter();
+                GeoPoint geoPoint = new GeoPoint(center.getLatitude(), center.getLongitude());
+                updateLocationText(geoPoint);
+                return true;
+            }
+
+            @Override
+            public boolean onZoom(ZoomEvent event) {
+                IGeoPoint center = mapView.getMapCenter();
+                GeoPoint geoPoint = new GeoPoint(center.getLatitude(), center.getLongitude());
+                updateLocationText(geoPoint);
+                return true;
+            }
+        }, 500));
+
         mapView.getOverlays().add(new MapEventsOverlay(new MapEventsReceiver() {
             @Override
             public boolean singleTapConfirmedHelper(GeoPoint p) {
-                // When map is tapped, re-enable bottom sheet dragging
                 if (behavior != null) {
                     behavior.setDraggable(true);
                 }
@@ -182,18 +203,15 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
 
             @Override
             public boolean longPressHelper(GeoPoint p) {
-                // Disable bottom sheet dragging during long press
                 if (behavior != null) {
                     behavior.setDraggable(false);
                 }
 
-                // Move camera to long press location
                 mapView.getController().animateTo(p);
                 selectedLat = p.getLatitude();
                 selectedLon = p.getLongitude();
                 updateLocationText(p);
 
-                // Re-enable after a delay
                 mapView.postDelayed(() -> {
                     if (behavior != null) {
                         behavior.setDraggable(true);
@@ -301,21 +319,31 @@ public class AdjustLocationFragment extends BottomSheetDialogFragment {
     }
 
     private void updateLocationText(GeoPoint geoPoint) {
-        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-        try {
-            List<Address> addresses = geocoder.getFromLocation(geoPoint.getLatitude(), geoPoint.getLongitude(), 1);
+        String coordText = String.format(Locale.getDefault(), "%.6f, %.6f",
+                geoPoint.getLatitude(), geoPoint.getLongitude());
+        locationText.setText(coordText + " (Getting address...)");
 
-            if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                String locationDetails = address.getAddressLine(0);
-                locationText.setText(locationDetails);
-            } else {
-                locationText.setText("Unknown Location");
+        new Thread(() -> {
+            Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
+            try {
+                List<Address> addresses = geocoder.getFromLocation(geoPoint.getLatitude(), geoPoint.getLongitude(), 1);
+
+                requireActivity().runOnUiThread(() -> {
+                    if (addresses != null && !addresses.isEmpty()) {
+                        Address address = addresses.get(0);
+                        String locationDetails = address.getAddressLine(0);
+                        locationText.setText(locationDetails);
+                    } else {
+                        locationText.setText(coordText + " (Address not found)");
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+                requireActivity().runOnUiThread(() -> {
+                    locationText.setText(coordText + " (Error fetching location)");
+                });
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            locationText.setText("Error fetching location");
-        }
+        }).start();
     }
 
     @Override

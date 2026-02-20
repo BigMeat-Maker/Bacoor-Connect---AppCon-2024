@@ -2,6 +2,8 @@ package com.example.bacoorconnect.Report;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -77,6 +79,17 @@ public class ReportActivity extends AppCompatActivity {
         setupSubmitButton();
 
         handleIntentExtras();
+
+        if (lat != 0.0 && lon != 0.0 && locationText != null) {
+            String currentText = locationText.getText().toString();
+            if (currentText.isEmpty() || currentText.contains(String.valueOf(lat))) {
+                updateLocationFromLatLon(lat, lon);
+            }
+        }
+    }
+
+    private boolean isCoordinateString(String text) {
+        return text.matches("-?\\d+\\.\\d+,\\s*-?\\d+\\.\\d+");
     }
 
     private void initializeViews() {
@@ -95,6 +108,29 @@ public class ReportActivity extends AppCompatActivity {
         backButton.setOnClickListener(v -> finish());
     }
 
+    private void updateLocationFromLatLon(double latitude, double longitude) {
+        // Show coordinates while loading
+        String coordText = String.format(Locale.getDefault(), "%.6f, %.6f", latitude, longitude);
+        locationText.setText(coordText + " (Getting address...)");
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                String locationDetails = address.getAddressLine(0);
+                locationText.setText(locationDetails);
+            } else {
+                locationText.setText(coordText + " (Address not found)");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            locationText.setText(coordText + " (Error fetching address)");
+            Toast.makeText(this, "Error fetching address", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void setupCategorySelection() {
         findViewById(R.id.Accident).setOnClickListener(v -> setSelectedCategory("accident", (ImageView) v));
         findViewById(R.id.Fire).setOnClickListener(v -> setSelectedCategory("fire", (ImageView) v));
@@ -108,11 +144,14 @@ public class ReportActivity extends AppCompatActivity {
             lat = bundle.getDouble("lat", lat);
             lon = bundle.getDouble("lon", lon);
 
-            if (locationDetails != null) {
+            if (locationDetails != null && !locationDetails.isEmpty()) {
                 locationText.setText(locationDetails);
+            } else if (lat != 0.0 && lon != 0.0) {
+                locationText.setText(String.format(Locale.getDefault(), "%.6f, %.6f", lat, lon));
+                updateLocationFromLatLon(lat, lon);
             } else {
                 locationText.setText("Location not found");
-                runOnUiThread(() -> Toast.makeText(this, "Failed to get location details.", Toast.LENGTH_SHORT).show());
+                Toast.makeText(this, "Failed to get location details.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -150,8 +189,11 @@ public class ReportActivity extends AppCompatActivity {
             lat = arguments.getDouble("lat", 0.0);
             lon = arguments.getDouble("lon", 0.0);
 
-            if (location != null && locationText != null) {
+            if (location != null && !location.isEmpty() && locationText != null) {
                 locationText.setText(location);
+            } else if (lat != 0.0 && lon != 0.0) {
+                locationText.setText(String.format(Locale.getDefault(), "%.6f, %.6f", lat, lon));
+                updateLocationFromLatLon(lat, lon);
             }
         }
     }

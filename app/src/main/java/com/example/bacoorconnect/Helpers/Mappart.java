@@ -890,18 +890,37 @@ public class Mappart extends Fragment {
         if (category == null || precision == null) return null;
 
         String iconFileName;
+        String fallbackIconFileName = null;
+
+        // Log the category for debugging
+        Log.d("Mappart", "Getting icon for category: '" + category + "' with precision: '" + precision + "'");
 
         switch (category.toLowerCase()) {
             case "accident":
+                iconFileName = "location_" + precision.toLowerCase() + "_accident";
+                fallbackIconFileName = "location_precise_accident";
+                break;
             case "fire":
-            case "naturaldisaster":
+                iconFileName = "location_" + precision.toLowerCase() + "_fire";
+                fallbackIconFileName = "location_precise_fire";
+                break;
+            case "disaster":
+            case "naturaldisaster": // Keep both just in case
+                iconFileName = "location_" + precision.toLowerCase() + "_disaster";
+                fallbackIconFileName = "location_precise_disaster";
+                break;
             case "traffic":
-                iconFileName = "location_" + precision.toLowerCase() + "_" + category.toLowerCase();
+                iconFileName = "location_" + precision.toLowerCase() + "_traffic";
+                fallbackIconFileName = "location_precise_traffic";
                 break;
             default:
+                Log.e("Mappart", "Unknown category: " + category);
                 return null;
         }
 
+        Log.d("Mappart", "Looking for icon: " + iconFileName);
+
+        // Try the specific icon first (precise or general)
         int iconResId = getResources().getIdentifier(iconFileName, "drawable", getActivity().getPackageName());
 
         if (iconResId != 0) {
@@ -909,6 +928,17 @@ public class Mappart extends Fragment {
             return resizeDrawable(drawable, zoomLevel);
         }
 
+        if (fallbackIconFileName != null) {
+            Log.d("Mappart", "Icon not found, trying fallback: " + fallbackIconFileName);
+            int fallbackResId = getResources().getIdentifier(fallbackIconFileName, "drawable", getActivity().getPackageName());
+
+            if (fallbackResId != 0) {
+                Drawable drawable = getResources().getDrawable(fallbackResId, null);
+                return resizeDrawable(drawable, zoomLevel);
+            }
+        }
+
+        Log.e("Mappart", "No icon found for category: " + category + " with precision: " + precision);
         return null;
     }
 

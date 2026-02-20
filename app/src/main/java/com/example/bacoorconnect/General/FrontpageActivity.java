@@ -26,6 +26,7 @@ import com.example.bacoorconnect.Emergency.EmergencyGuides;
 import com.example.bacoorconnect.Emergency.EmergencyHospitals;
 import com.example.bacoorconnect.Helpers.LocationTrackingService;
 import com.example.bacoorconnect.R;
+import com.example.bacoorconnect.Report.ReportFeedActivity;
 import com.example.bacoorconnect.Report.ReportHistoryActivity;
 import com.example.bacoorconnect.Report.ReportIncident;
 import com.example.bacoorconnect.UserProfile;
@@ -69,6 +70,10 @@ public class FrontpageActivity extends AppCompatActivity {
         Logindirect = findViewById(R.id.Logindirect);
         Registerdirect = findViewById(R.id.RegisterButton);
         Guestdirect = findViewById(R.id.LoginGuest);
+
+        // Check if this is from a notification FIRST
+        boolean isFromNotification = getIntent().getBooleanExtra("OPEN_REPORT_FEED", false);
+
         if (getIntent().getBooleanExtra("OPEN_LOGIN_FRAGMENT", false)) {
             loadLoginFragment();
         }
@@ -104,9 +109,30 @@ public class FrontpageActivity extends AppCompatActivity {
             }
         });
 
-        if (getIntent().getBooleanExtra("LOAD_DASHBOARD", false)) {
+        // Handle notification intent - this should NOT trigger auto-login
+        if (isFromNotification) {
+            // Make sure user is logged in first
+            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                // Load the report feed fragment directly
+                loadReportFeedFragment(getIntent().getStringExtra("FOCUS_REPORT_ID"));
+
+                // Start location service if needed
+                Intent serviceIntent = new Intent(FrontpageActivity.this, LocationTrackingService.class);
+                ContextCompat.startForegroundService(FrontpageActivity.this, serviceIntent);
+            } else {
+                // If not logged in, show login first
+                Toast.makeText(this, "Please login to view reports", Toast.LENGTH_SHORT).show();
+                loadLoginFragment();
+            }
+        } else if (getIntent().getBooleanExtra("LOAD_DASHBOARD", false)) {
             loadDashboardFragment();
+            // Start location service for logged-in users
+            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                Intent serviceIntent = new Intent(FrontpageActivity.this, LocationTrackingService.class);
+                ContextCompat.startForegroundService(FrontpageActivity.this, serviceIntent);
+            }
         } else {
+            // Only do auto-login if not from notification
             checkAutoLogin();
         }
 
@@ -124,7 +150,6 @@ public class FrontpageActivity extends AppCompatActivity {
         });
 
         updateGreetingTextFromPrefs();
-
     }
 
     private void setupCustomBottomNavigation(BottomNavigationView bottomNav) {
@@ -473,6 +498,70 @@ public class FrontpageActivity extends AppCompatActivity {
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         if (bottomNav != null) {
             bottomNav.setSelectedItemId(R.id.nav_home);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+
+        if (intent.getBooleanExtra("OPEN_REPORT_FEED", false)) {
+            handleNotificationIntent(intent);
+        }
+    }
+
+    private void handleNotificationIntent(Intent intent) {
+        if (intent.getBooleanExtra("OPEN_REPORT_FEED", false)) {
+            // Make sure user is logged in
+            if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                // Load the report feed fragment directly
+                loadReportFeedFragment(intent.getStringExtra("FOCUS_REPORT_ID"));
+            } else {
+                // If not logged in, show login first
+                Toast.makeText(this, "Please login to view reports", Toast.LENGTH_SHORT).show();
+                loadLoginFragment();
+            }
+        }
+    }
+
+    public void loadReportFeedFragment(String focusReportId) {
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
+        welcomeLayout.setVisibility(View.GONE);
+        loggedInLayout.setVisibility(View.VISIBLE);
+        headerLayout.setVisibility(View.VISIBLE);
+        bottomNavigation.setVisibility(View.VISIBLE);
+
+        greetingText.setText("Nearby Reports");
+        backButton.setVisibility(View.VISIBLE);
+        backButton.setAlpha(0f);
+        backButton.animate().alpha(1f).setDuration(200).start();
+
+        // Create bundle with focus report ID
+        Bundle bundle = new Bundle();
+        if (focusReportId != null) {
+            bundle.putString("FOCUS_REPORT_ID", focusReportId);
+        }
+
+        ReportFeedActivity reportFeed = new ReportFeedActivity();
+        reportFeed.setArguments(bundle);
+
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.setCustomAnimations(
+                R.anim.fade_in,
+                R.anim.fade_out,
+                R.anim.fade_in,
+                R.anim.fade_out
+        );
+        transaction.replace(R.id.fragment_container, reportFeed);
+        transaction.addToBackStack("report_feed");
+        transaction.commit();
+
+        // Update bottom nav selection
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_ri);
         }
     }
 

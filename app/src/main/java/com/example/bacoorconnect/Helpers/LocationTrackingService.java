@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,67 +14,103 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
 
-import com.example.bacoorconnect.R;
-import com.google.android.gms.location.*;
-
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
+import com.example.bacoorconnect.General.FrontpageActivity;
+import com.example.bacoorconnect.R;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.*;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LocationTrackingService extends Service {
-    private final List<String> notifiedReports = new ArrayList<>();
+    private static final String TAG = "LocationTracking";
+    private static final String CHANNEL_ID = "LocationTrackingServiceChannel";
+    private static final int NOTIFICATION_ID = 1;
+    private static final int PROXIMITY_NOTIFICATION_ID = 2;
+    private static final long UPDATE_INTERVAL = 10000; // 10 seconds
+    private static final float PROXIMITY_THRESHOLD = 200; // meters
+    private static final long REPORTS_REFRESH_INTERVAL = 60000; // 1 minute
 
-    public static final String CHANNEL_ID = "LocationTrackingServiceChannel";
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
-    private List<Report> confirmedReports = new ArrayList<>();
+    private Map<String, Report> confirmedReports = new HashMap<>();
+    private Map<String, Long> notifiedReports = new HashMap<>(); // Store notification timestamp
+    private long lastReportsRefresh = 0;
+    private String currentUserId;
+    private DatabaseReference userStatusRef;
+    private DatabaseReference reportsRef;
+    private ValueEventListener reportsListener;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Location Tracking Service";
-            String description = "Notification for Location Tracking Service";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
+        currentUserId = FirebaseAuth.getInstance().getUid();
+        if (currentUserId == null) {
+            stopSelf();
+            return;
         }
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        createNotificationChannel();
+        setupUserStatus();
+        initializeLocationClient();
 
+        // Start as foreground service
+        startForeground(NOTIFICATION_ID, createServiceNotification());
+    }
+
+    private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Location Tracking Service";
-            String description = "Notification for Location Tracking Service";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.setDescription(description);
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Location Tracking Service",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            channel.setDescription("Notifies you when you're near confirmed reports");
 
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
             }
         }
+    }
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+    private Notification createServiceNotification() {
+        Intent notificationIntent = new Intent(this, FrontpageActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
+                notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        DatabaseReference userStatusRef = FirebaseDatabase.getInstance()
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Bacoor Connect")
+                .setContentText("Monitoring nearby reports...")
+                .setSmallIcon(R.drawable.alerts)
+                .setContentIntent(pendingIntent)
+                .build();
+    }
+
+    private void setupUserStatus() {
+        userStatusRef = FirebaseDatabase.getInstance()
                 .getReference("Users")
-                .child(FirebaseAuth.getInstance().getUid())
+                .child(currentUserId)
                 .child("status");
 
-        DatabaseReference connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected");
+        DatabaseReference connectedRef = FirebaseDatabase.getInstance()
+                .getReference(".info/connected");
+
         connectedRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -85,109 +122,14 @@ public class LocationTrackingService extends Service {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
-        });
-
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Location Tracking")
-                .setContentText("The app is tracking your location.")
-                .setSmallIcon(R.drawable.alerts)
-                .build();
-
-        startForeground(1, notification);
-
-        loadConfirmedReports();
-
-        startLocationUpdates();
-
-        return START_NOT_STICKY;
-    }
-
-    private void loadConfirmedReports() {
-        DatabaseReference reportsRef = FirebaseDatabase.getInstance().getReference("Report");
-        reportsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                confirmedReports.clear();
-                notifiedReports.clear();
-                for (DataSnapshot reportSnapshot : snapshot.getChildren()) {
-                    Log.d("loadConfirmedReports", "Processing report: " + reportSnapshot.getKey());
-
-                    Double lat = null;
-                    Double lon = null;
-
-                    if (reportSnapshot.child("latitude").exists()) {
-                        lat = reportSnapshot.child("latitude").getValue(Double.class);
-                    }
-                    else if (reportSnapshot.child("lat").exists()) {
-                        lat = reportSnapshot.child("lat").getValue(Double.class);
-                    }
-
-                    if (reportSnapshot.child("longitude").exists()) {
-                        lon = reportSnapshot.child("longitude").getValue(Double.class);
-                    }
-                    else if (reportSnapshot.child("lon").exists()) {
-                        lon = reportSnapshot.child("lon").getValue(Double.class);
-                    }
-
-                    if (lat == null || lon == null) {
-                        Log.w("LocationTracking", "Missing coordinates for report " + reportSnapshot.getKey() +
-                                ", using default Bacoor location");
-                        if (lat == null) lat = 14.4451;
-                        if (lon == null) lon = 120.9511;
-                    }
-
-                    String category = reportSnapshot.child("category").getValue(String.class);
-                    String description = reportSnapshot.child("description").getValue(String.class);
-                    String reportId = reportSnapshot.getKey();
-                    String userId = reportSnapshot.child("userId").getValue(String.class);
-
-                    int upvotes = 0;
-                    int downvotes = 0;
-
-                    if (reportSnapshot.child("upvotes").exists()) {
-                        Object upvotesObj = reportSnapshot.child("upvotes").getValue();
-                        if (upvotesObj instanceof Long) {
-                            upvotes = ((Long) upvotesObj).intValue();
-                        } else if (upvotesObj instanceof Integer) {
-                            upvotes = (Integer) upvotesObj;
-                        }
-                    }
-
-                    if (reportSnapshot.child("downvotes").exists()) {
-                        Object downvotesObj = reportSnapshot.child("downvotes").getValue();
-                        if (downvotesObj instanceof Long) {
-                            downvotes = ((Long) downvotesObj).intValue();
-                        } else if (downvotesObj instanceof Integer) {
-                            downvotes = (Integer) downvotesObj;
-                        }
-                    }
-
-                    Log.d("ReportDebug", "Report ID: " + reportId +
-                            ", Lat: " + lat + ", Lon: " + lon +
-                            ", Upvotes: " + upvotes + ", Downvotes: " + downvotes);
-
-                    if (upvotes > downvotes) {
-                        confirmedReports.add(new Report(lat, lon, category, description, reportId, userId));
-                        Log.d("Confirmation", "Added confirmed report: " + reportId);
-                    }
-                }
-                Log.d("ConfirmedReports", "Total confirmed reports loaded: " + confirmedReports.size());
-            }
-
-            @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("FirebaseError", "Failed to load reports: " + error.getMessage());
+                Log.e(TAG, "Connected ref error: " + error.getMessage());
             }
         });
     }
 
-    private void startLocationUpdates() {
-        LocationRequest request = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).build();
+    private void initializeLocationClient() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         locationCallback = new LocationCallback() {
             @Override
@@ -198,51 +140,171 @@ public class LocationTrackingService extends Service {
                 }
             }
         };
+    }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        loadConfirmedReports();
+        startLocationUpdates();
+        return START_STICKY;
+    }
+
+    private void loadConfirmedReports() {
+        // Refresh reports periodically
+        long now = System.currentTimeMillis();
+        if (now - lastReportsRefresh < REPORTS_REFRESH_INTERVAL) {
+            return;
+        }
+        lastReportsRefresh = now;
+
+        if (reportsListener != null) {
+            reportsRef.removeEventListener(reportsListener);
+        }
+
+        reportsRef = FirebaseDatabase.getInstance().getReference("Report");
+        reportsListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<String, Report> newReports = new HashMap<>();
+
+                for (DataSnapshot reportSnapshot : snapshot.getChildren()) {
+                    try {
+                        Double lat = getDoubleValue(reportSnapshot, "latitude", "lat");
+                        Double lon = getDoubleValue(reportSnapshot, "longitude", "lon");
+
+                        if (lat == null || lon == null) {
+                            Log.w(TAG, "Missing coordinates for report " + reportSnapshot.getKey());
+                            continue;
+                        }
+
+                        int upvotes = getIntValue(reportSnapshot, "upvotes");
+                        int downvotes = getIntValue(reportSnapshot, "downvotes");
+
+                        // Only include confirmed reports (more upvotes than downvotes)
+                        if (upvotes > downvotes) {
+                            String category = reportSnapshot.child("category").getValue(String.class);
+                            String description = reportSnapshot.child("description").getValue(String.class);
+                            String reportId = reportSnapshot.getKey();
+                            String userId = reportSnapshot.child("userId").getValue(String.class);
+
+                            Report report = new Report(lat, lon, category, description, reportId, userId);
+                            newReports.put(reportId, report);
+
+                            Log.d(TAG, "Loaded confirmed report: " + reportId);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error processing report: " + e.getMessage());
+                    }
+                }
+
+                confirmedReports = newReports;
+                Log.d(TAG, "Total confirmed reports loaded: " + confirmedReports.size());
+
+                // Clean up old notifications (older than 1 hour)
+                long oneHourAgo = System.currentTimeMillis() - (60 * 60 * 1000);
+                notifiedReports.entrySet().removeIf(entry -> entry.getValue() < oneHourAgo);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Failed to load reports: " + error.getMessage());
+            }
+        };
+
+        reportsRef.addValueEventListener(reportsListener);
+    }
+
+    private Double getDoubleValue(DataSnapshot snapshot, String... keys) {
+        for (String key : keys) {
+            if (snapshot.child(key).exists()) {
+                return snapshot.child(key).getValue(Double.class);
+            }
+        }
+        return null;
+    }
+
+    private int getIntValue(DataSnapshot snapshot, String key) {
+        Object value = snapshot.child(key).getValue();
+        if (value instanceof Long) {
+            return ((Long) value).intValue();
+        } else if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        return 0;
+    }
+
+    private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            stopSelf();
             return;
         }
 
-        fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper());
+        LocationRequest request = new LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, UPDATE_INTERVAL)
+                .setMinUpdateIntervalMillis(5000)
+                .build();
+
+        try {
+            fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper());
+            Log.d(TAG, "Location updates started");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start location updates: " + e.getMessage());
+        }
     }
 
     private void checkProximity(Location userLocation) {
-        Log.d("ProxCheck", "Checking proximity at: Lat=" + userLocation.getLatitude() + ", Lon=" + userLocation.getLongitude());
+        Log.d(TAG, String.format("Checking proximity at: %.6f, %.6f",
+                userLocation.getLatitude(), userLocation.getLongitude()));
 
-        for (Report report : confirmedReports) {
-            if (notifiedReports.contains(report.reportId)) {
+        for (Report report : confirmedReports.values()) {
+            // Skip if already notified in the last hour
+            if (notifiedReports.containsKey(report.reportId)) {
                 continue;
             }
 
             float[] distance = new float[1];
-            Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(),
-                    report.lat, report.lon, distance);
+            Location.distanceBetween(
+                    userLocation.getLatitude(), userLocation.getLongitude(),
+                    report.lat, report.lon, distance
+            );
 
-            Log.d("ProxCheck", "Distance to report " + report.reportId + ": " + distance[0] + " meters");
-
-            if (distance[0] <= 200) {
-                sendProximityNotification(report);
-                notifiedReports.add(report.reportId);
+            if (distance[0] <= PROXIMITY_THRESHOLD) {
+                sendProximityNotification(report, distance[0]);
+                notifiedReports.put(report.reportId, System.currentTimeMillis());
             }
         }
     }
 
+    private void sendProximityNotification(Report report, float distance) {
+        // Create intent to open FrontpageActivity with the report feed
+        Intent intent = new Intent(this, FrontpageActivity.class);
+        intent.putExtra("OPEN_REPORT_FEED", true);
+        intent.putExtra("FOCUS_REPORT_ID", report.reportId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this,
+                report.reportId.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
-    private void sendProximityNotification(Report report) {
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.alerts)
-                .setContentTitle("Nearby Confirmed Report!")
-                .setContentText("Category: " + report.category + "\n" + report.description)
+                .setContentTitle("📍 Nearby Confirmed Report!")
+                .setContentText(String.format("%s - %.0f meters away", report.category, distance))
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText(report.description))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true);
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build();
 
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        notificationManager.notify(2, builder.build());
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(PROXIMITY_NOTIFICATION_ID + report.reportId.hashCode(), notification);
+        }
     }
-
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -251,25 +313,17 @@ public class LocationTrackingService extends Service {
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
+
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
-        super.onDestroy();
-        setUserOffline();
-    }
 
-    private static class Report {
-        double lat, lon;
-        String category, description, reportId, userId;
-
-        Report(double lat, double lon, String category, String description, String reportId, String userId) {
-            this.lat = lat;
-            this.lon = lon;
-            this.category = category;
-            this.description = description;
-            this.reportId = reportId;
-            this.userId = userId;
+        if (reportsRef != null && reportsListener != null) {
+            reportsRef.removeEventListener(reportsListener);
         }
+
+        setUserOffline();
     }
 
     @Override
@@ -280,16 +334,26 @@ public class LocationTrackingService extends Service {
     }
 
     private void setUserOffline() {
-        String userId = FirebaseAuth.getInstance().getUid();
-        if (userId != null) {
+        if (currentUserId != null) {
             FirebaseDatabase.getInstance()
                     .getReference("Users")
-                    .child(userId)
+                    .child(currentUserId)
                     .child("status")
                     .setValue("offline");
         }
     }
 
+    private static class Report {
+        final double lat, lon;
+        final String category, description, reportId, userId;
 
-
+        Report(double lat, double lon, String category, String description, String reportId, String userId) {
+            this.lat = lat;
+            this.lon = lon;
+            this.category = category;
+            this.description = description;
+            this.reportId = reportId;
+            this.userId = userId;
+        }
+    }
 }

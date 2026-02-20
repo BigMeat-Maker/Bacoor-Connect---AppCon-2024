@@ -28,6 +28,7 @@
     <color name="magnitude_default">#9E9E9E</color>  <!-- Gray default -->
 
     <color name="light_gray_background">#F5F5F5</color>
+    <color name="highlight_color">#33FFC107</color>
     <color name="dark_gray">#666666</color>
     <color name="primary_blue">#2B3381</color>
     <color name="divider_gray">#EEEEEE</color>

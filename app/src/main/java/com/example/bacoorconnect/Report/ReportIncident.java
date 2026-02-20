@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
@@ -91,6 +93,29 @@ public class ReportIncident extends AppCompatActivity {
         }
     }
 
+    private void updateLocationFromLatLon(double latitude, double longitude) {
+        // Show coordinates while loading
+        String coordText = String.format(Locale.getDefault(), "%.6f, %.6f", latitude, longitude);
+        locationText.setText(coordText + " (Getting address...)");
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                String locationDetails = address.getAddressLine(0);
+                locationText.setText(locationDetails);
+            } else {
+                locationText.setText(coordText + " (Address not found)");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            locationText.setText(coordText + " (Error fetching address)");
+            Toast.makeText(this, "Error fetching address", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -100,9 +125,7 @@ public class ReportIncident extends AppCompatActivity {
                             lat = location.getLatitude();
                             lon = location.getLongitude();
 
-                            // Update location text
-                            String locationTextStr = "Lat: " + lat + ", Lon: " + lon;
-                            locationText.setText(locationTextStr);
+                            updateLocationFromLatLon(lat, lon);
 
                             Log.d("ReportIncident", "Got location: " + lat + ", " + lon);
                         } else {
@@ -162,8 +185,12 @@ public class ReportIncident extends AppCompatActivity {
             lat = bundle.getDouble("lat", lat);
             lon = bundle.getDouble("lon", lon);
 
-            if (locationDetails != null) {
+            if (locationDetails != null && !locationDetails.isEmpty()) {
                 locationText.setText(locationDetails);
+            } else if (lat != 0.0 && lon != 0.0) {
+                String coordText = String.format(Locale.getDefault(), "%.6f, %.6f", lat, lon);
+                locationText.setText(coordText + " (Getting address...)");
+                updateLocationFromLatLon(lat, lon);
             } else {
                 locationText.setText("Location not found");
                 runOnUiThread(() -> Toast.makeText(this, "Failed to get location details.", Toast.LENGTH_SHORT).show());
@@ -211,8 +238,12 @@ public class ReportIncident extends AppCompatActivity {
             Log.d("ReportIncident", "Longitude: " + lon);
             Log.d("ReportIncident", "All extras keys: " + arguments.keySet());
 
-            if (location != null && locationText != null) {
+            if (location != null && !location.isEmpty() && locationText != null) {
                 locationText.setText(location);
+            } else if (lat != 0.0 && lon != 0.0) {
+                String coordText = String.format(Locale.getDefault(), "%.6f, %.6f", lat, lon);
+                locationText.setText(coordText);
+                updateLocationFromLatLon(lat, lon);
             }
         } else {
             Log.e("ReportIncident", "NO INTENT EXTRAS FOUND!");

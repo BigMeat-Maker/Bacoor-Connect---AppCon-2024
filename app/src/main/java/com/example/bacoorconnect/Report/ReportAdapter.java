@@ -2,6 +2,7 @@ package com.example.bacoorconnect.Report;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -21,11 +23,14 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+
+// Add this interface
+interface OnHighlightReadyListener {
+    void onHighlightReady(int position);
+}
 
 public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportViewHolder> {
 
@@ -35,7 +40,12 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     private String currentUserId;
     private double currentLatitude = 14.4597; // Default Bacoor coordinates
     private double currentLongitude = 120.9333;
+    private int highlightedPosition = -1;
+    private OnHighlightReadyListener highlightListener;
+    private Handler highlightHandler = new Handler();
+    private Runnable clearHighlightRunnable;
 
+    // Original constructor
     public ReportAdapter(Context context, List<Report> reportList, double currentLatitude, double currentLongitude) {
         this.context = context;
         this.reportList = reportList;
@@ -44,6 +54,33 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         this.usersRef = FirebaseDatabase.getInstance().getReference("Users");
         this.currentLatitude = currentLatitude;
         this.currentLongitude = currentLongitude;
+    }
+
+    // New constructor with highlight listener
+    public ReportAdapter(Context context, List<Report> reportList, double currentLatitude, double currentLongitude, OnHighlightReadyListener listener) {
+        this(context, reportList, currentLatitude, currentLongitude);
+        this.highlightListener = listener;
+    }
+
+    public void highlightPosition(int position) {
+        this.highlightedPosition = position;
+        notifyDataSetChanged();
+
+        // Notify listener to scroll to position
+        if (highlightListener != null) {
+            highlightListener.onHighlightReady(position);
+        }
+
+        // Clear highlight after 3 seconds
+        if (clearHighlightRunnable != null) {
+            highlightHandler.removeCallbacks(clearHighlightRunnable);
+        }
+
+        clearHighlightRunnable = () -> {
+            highlightedPosition = -1;
+            notifyDataSetChanged();
+        };
+        highlightHandler.postDelayed(clearHighlightRunnable, 3000);
     }
 
     @NonNull
@@ -56,6 +93,13 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     @Override
     public void onBindViewHolder(@NonNull ReportViewHolder holder, int position) {
         Report report = reportList.get(position);
+
+        // Apply highlight if this position is highlighted
+        if (position == highlightedPosition) {
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.highlight_color));
+        } else {
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.transparent));
+        }
 
         holder.descriptionView.setText(report.getDescription());
         holder.upvoteCountView.setText(String.valueOf(report.getUpvotes()));
