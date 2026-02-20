@@ -360,47 +360,6 @@
                             android:layout_width="wrap_content"
                             android:layout_height="20dp" />
 
-                        <!-- loc -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical"
-                            android:layout_gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:src="@drawable/locpin_vector"
-                                android:layout_marginEnd="6dp"/>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Location"
-                                    android:textSize="14sp"
-                                    android:fontFamily="@font/poppins_bold"
-                                    android:textColor="@color/black"
-                                    />
-                                <TextView
-                                    android:id="@+id/locationInfo"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Molino II, Bacoor City, Cavite"
-                                    android:textSize="14sp"
-                                    android:fontFamily="@font/poppins_regular"
-                                    android:textColor="@color/black"
-                                    />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
 
                     </LinearLayout>
 
