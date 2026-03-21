@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.ext.junit)
     implementation(libs.play.services.location)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.firebase.config)
     testImplementation(libs.junit.junit)
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     implementation("com.google.android.gms:play-services-auth:20.7.0")

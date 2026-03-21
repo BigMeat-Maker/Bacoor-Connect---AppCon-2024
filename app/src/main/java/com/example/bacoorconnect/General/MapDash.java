@@ -243,23 +243,10 @@ public class MapDash extends AppCompatActivity {
                     "Lat=" + reportLocation.getLatitude() + ", Lon=" + reportLocation.getLongitude() : "null"));
             Log.d("MapDashDebug", "userLocation: " + (userLocation != null ?
                     "Lat=" + userLocation.getLatitude() + ", Lon=" + userLocation.getLongitude() : "null"));
-            Log.d("MapDashDebug", "currentLat/Lon from MapDash: " + currentLat + ", " + currentLon);
 
             if (userLocation == null) {
-                Toast.makeText(this, "ErrorCheck: User location unavailable", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Error: User location unavailable", Toast.LENGTH_SHORT).show();
                 Log.e("MapDashDebug", "userLocation is null!");
-                return;
-            }
-
-            if (!mapFragment.isWithinBacoor(userLocation)) {
-                new AlertDialog.Builder(this)
-                        .setTitle("Reporting Disabled")
-                        .setMessage("Sorry, you cannot report while outside Bacoor.")
-                        .setPositiveButton("OK", null)
-                        .show();
-
-                logActivity(currentUserId, "Report Attempt", "Blocked", "Outside Bacoor", "Failed",
-                        "User attempted to report outside allowed area", "N/A");
                 return;
             }
 
@@ -285,13 +272,15 @@ public class MapDash extends AppCompatActivity {
                     "Success", "User successfully accessed reporting", "N/A");
 
         } else {
-            Toast.makeText(this, "ErrorCheck: Map fragment missing", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error: Map fragment missing", Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode,
+                resultCode,
+                data);
 
         if (requestCode == 100 && resultCode == RESULT_OK) {
             Mappart mapFragment = (Mappart) getSupportFragmentManager().findFragmentById(R.id.map_placeholder);

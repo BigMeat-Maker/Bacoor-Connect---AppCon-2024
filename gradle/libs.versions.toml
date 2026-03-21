@@ -26,6 +26,7 @@ junitJunit = "4.12"
 monitor = "1.7.2"
 playServicesLocation = "21.3.0"
 firebaseCrashlyticsBuildtools = "3.0.3"
+firebaseConfig = "23.0.1"
 
 
 [libraries]
@@ -60,6 +61,7 @@ junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
 monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+firebase-config = { group = "com.google.firebase", name = "firebase-config", version.ref = "firebaseConfig" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
