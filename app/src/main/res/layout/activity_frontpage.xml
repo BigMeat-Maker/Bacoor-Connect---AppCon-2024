@@ -44,7 +44,7 @@
         <ImageView
             android:layout_width="300dp"
             android:layout_height="wrap_content"
-            android:src="@drawable/logo_baconnect_nobg"/>
+            android:src="@drawable/cityconnect_applogo_nobg"/>
 
         <Button
             android:id="@+id/Logindirect"

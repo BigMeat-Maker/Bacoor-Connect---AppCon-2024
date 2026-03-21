@@ -50,9 +50,9 @@
                 android:layout_weight="1" />
 
             <ImageView
-                android:layout_width="65dp"
+                android:layout_width="105dp"
                 android:layout_height="40dp"
-                android:src="@drawable/logo_baconnect_nobg"
+                android:src="@drawable/cityconnect_horizontal_white"
                 android:contentDescription="App Logo" />
 
             <View

@@ -49,13 +49,13 @@
         <ImageView
             android:id="@+id/home"
             android:layout_width="300dp"
-            android:layout_height="200dp"
+            android:layout_height="250dp"
             android:layout_gravity="center"
-            android:layout_marginBottom="100dp"
+            android:layout_marginBottom="70dp"
             android:layout_marginTop="20dp"
             android:padding="8dp"
             app:layout_constraintBottom_toBottomOf="@id/backButton"
-            android:src="@drawable/logo_baconnect_nobg" />
+            android:src="@drawable/cityconnect_applogo_nobg" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/lowerCard"
