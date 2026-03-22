@@ -49,10 +49,10 @@
                     android:id="@+id/reportUsername"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="username"
-                    android:textSize="15sp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="user"
                     android:textColor="@android:color/black"
-                    android:fontFamily="@font/poppins_regular"/>
+                    android:textSize="15sp" />
 
                 <View
                     android:layout_width="0dp"
@@ -63,7 +63,7 @@
                     android:id="@+id/distanceToUser"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="37M"
+                    android:text="37m"
                     android:textSize="13sp"
                     android:textColor="@android:color/black"
                     android:fontFamily=""/>

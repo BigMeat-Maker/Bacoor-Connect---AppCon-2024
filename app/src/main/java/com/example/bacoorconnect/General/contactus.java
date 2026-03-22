@@ -27,6 +27,8 @@ public class contactus extends AppCompatActivity {
 
     private TextInputEditText fullnameInput, emailInput, numberInput, subjectInput, messageInput;
     private Button sendBtn;
+    private ImageView backBtn;
+
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -77,7 +79,7 @@ public class contactus extends AppCompatActivity {
 
         ImageView backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(v -> {
-            Intent intent = new Intent(contactus.this, FrontpageActivity.class);
+            Intent intent = new Intent(contactus.this, Dashboard.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
             finish();

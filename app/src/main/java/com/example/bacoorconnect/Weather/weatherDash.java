@@ -1,5 +1,7 @@
 package com.example.bacoorconnect.Weather;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,9 +10,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.bacoorconnect.R;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -25,12 +30,7 @@ import java.util.Locale;
 
 public class weatherDash extends Fragment {
 
-    private TextView weatherTemperature;
-    private TextView weatherDate;
-    private TextView weatherTime;
-    private TextView weatherHeatIndex;
-    private TextView weatherHumidity;
-    private TextView weatherCondition;
+    private TextView weatherTemperature, weatherDate, weatherTime, weatherHeatIndex, weatherHumidity, weatherCondition, weatherLocation;
     private ImageView weatherIcon;
 
     public weatherDash() {
@@ -50,9 +50,10 @@ public class weatherDash extends Fragment {
         loadCurrentWeatherFromForecast();
         loadDailyWeatherFragment();
         loadHourlyWeatherFragment();
-
         return view;
     }
+
+
 
     private void initializeViews(View view) {
         weatherTemperature = view.findViewById(R.id.WeatherTemperature);
@@ -62,6 +63,7 @@ public class weatherDash extends Fragment {
         weatherHumidity = view.findViewById(R.id.WeatherHumidity);
         weatherCondition = view.findViewById(R.id.WeatherCondition);
         weatherIcon = view.findViewById(R.id.WeatherIcon);
+        weatherLocation = view.findViewById(R.id.WeatherLocation);
     }
 
     private void setCurrentDateTime() {
