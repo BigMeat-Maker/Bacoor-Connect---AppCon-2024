@@ -1,7 +1,9 @@
 package com.example.bacoorconnect.Emergency;
 
+import android.Manifest;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,12 +12,19 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.bacoorconnect.R;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -36,6 +45,19 @@ public class EarthquakeView extends Fragment {
     private List<Earthquake> allEarthquakes = new ArrayList<>();
     private List<Earthquake> olderQuakes = new ArrayList<>();
     private WeeklySummary weeklySummary;
+    private FusedLocationProviderClient fusedLocationClient;
+    private Double userLatitude;
+    private Double userLongitude;
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                boolean granted = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (granted) {
+                    fetchUserLocationAndData();
+                } else {
+                    fetchEarthquakeData();
+                }
+            });
 
     public EarthquakeView() {
     }
@@ -53,9 +75,71 @@ public class EarthquakeView extends Fragment {
 
         earthquakeAdapter = new EarthquakeAdapter();
         earthquakeRecyclerView.setAdapter(earthquakeAdapter);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
-        fetchEarthquakeData();
+        fetchUserLocationAndData();
         return view;
+    }
+
+    private void fetchUserLocationAndData() {
+        if (!hasLocationPermission()) {
+            locationPermissionLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+            return;
+        }
+
+        try {
+            fusedLocationClient.getLastLocation()
+                    .addOnSuccessListener(location -> {
+                        if (location != null) {
+                            userLatitude = location.getLatitude();
+                            userLongitude = location.getLongitude();
+                            fetchEarthquakeData();
+                        } else {
+                            requestCurrentLocationAndFetch();
+                        }
+                    })
+                    .addOnFailureListener(error -> {
+                        Log.w("EarthquakeView", "Unable to get last known location", error);
+                        fetchEarthquakeData();
+                    });
+        } catch (SecurityException ex) {
+            Log.w("EarthquakeView", "Location permission unavailable at runtime", ex);
+            fetchEarthquakeData();
+        }
+    }
+
+    private void requestCurrentLocationAndFetch() {
+        if (!hasLocationPermission()) {
+            fetchEarthquakeData();
+            return;
+        }
+
+        CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        try {
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cancellationTokenSource.getToken())
+                    .addOnSuccessListener(location -> {
+                        if (location != null) {
+                            userLatitude = location.getLatitude();
+                            userLongitude = location.getLongitude();
+                        }
+                        fetchEarthquakeData();
+                    })
+                    .addOnFailureListener(error -> {
+                        Log.w("EarthquakeView", "Unable to get current location", error);
+                        fetchEarthquakeData();
+                    });
+        } catch (SecurityException ex) {
+            Log.w("EarthquakeView", "Location permission unavailable at runtime", ex);
+            fetchEarthquakeData();
+        }
+    }
+
+    private boolean hasLocationPermission() {
+        return ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED;
     }
 
     private void fetchEarthquakeData() {
@@ -70,13 +154,19 @@ public class EarthquakeView extends Fragment {
                 String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
                 List<Earthquake> todaysQuakes = new ArrayList<>();
+                boolean hasCoordinatesInDataset = false;
 
                 for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
                     Earthquake earthquake = dataSnapshot.getValue(Earthquake.class);
                     if (earthquake != null) {
+                        earthquake.setLatitude(readCoordinate(dataSnapshot, "latitude", "lat"));
+                        earthquake.setLongitude(readCoordinate(dataSnapshot, "longitude", "lon", "lng"));
+                        if (earthquake.hasCoordinates()) {
+                            hasCoordinatesInDataset = true;
+                        }
                         allEarthquakes.add(earthquake);
 
-                        if (earthquake.getDate().equals(today)) {
+                        if (today.equals(earthquake.getDate())) {
                             todaysQuakes.add(earthquake);
                         } else {
                             olderQuakes.add(earthquake);
@@ -84,7 +174,12 @@ public class EarthquakeView extends Fragment {
                     }
                 }
 
-                olderQuakes.sort((q1, q2) -> q2.getDate().compareTo(q1.getDate()));
+                if (canSortByDistance(hasCoordinatesInDataset)) {
+                    todaysQuakes.sort((q1, q2) -> Double.compare(getDistanceKm(q1), getDistanceKm(q2)));
+                    olderQuakes.sort((q1, q2) -> Double.compare(getDistanceKm(q1), getDistanceKm(q2)));
+                } else {
+                    olderQuakes.sort((q1, q2) -> safeString(q2.getDate()).compareTo(safeString(q1.getDate())));
+                }
 
                 weeklySummary = calculateWeeklySummary(allEarthquakes);
 
@@ -149,11 +244,74 @@ public class EarthquakeView extends Fragment {
         return summary;
     }
 
+    private Double readCoordinate(DataSnapshot dataSnapshot, String... keys) {
+        for (String key : keys) {
+            DataSnapshot child = dataSnapshot.child(key);
+            if (!child.exists()) {
+                continue;
+            }
+
+            Object value = child.getValue();
+            if (value instanceof Number) {
+                return ((Number) value).doubleValue();
+            }
+
+            if (value instanceof String) {
+                try {
+                    return Double.parseDouble(((String) value).trim());
+                } catch (NumberFormatException ignored) {
+                    // Try next key format.
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean canSortByDistance(boolean hasCoordinatesInDataset) {
+        return hasCoordinatesInDataset && userLatitude != null && userLongitude != null;
+    }
+
+    private double getDistanceKm(Earthquake earthquake) {
+        if (userLatitude == null || userLongitude == null || earthquake == null || !earthquake.hasCoordinates()) {
+            return Double.MAX_VALUE;
+        }
+
+        float[] results = new float[1];
+        Location.distanceBetween(
+                userLatitude,
+                userLongitude,
+                earthquake.getLatitude(),
+                earthquake.getLongitude(),
+                results
+        );
+        return results[0] / 1000d;
+    }
+
+    private String formatLocationWithDistance(Earthquake earthquake) {
+        String location = safeString(earthquake != null ? earthquake.getLocation() : null);
+        if (location.isEmpty()) {
+            location = "Unknown location";
+        }
+
+        double distanceKm = getDistanceKm(earthquake);
+        if (distanceKm == Double.MAX_VALUE) {
+            return location;
+        }
+
+        return String.format(Locale.getDefault(), "%s (%.1f km)", location, distanceKm);
+    }
+
+    private String safeString(String value) {
+        return value == null ? "" : value;
+    }
+
     public static class Earthquake {
         private String date;
         private String location;
         private String magnitude;
         private String time;
+        private Double latitude;
+        private Double longitude;
 
         public Earthquake() {}
 
@@ -168,11 +326,19 @@ public class EarthquakeView extends Fragment {
         public String getLocation() { return location; }
         public String getMagnitude() { return magnitude; }
         public String getTime() { return time; }
+        public Double getLatitude() { return latitude; }
+        public Double getLongitude() { return longitude; }
 
         public void setDate(String date) { this.date = date; }
         public void setLocation(String location) { this.location = location; }
         public void setMagnitude(String magnitude) { this.magnitude = magnitude; }
         public void setTime(String time) { this.time = time; }
+        public void setLatitude(Double latitude) { this.latitude = latitude; }
+        public void setLongitude(Double longitude) { this.longitude = longitude; }
+
+        public boolean hasCoordinates() {
+            return latitude != null && longitude != null;
+        }
 
         public int getMagnitudeColor() {
             try {
@@ -296,9 +462,9 @@ public class EarthquakeView extends Fragment {
                 case TYPE_TODAY_QUAKE:
                     Earthquake todayQuake = (Earthquake) item;
                     TodayQuakeViewHolder todayHolder = (TodayQuakeViewHolder) holder;
-                    todayHolder.magnitudeText.setText("M " + todayQuake.getMagnitude());
-                    todayHolder.locationText.setText(todayQuake.getLocation());
-                    todayHolder.timeText.setText(todayQuake.getTime());
+                    todayHolder.magnitudeText.setText("M " + safeString(todayQuake.getMagnitude()));
+                    todayHolder.locationText.setText(formatLocationWithDistance(todayQuake));
+                    todayHolder.timeText.setText(safeString(todayQuake.getTime()));
 
                     // DEBUG: Log the magnitude value
                     Log.d("EarthquakeDebug", "Today Quake - Magnitude: " + todayQuake.getMagnitude() +
@@ -458,15 +624,15 @@ public class EarthquakeView extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull HorizontalQuakeViewHolder holder, int position) {
             Earthquake earthquake = earthquakeList.get(position);
-            holder.magnitudeText.setText("M " + earthquake.getMagnitude());
+            holder.magnitudeText.setText("M " + safeString(earthquake.getMagnitude()));
 
             // Shorten location
-            String location = earthquake.getLocation();
+            String location = formatLocationWithDistance(earthquake);
             if (location.length() > 30) {
                 location = location.substring(0, 27) + "...";
             }
             holder.locationText.setText(location);
-            holder.dateText.setText(earthquake.getDate());
+            holder.dateText.setText(safeString(earthquake.getDate()));
 
             // Apply magnitude-based BACKGROUND color
             try {
