@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.bacoorconnect.R;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -49,7 +50,8 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     public ReportAdapter(Context context, List<Report> reportList, double currentLatitude, double currentLongitude) {
         this.context = context;
         this.reportList = reportList;
-        this.currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        this.currentUserId = user != null ? user.getUid() : null;
         this.reportRef = FirebaseDatabase.getInstance().getReference("Report");
         this.usersRef = FirebaseDatabase.getInstance().getReference("Users");
         this.currentLatitude = currentLatitude;
@@ -138,7 +140,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         holder.upvoteButton.setOnClickListener(v -> modifyVote(report, true, holder));
         holder.downvoteButton.setOnClickListener(v -> modifyVote(report, false, holder));
 
-        if (report.getUserId() != null && report.getUserId().equals(currentUserId)) {
+        if (currentUserId != null && currentUserId.equals(report.getUserId())) {
             holder.optionsButton.setVisibility(View.VISIBLE);
             holder.optionsButton.setOnClickListener(v -> {
                 PopupMenu popupMenu = new PopupMenu(context, holder.optionsButton);
@@ -161,9 +163,45 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         } else {
             holder.optionsButton.setVisibility(View.GONE);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent detailIntent = new Intent(context, ReportDetailActivity.class);
+            detailIntent.putExtra("title", "Report Details");
+            detailIntent.putExtra("report_type", report.getCategory());
+            detailIntent.putExtra("report_location", report.getLocation());
+            detailIntent.putExtra("report_date", report.getFormattedTime());
+            detailIntent.putExtra("report_status", resolveStatus(report));
+            detailIntent.putExtra("report_description", report.getDescription());
+            detailIntent.putExtra("report_upvotes", report.getUpvotes());
+            detailIntent.putExtra("report_downvotes", report.getDownvotes());
+            detailIntent.putExtra("report_latitude", report.getLatitude());
+            detailIntent.putExtra("report_longitude", report.getLongitude());
+            detailIntent.putExtra("report_timestamp", report.getTimestamp());
+            detailIntent.putExtra("report_userId", report.getUserId());
+            detailIntent.putExtra("report_image_url", report.getImageUrl());
+            context.startActivity(detailIntent);
+        });
+    }
+
+    private String resolveStatus(Report report) {
+        if (report == null) {
+            return "Neutral";
+        }
+        if (report.getUpvotes() > report.getDownvotes()) {
+            return "Positive";
+        }
+        if (report.getDownvotes() > report.getUpvotes()) {
+            return "Negative";
+        }
+        return "Neutral";
     }
 
     private void loadUserData(String userId, ReportViewHolder holder) {
+        if (userId == null || userId.isEmpty()) {
+            holder.usernameView.setText("Unknown User");
+            return;
+        }
+
         usersRef.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -199,6 +237,12 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     }
 
     private void loadUserVote(String reportId, ImageView upvoteButton, ImageView downvoteButton) {
+        if (currentUserId == null || currentUserId.isEmpty() || reportId == null || reportId.isEmpty()) {
+            upvoteButton.setImageResource(R.drawable.upvote_blank);
+            downvoteButton.setImageResource(R.drawable.downvote_blank);
+            return;
+        }
+
         reportRef.child(reportId).child("voters").child(currentUserId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -241,10 +285,16 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     }
 
     private void modifyVote(Report report, boolean isUpvote, ReportViewHolder holder) {
+        if (currentUserId == null || currentUserId.isEmpty() || report == null || report.getReportId() == null) {
+            return;
+        }
+
         reportRef.child(report.getReportId()).get().addOnSuccessListener(snapshot -> {
             if (snapshot.exists()) {
-                int upvotes = snapshot.child("upvotes").getValue(Integer.class);
-                int downvotes = snapshot.child("downvotes").getValue(Integer.class);
+                Integer upvotesValue = snapshot.child("upvotes").getValue(Integer.class);
+                Integer downvotesValue = snapshot.child("downvotes").getValue(Integer.class);
+                int upvotes = upvotesValue != null ? upvotesValue : 0;
+                int downvotes = downvotesValue != null ? downvotesValue : 0;
 
                 String previousVote = snapshot.child("voters").child(currentUserId).getValue(String.class);
                 HashMap<String, Object> updateData = new HashMap<>();

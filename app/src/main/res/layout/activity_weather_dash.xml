@@ -60,7 +60,7 @@
                         android:id="@+id/WeatherLocation"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:text="Bacoor"
+                        android:text="@string/weather_location_loading"
                         android:textSize="30dp"
                         android:textColor="@color/white"
                         android:fontFamily="@font/montserrat_extrabold"/>

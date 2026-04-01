@@ -226,14 +226,14 @@ public class EarthquakeView extends Fragment {
         double strongest = 0;
 
         for (Earthquake quake : earthquakes) {
-            try {
-                double mag = Double.parseDouble(quake.getMagnitude());
+            Double mag = parseMagnitudeOrNull(quake);
+            if (mag != null) {
                 totalMagnitude += mag;
                 if (mag > strongest) {
                     strongest = mag;
                 }
-            } catch (NumberFormatException e) {
-                Log.w("EarthquakeCalc", "Invalid magnitude format: " + quake.getMagnitude());
+            } else {
+                Log.w("EarthquakeCalc", "Invalid magnitude format: " + (quake != null ? quake.getMagnitude() : null));
             }
         }
 
@@ -242,6 +242,28 @@ public class EarthquakeView extends Fragment {
         summary.strongestMagnitude = strongest;
 
         return summary;
+    }
+
+    private Double parseMagnitudeOrNull(Earthquake quake) {
+        if (quake == null) {
+            return null;
+        }
+
+        String rawMagnitude = quake.getMagnitude();
+        if (rawMagnitude == null) {
+            return null;
+        }
+
+        String cleanMag = rawMagnitude.replaceAll("[^0-9.]", "").trim();
+        if (cleanMag.isEmpty()) {
+            return null;
+        }
+
+        try {
+            return Double.parseDouble(cleanMag);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private Double readCoordinate(DataSnapshot dataSnapshot, String... keys) {
@@ -686,3 +708,4 @@ public class EarthquakeView extends Fragment {
         }
     }
 }
+

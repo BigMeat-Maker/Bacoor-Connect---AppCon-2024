@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,6 +14,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
@@ -45,12 +48,22 @@ import okhttp3.Response;
 public class weatherDash extends Fragment {
 
     private static final String TAG = "weatherDash";
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 2101;
 
     private TextView weatherTemperature, weatherDate, weatherTime, weatherHeatIndex, weatherHumidity, weatherCondition, weatherLocation;
     private ImageView weatherIcon;
     private FusedLocationProviderClient fusedLocationClient;
     private final OkHttpClient okHttpClient = new OkHttpClient();
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                boolean granted = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (granted) {
+                    loadWeatherFromCurrentLocation();
+                } else {
+                    showLocationUnavailableIfNeeded();
+                    loadWeatherFromFirebaseFallback();
+                }
+            });
 
     public weatherDash() {
     }
@@ -94,10 +107,17 @@ public class weatherDash extends Fragment {
 
     private void loadWeatherFromCurrentLocation() {
         if (!hasLocationPermission()) {
-            requestPermissions(
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    LOCATION_PERMISSION_REQUEST_CODE
-            );
+            locationPermissionLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+            showLocationUnavailableIfNeeded();
+            loadWeatherFromFirebaseFallback();
+            return;
+        }
+
+        if (!isLocationServiceEnabled()) {
+            showLocationDisabled();
             loadWeatherFromFirebaseFallback();
             return;
         }
@@ -113,10 +133,12 @@ public class weatherDash extends Fragment {
                     })
                     .addOnFailureListener(error -> {
                         Log.w(TAG, "Unable to get last location", error);
+                        showLocationUnavailableIfNeeded();
                         loadWeatherFromFirebaseFallback();
                     });
         } catch (SecurityException exception) {
             Log.w(TAG, "Location permission rejected at runtime", exception);
+            showLocationUnavailableIfNeeded();
             loadWeatherFromFirebaseFallback();
         }
     }
@@ -126,28 +148,46 @@ public class weatherDash extends Fragment {
                 || ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    private boolean isLocationServiceEnabled() {
+        if (!isAdded()) {
+            return false;
+        }
+
+        LocationManager locationManager = (LocationManager) requireContext().getSystemService(android.content.Context.LOCATION_SERVICE);
+        if (locationManager == null) {
+            return false;
+        }
+
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+    }
+
     private void requestCurrentLocationFix() {
         if (!hasLocationPermission()) {
+            showLocationUnavailableIfNeeded();
             loadWeatherFromFirebaseFallback();
             return;
         }
 
         CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         try {
-            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cancellationTokenSource.getToken())
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellationTokenSource.getToken())
                     .addOnSuccessListener(location -> {
                         if (location != null) {
                             fetchWeatherForCoordinates(location.getLatitude(), location.getLongitude());
                         } else {
+                            showLocationUnavailableIfNeeded();
                             loadWeatherFromFirebaseFallback();
                         }
                     })
                     .addOnFailureListener(error -> {
                         Log.w(TAG, "Unable to get current location", error);
+                        showLocationUnavailableIfNeeded();
                         loadWeatherFromFirebaseFallback();
                     });
         } catch (SecurityException exception) {
             Log.w(TAG, "Location permission rejected at runtime", exception);
+            showLocationUnavailableIfNeeded();
             loadWeatherFromFirebaseFallback();
         }
     }
@@ -392,6 +432,20 @@ public class weatherDash extends Fragment {
         loadHourlyWeatherFragment();
     }
 
+    private void showLocationUnavailableIfNeeded() {
+        if (weatherLocation == null || !isAdded()) {
+            return;
+        }
+
+        CharSequence currentLabel = weatherLocation.getText();
+        String text = currentLabel != null ? currentLabel.toString().trim() : "";
+        String loadingLabel = getString(R.string.weather_location_loading);
+
+        if (text.isEmpty() || text.equals(loadingLabel) || "Bacoor".equalsIgnoreCase(text)) {
+            weatherLocation.setText(R.string.weather_location_unavailable);
+        }
+    }
+
     private void loadCurrentWeatherFromForecast() {
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         String currentHour = new SimpleDateFormat("HH", Locale.getDefault()).format(new Date());
@@ -503,23 +557,9 @@ public class weatherDash extends Fragment {
         weatherIcon.setImageResource(R.drawable.weather_partlycloudy);
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            boolean granted = false;
-            for (int result : grantResults) {
-                if (result == PackageManager.PERMISSION_GRANTED) {
-                    granted = true;
-                    break;
-                }
-            }
-
-            if (granted) {
-                loadWeatherFromCurrentLocation();
-            } else {
-                loadWeatherFromFirebaseFallback();
-            }
+    private void showLocationDisabled() {
+        if (weatherLocation != null) {
+            weatherLocation.setText(R.string.weather_location_disabled);
         }
     }
 

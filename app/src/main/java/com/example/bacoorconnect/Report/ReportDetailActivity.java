@@ -18,6 +18,7 @@ import com.example.bacoorconnect.R;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class ReportDetailActivity extends AppCompatActivity {
 
@@ -36,6 +37,7 @@ public class ReportDetailActivity extends AppCompatActivity {
         btnPrintReport = findViewById(R.id.btnPrintReport);
         btnExportReport = findViewById(R.id.btnExportReport);
         backButton = findViewById(R.id.back_button);
+        toolbarTitle = findViewById(R.id.toolbar_title);
 
         // Set up back button click listener
         backButton.setOnClickListener(v -> {
@@ -44,13 +46,13 @@ public class ReportDetailActivity extends AppCompatActivity {
 
         // Set title if passed from intent
         String title = getIntent().getStringExtra("title");
-        if (title != null) {
+        if (title != null && toolbarTitle != null) {
             toolbarTitle.setText(title);
         }
 
         // Set up RecyclerView
         rvReportHistory.setLayoutManager(new LinearLayoutManager(this));
-        List<ReportItem> reportItems = getDummyReports();
+        List<ReportItem> reportItems = getReportFromIntent();
         ReportHistoryAdapter adapter = new ReportHistoryAdapter(reportItems);
         rvReportHistory.setAdapter(adapter);
 
@@ -81,11 +83,45 @@ public class ReportDetailActivity extends AppCompatActivity {
         Toast.makeText(this, "Export functionality is under development.", Toast.LENGTH_SHORT).show();
     }
 
-    private List<ReportItem> getDummyReports() {
+    private List<ReportItem> getReportFromIntent() {
         List<ReportItem> reports = new ArrayList<>();
-        reports.add(new ReportItem("Type A", "Location 1", "2023-10-01", "Resolved"));
-        reports.add(new ReportItem("Type B", "Location 2", "2023-10-02", "Pending"));
+
+        String type = safeValue(getIntent().getStringExtra("report_type"), "Unknown");
+        String location = safeValue(getIntent().getStringExtra("report_location"), "Location not set");
+        String date = safeValue(getIntent().getStringExtra("report_date"), "Recently");
+        String status = safeValue(getIntent().getStringExtra("report_status"), "Neutral");
+
+        if ("Recently".equals(date)) {
+            long timestamp = getIntent().getLongExtra("report_timestamp", 0L);
+            if (timestamp > 0L) {
+                date = formatRelativeTime(timestamp);
+            }
+        }
+
+        reports.add(new ReportItem(type, location, date, status));
         return reports;
+    }
+
+    private String safeValue(String value, String fallback) {
+        return value == null || value.trim().isEmpty() ? fallback : value;
+    }
+
+    private String formatRelativeTime(long timestamp) {
+        long now = System.currentTimeMillis();
+        long diff = Math.max(0L, now - timestamp);
+        long minutes = diff / 60000L;
+        long hours = minutes / 60L;
+        long days = hours / 24L;
+
+        if (minutes < 1L) {
+            return "Just now";
+        } else if (minutes < 60L) {
+            return String.format(Locale.getDefault(), "%dm ago", minutes);
+        } else if (hours < 24L) {
+            return String.format(Locale.getDefault(), "%dh ago", hours);
+        } else {
+            return String.format(Locale.getDefault(), "%dd ago", days);
+        }
     }
 
     // Adapter for RecyclerView

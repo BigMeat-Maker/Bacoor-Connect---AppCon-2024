@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">CityConnect</string>
+    <string name="weather_location_loading">Locating...</string>
+    <string name="weather_location_unavailable">Current location unavailable</string>
+    <string name="weather_location_disabled">Turn on device location</string>
     <string name="username" />
     <string name="email" />
 

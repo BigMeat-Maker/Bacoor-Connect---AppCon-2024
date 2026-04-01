@@ -36,6 +36,7 @@ public class ReportDetailsFrag extends DialogFragment {
     private String reportId, currentUserId;
     private double userLat = 14.4597; // Default Bacoor coordinates
     private double userLon = 120.9333;
+    private View rootView;
 
     public ReportDetailsFrag() {
     }
@@ -58,7 +59,9 @@ public class ReportDetailsFrag extends DialogFragment {
             userLat = getArguments().getDouble("userLat", 14.4597);
             userLon = getArguments().getDouble("userLon", 120.9333);
         }
-        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        }
         reportRef = FirebaseDatabase.getInstance().getReference("Report").child(reportId);
         usersRef = FirebaseDatabase.getInstance().getReference("Users");
         auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
@@ -67,25 +70,25 @@ public class ReportDetailsFrag extends DialogFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_report_details, container, false);
+        rootView = inflater.inflate(R.layout.fragment_report_details, container, false);
 
         // Initialize all views
-        descriptionView = view.findViewById(R.id.report_description);
-        upvoteCountView = view.findViewById(R.id.upvote_count);
-        downvoteCountView = view.findViewById(R.id.downvote_count);
-        upvoteButton = view.findViewById(R.id.upvote_button);
-        downvoteButton = view.findViewById(R.id.downvote_button);
-        user_distance = view.findViewById(R.id.user_distance);
-        locationTextView = view.findViewById(R.id.location_text);
-        usernameView = view.findViewById(R.id.Username);
-        userProfileImageView = view.findViewById(R.id.user_profile_image);
+        descriptionView = rootView.findViewById(R.id.report_description);
+        upvoteCountView = rootView.findViewById(R.id.upvote_count);
+        downvoteCountView = rootView.findViewById(R.id.downvote_count);
+        upvoteButton = rootView.findViewById(R.id.upvote_button);
+        downvoteButton = rootView.findViewById(R.id.downvote_button);
+        user_distance = rootView.findViewById(R.id.user_distance);
+        locationTextView = rootView.findViewById(R.id.location_text);
+        usernameView = rootView.findViewById(R.id.Username);
+        userProfileImageView = rootView.findViewById(R.id.user_profile_image);
 
         loadReportDetails();
 
         upvoteButton.setOnClickListener(v -> modifyVote(true));
         downvoteButton.setOnClickListener(v -> modifyVote(false));
 
-        ImageView threedots = view.findViewById(R.id.threedots);
+        ImageView threedots = rootView.findViewById(R.id.threedots);
         threedots.setOnClickListener(v -> {
             PopupMenu popupMenu = new PopupMenu(requireContext(), threedots);
             popupMenu.getMenuInflater().inflate(R.menu.post_options_menu, popupMenu.getMenu());
@@ -105,7 +108,7 @@ public class ReportDetailsFrag extends DialogFragment {
             popupMenu.show();
         });
 
-        return view;
+        return rootView;
     }
 
     private void loadReportDetails() {
@@ -114,17 +117,28 @@ public class ReportDetailsFrag extends DialogFragment {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
                     String description = snapshot.child("description").getValue(String.class);
-                    int upvotes = snapshot.child("upvotes").getValue(Integer.class);
-                    int downvotes = snapshot.child("downvotes").getValue(Integer.class);
+                    Integer upvotesValue = snapshot.child("upvotes").getValue(Integer.class);
+                    Integer downvotesValue = snapshot.child("downvotes").getValue(Integer.class);
                     String reportOwnerId = snapshot.child("userId").getValue(String.class);
-                    double reportLat = snapshot.child("latitude").getValue(Double.class);
-                    double reportLon = snapshot.child("longitude").getValue(Double.class);
-                    String previousVote = snapshot.child("voters").child(currentUserId).getValue(String.class);
+                    Double reportLatValue = snapshot.child("latitude").getValue(Double.class);
+                    Double reportLonValue = snapshot.child("longitude").getValue(Double.class);
+                    String previousVote = currentUserId == null
+                            ? null
+                            : snapshot.child("voters").child(currentUserId).getValue(String.class);
                     String category = snapshot.child("category").getValue(String.class);
                     String imageUrl = snapshot.child("imageUrl").getValue(String.class);
                     String location = snapshot.child("location").getValue(String.class);
 
-                    ImageView reportImageView = getView().findViewById(R.id.report_image);
+                    int upvotes = upvotesValue != null ? upvotesValue : 0;
+                    int downvotes = downvotesValue != null ? downvotesValue : 0;
+                    double reportLat = reportLatValue != null ? reportLatValue : 0d;
+                    double reportLon = reportLonValue != null ? reportLonValue : 0d;
+
+                    if (rootView == null) {
+                        return;
+                    }
+
+                    ImageView reportImageView = rootView.findViewById(R.id.report_image);
 
                     // Calculate and display distance
                     calculateDistance(reportLat, reportLon);
@@ -168,11 +182,13 @@ public class ReportDetailsFrag extends DialogFragment {
                     updateVoteIcons(previousVote);
 
                     // Show/hide options button
-                    ImageView threedots = getView().findViewById(R.id.threedots);
-                    if (reportOwnerId != null && reportOwnerId.equals(currentUserId)) {
-                        threedots.setVisibility(View.VISIBLE);
-                    } else {
-                        threedots.setVisibility(View.GONE);
+                    ImageView threedots = rootView.findViewById(R.id.threedots);
+                    if (threedots != null) {
+                        if (reportOwnerId != null && reportOwnerId.equals(currentUserId)) {
+                            threedots.setVisibility(View.VISIBLE);
+                        } else {
+                            threedots.setVisibility(View.GONE);
+                        }
                     }
                 } else {
                     Toast.makeText(getActivity(), "Report not found.", Toast.LENGTH_SHORT).show();
@@ -246,8 +262,13 @@ public class ReportDetailsFrag extends DialogFragment {
                 break;
         }
 
-        ImageView reportCategoryImageView = getView().findViewById(R.id.report_category);
-        reportCategoryImageView.setImageResource(categoryDrawable);
+        if (rootView == null) {
+            return;
+        }
+        ImageView reportCategoryImageView = rootView.findViewById(R.id.report_category);
+        if (reportCategoryImageView != null) {
+            reportCategoryImageView.setImageResource(categoryDrawable);
+        }
     }
 
     private void fetchAndDisplayUserInfo(String userId) {
@@ -305,12 +326,18 @@ public class ReportDetailsFrag extends DialogFragment {
     @SuppressLint("SetTextI18n")
     private void modifyVote(boolean isUpvote) {
         if (isVotingInProgress) return;
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            Toast.makeText(getActivity(), "Please login to vote.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         isVotingInProgress = true;
 
         reportRef.get().addOnSuccessListener(snapshot -> {
             if (snapshot.exists()) {
-                int upvotes = snapshot.child("upvotes").getValue(Integer.class);
-                int downvotes = snapshot.child("downvotes").getValue(Integer.class);
+                Integer upvotesValue = snapshot.child("upvotes").getValue(Integer.class);
+                Integer downvotesValue = snapshot.child("downvotes").getValue(Integer.class);
+                int upvotes = upvotesValue != null ? upvotesValue : 0;
+                int downvotes = downvotesValue != null ? downvotesValue : 0;
                 String previousVote = snapshot.child("voters").child(currentUserId).getValue(String.class);
                 HashMap<String, Object> updateData = new HashMap<>();
 
