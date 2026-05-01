@@ -1,8 +1,10 @@
 package com.example.bacoorconnect.Helpers;
 
 // Android Imports
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Geocoder;
@@ -15,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -83,6 +86,8 @@ public class Mappart extends Fragment {
 
     // Polygon overlay for the radius circle
     private Polygon radiusCircle;
+    private ValueAnimator circleAnimator;
+    private int circleAlpha = 255;
 
     // Track if circle is currently displayed
     private boolean isRadiusCircleVisible = false;
@@ -520,17 +525,22 @@ public class Mappart extends Fragment {
 
         GeoPoint center = new GeoPoint(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude());
 
-        // Remove existing circle if present
-        if (radiusCircle != null) {
-            mapView.getOverlays().remove(radiusCircle);
+        // Create new circle polygon if it doesn't exist
+        if (radiusCircle == null) {
+            radiusCircle = new Polygon();
+            radiusCircle.getFillPaint().setColor(Color.TRANSPARENT);
+            radiusCircle.getOutlinePaint().setColor(Color.rgb(0, 170, 255)); // Blue color
+            radiusCircle.getOutlinePaint().setStrokeWidth(5f);
+            
+            // Ensure the circle is enabled for drawing, but doesn't handle clicks
+            radiusCircle.setEnabled(true);
+            radiusCircle.setOnClickListener((polygon, mapView, eventPos) -> false);
+            radiusCircle.setInfoWindow(null);
+            
+            // Add at index 0 so it's behind markers and MapEventsOverlay
+            mapView.getOverlays().add(0, radiusCircle);
+            startBlinkingAnimation();
         }
-
-        // Create new circle polygon
-        radiusCircle = new Polygon();
-        radiusCircle.getFillPaint().setColor(0x3300AAFF); // Semi-transparent blue
-        radiusCircle.getFillPaint().setAlpha(100);
-        radiusCircle.getOutlinePaint().setColor(0xFF00AAFF);
-        radiusCircle.getOutlinePaint().setStrokeWidth(3f);
 
         // Generate circle points (approximation using 60 points)
         List<GeoPoint> circlePoints = new ArrayList<>();
@@ -549,9 +559,31 @@ public class Mappart extends Fragment {
         }
 
         radiusCircle.setPoints(circlePoints);
-        mapView.getOverlays().add(radiusCircle);
         isRadiusCircleVisible = true;
         mapView.postInvalidate();
+    }
+
+    private void startBlinkingAnimation() {
+        if (circleAnimator != null) {
+            circleAnimator.cancel();
+        }
+
+        circleAnimator = ValueAnimator.ofInt(70, 255); // Alpha range for blinking
+        circleAnimator.setDuration(1200); // 1.2 seconds for a smooth blink
+        circleAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        circleAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        circleAnimator.setInterpolator(new LinearInterpolator());
+        circleAnimator.addUpdateListener(animation -> {
+            if (radiusCircle != null && radiusCircle.getOutlinePaint() != null) {
+                int alpha = (int) animation.getAnimatedValue();
+                // Apply alpha to the outline color
+                radiusCircle.getOutlinePaint().setColor(Color.argb(alpha, 0, 170, 255));
+                if (mapView != null) {
+                    mapView.postInvalidate();
+                }
+            }
+        });
+        circleAnimator.start();
     }
 
     // Remove the radius circle from map
@@ -560,6 +592,9 @@ public class Mappart extends Fragment {
             mapView.getOverlays().remove(radiusCircle);
             radiusCircle = null;
             isRadiusCircleVisible = false;
+            if (circleAnimator != null) {
+                circleAnimator.cancel();
+            }
             mapView.postInvalidate();
         }
     }
@@ -573,12 +608,14 @@ public class Mappart extends Fragment {
         currentMarker.setPosition(point);
         currentMarker.setTitle("Location Selected");
         currentMarker.setId("tempmarker");
-        mapView.getOverlays().add(currentMarker);
+        currentMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
 
-        Drawable locationIcon = getResources().getDrawable(R.drawable.location_decider);
+        Drawable locationIcon = getResources().getDrawable(R.drawable.location_decider, null);
         if (locationIcon != null) {
             currentMarker.setIcon(resizeDrawable(locationIcon, zoomLevel));
         }
+
+        mapView.getOverlays().add(currentMarker);
 
         currentLat = point.getLatitude();
         currentLon = point.getLongitude();
@@ -606,7 +643,7 @@ public class Mappart extends Fragment {
             ((MapDash) getActivity()).updateLocation(currentLat, currentLon);
         }
 
-        mapView.postInvalidate();
+        mapView.invalidate();
     }
 
     public void removeCurrentMarker() {
@@ -898,6 +935,9 @@ public class Mappart extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (circleAnimator != null) {
+            circleAnimator.cancel();
+        }
         mapView.onDetach();
     }
 }
