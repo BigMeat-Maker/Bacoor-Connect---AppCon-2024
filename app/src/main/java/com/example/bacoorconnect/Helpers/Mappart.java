@@ -744,6 +744,8 @@ public class Mappart extends Fragment {
         lastKnownLocation = location;
         this.currentLat = location.getLatitude();
         this.currentLon = location.getLongitude();
+        this.getterLat = location.getLatitude();
+        this.getterLon = location.getLongitude();
 
         if (getActivity() instanceof MapDash) {
             MapDash mapdash = (MapDash) getActivity();

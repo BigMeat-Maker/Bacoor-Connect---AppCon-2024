@@ -21,7 +21,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.example.bacoorconnect.Helpers.AdjustLocationFragment;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
@@ -63,6 +62,8 @@ public class ReportActivity extends AppCompatActivity {
     private ImageView imagePreview;
     private double lon;
     private double lat;
+    private double userLat;
+    private double userLon;
     private ImageView DashNotif;
     private DatabaseReference auditRef;
     private DrawerLayout drawerLayout;
@@ -139,23 +140,6 @@ public class ReportActivity extends AppCompatActivity {
     }
 
     private void setupLocationHandling() {
-        getSupportFragmentManager().setFragmentResultListener("locationResult", this, (requestKey, bundle) -> {
-            String locationDetails = bundle.getString("locationDetails");
-            lat = bundle.getDouble("lat", lat);
-            lon = bundle.getDouble("lon", lon);
-
-            if (locationDetails != null && !locationDetails.isEmpty()) {
-                locationText.setText(locationDetails);
-            } else if (lat != 0.0 && lon != 0.0) {
-                locationText.setText(String.format(Locale.getDefault(), "%.6f, %.6f", lat, lon));
-                updateLocationFromLatLon(lat, lon);
-            } else {
-                locationText.setText("Location not found");
-                Toast.makeText(this, "Failed to get location details.", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        findViewById(R.id.changelocation).setOnClickListener(v -> openLocationAdjuster());
     }
 
     private void setupImageSelection() {
@@ -188,6 +172,8 @@ public class ReportActivity extends AppCompatActivity {
             String location = arguments.getString("location");
             lat = arguments.getDouble("lat", 0.0);
             lon = arguments.getDouble("lon", 0.0);
+            userLat = arguments.getDouble("userLat", 14.4450);
+            userLon = arguments.getDouble("userLon", 120.9405);
 
             if (location != null && !location.isEmpty() && locationText != null) {
                 locationText.setText(location);
@@ -198,14 +184,6 @@ public class ReportActivity extends AppCompatActivity {
         }
     }
 
-    private void openLocationAdjuster() {
-        AdjustLocationFragment fragment = new AdjustLocationFragment();
-        Bundle bundle = new Bundle();
-        bundle.putDouble("lat", lat);
-        bundle.putDouble("lon", lon);
-        fragment.setArguments(bundle);
-        fragment.show(getSupportFragmentManager(), fragment.getTag());
-    }
 
     private void openGallery() {
         Intent intent = new Intent();

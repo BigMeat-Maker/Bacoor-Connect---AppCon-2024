@@ -20,7 +20,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import com.bumptech.glide.Glide;
-import com.example.bacoorconnect.Helpers.AdjustLocationFragment;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
@@ -50,7 +49,8 @@ public class EditReport extends AppCompatActivity {
     private TextView locationText;
     private double lat = 14.4597;
     private double lon = 120.9333;
-    private TextView changeMapLocation;
+    private double userLat = 14.4450;
+    private double userLon = 120.9405;
     private TextInputEditText descriptionEditText;
     private RadioButton roadAccidentRadioButton, disasterAccidentRadioButton, fireAccidentRadioButton, trafficRadioButton;
     private ImageView roadAccidentImage, fireAccidentImage, disasterAccidentImage, trafficImage;
@@ -98,11 +98,14 @@ public class EditReport extends AppCompatActivity {
         disasterAccidentImage = findViewById(R.id.NaturalDisaster);
         trafficImage = findViewById(R.id.TrafficReport);
 
-        changeMapLocation = findViewById(R.id.ChangeMapLocation);
-
         userUploadedImage1 = findViewById(R.id.Useruploadedimage1);
 
         reportId = getIntent().getStringExtra("reportId");
+        userLat = getIntent().getDoubleExtra("userLat", 14.4450);
+        userLon = getIntent().getDoubleExtra("userLon", 120.9405);
+
+        Log.d("EditReport", "Initialized with userLat: " + userLat + ", userLon: " + userLon);
+
         if (reportId == null) {
             Toast.makeText(this, "Error: Report ID missing.", Toast.LENGTH_SHORT).show();
             finish();
@@ -180,40 +183,6 @@ public class EditReport extends AppCompatActivity {
             updateCategoryUI("traffic");
             selectedCategory = "traffic";
         });
-
-        changeMapLocation.setOnClickListener(v -> openLocationAdjuster());
-    }
-
-    private void openLocationAdjuster() {
-        AdjustLocationFragment fragment = new AdjustLocationFragment();
-        Bundle bundle = new Bundle();
-        bundle.putDouble("lat", lat);
-        bundle.putDouble("lon", lon);
-        fragment.setArguments(bundle);
-
-        getSupportFragmentManager().setFragmentResultListener("locationResult", this,
-                (requestKey, result) -> {
-                    if (requestKey.equals("locationResult")) {
-                        double newLat = result.getDouble("lat", lat);
-                        double newLon = result.getDouble("lon", lon);
-                        String locationDetails = result.getString("locationDetails", "");
-
-                        lat = newLat;
-                        lon = newLon;
-
-                        if (locationDetails != null && !locationDetails.isEmpty()) {
-                            locationText.setText(locationDetails);
-                        } else {
-                            String locationStr = String.format(Locale.getDefault(),
-                                    "Lat: %.6f, Lon: %.6f", lat, lon);
-                            locationText.setText(locationStr);
-                        }
-
-                        Toast.makeText(this, "Location updated", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-        fragment.show(getSupportFragmentManager(), fragment.getTag());
     }
 
     private void showImageSelectionDialog() {
@@ -282,7 +251,10 @@ public class EditReport extends AppCompatActivity {
                     originalImageUrl = snapshot.child("imageUrl").getValue(String.class);
 
                     Double firebaseLat = snapshot.child("latitude").getValue(Double.class);
+                    if (firebaseLat == null) firebaseLat = snapshot.child("lat").getValue(Double.class);
+                    
                     Double firebaseLon = snapshot.child("longitude").getValue(Double.class);
+                    if (firebaseLon == null) firebaseLon = snapshot.child("lon").getValue(Double.class);
 
                     if (firebaseLat != null) lat = firebaseLat;
                     if (firebaseLon != null) lon = firebaseLon;

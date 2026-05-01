@@ -259,6 +259,8 @@ public class MapDash extends AppCompatActivity {
             intent.putExtra("location", "Lat: " + finalReportLocation.getLatitude() + ", Lon: " + finalReportLocation.getLongitude());
             intent.putExtra("lat", finalReportLocation.getLatitude());
             intent.putExtra("lon", finalReportLocation.getLongitude());
+            intent.putExtra("userLat", userLocation.getLatitude());
+            intent.putExtra("userLon", userLocation.getLongitude());
 
             Log.d("MapDashDebug", "Intent extras - location: " +
                     intent.getStringExtra("location") + ", lat: " +

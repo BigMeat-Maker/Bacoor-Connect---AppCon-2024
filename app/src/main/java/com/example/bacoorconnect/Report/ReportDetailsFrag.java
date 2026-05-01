@@ -97,6 +97,8 @@ public class ReportDetailsFrag extends DialogFragment {
                 if (item.getItemId() == R.id.option_edit) {
                     Intent intent = new Intent(requireContext(), EditReport.class);
                     intent.putExtra("reportId", reportId);
+                    intent.putExtra("userLat", userLat);
+                    intent.putExtra("userLon", userLon);
                     startActivity(intent);
                     return true;
                 } else if (item.getItemId() == R.id.option_delete) {

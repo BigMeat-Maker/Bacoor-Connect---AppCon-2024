@@ -85,6 +85,12 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         highlightHandler.postDelayed(clearHighlightRunnable, 3000);
     }
 
+    public void updateLocation(double lat, double lon) {
+        this.currentLatitude = lat;
+        this.currentLongitude = lon;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ReportViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -150,6 +156,8 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                     if (item.getItemId() == R.id.option_edit) {
                         Intent intent = new Intent(context, EditReport.class);
                         intent.putExtra("reportId", report.getReportId());
+                        intent.putExtra("userLat", currentLatitude);
+                        intent.putExtra("userLon", currentLongitude);
                         context.startActivity(intent);
                         return true;
                     } else if (item.getItemId() == R.id.option_delete) {
