@@ -9,6 +9,7 @@ import com.example.bacoorconnect.Helpers.AzureConfig;
 import com.example.bacoorconnect.Helpers.AzureVisionConfig;
 import com.example.bacoorconnect.Helpers.ContentSafetyConfig;
 import com.example.bacoorconnect.Helpers.EmailConfig;
+import com.example.bacoorconnect.Helpers.SightengineConfig;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -35,7 +36,9 @@ public class MyApplication extends Application implements Configuration.Provider
         setupAzureFromRemoteConfig();
         setupContentSafetyFromRemoteConfig();
         setupAzureVisionFromRemoteConfig();
+        setupSightengineFromRemoteConfig();
     }
+
     private void setupAzureVisionFromRemoteConfig() {
         FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
 
@@ -146,4 +149,41 @@ public class MyApplication extends Application implements Configuration.Provider
                 });
     }
 
+    private void setupSightengineFromRemoteConfig() {
+        FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+
+        java.util.Map<String, Object> defaults = new java.util.HashMap<>();
+        defaults.put("sightengine_api_user", "");
+        defaults.put("sightengine_api_secret", "");
+        defaults.put("sightengine_threshold", 0.7);
+        remoteConfig.setDefaultsAsync(defaults);
+
+        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
+                .setMinimumFetchIntervalInSeconds(3600)
+                .build();
+        remoteConfig.setConfigSettingsAsync(configSettings);
+
+        remoteConfig.fetchAndActivate()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        boolean updated = task.getResult();
+                        Log.d(TAG, "Sightengine Remote Config fetch " + (updated ? "successful" : "not needed"));
+
+                        String apiUser = remoteConfig.getString("sightengine_api_user");
+                        String apiSecret = remoteConfig.getString("sightengine_api_secret");
+                        double threshold = remoteConfig.getDouble("sightengine_threshold");
+
+                        if (!apiUser.isEmpty() && !apiSecret.isEmpty()) {
+                            SightengineConfig.setCredentials(this, apiUser, apiSecret);
+                            SightengineConfig.setConfidenceThreshold(this, (float) threshold);
+                            Log.d(TAG, "Sightengine credentials saved to secure storage");
+                            Log.d(TAG, "Sightengine threshold set to: " + threshold);
+                        } else {
+                            Log.e(TAG, "Sightengine credentials not found in Remote Config");
+                        }
+                    } else {
+                        Log.e(TAG, "Failed to fetch Sightengine Remote Config", task.getException());
+                    }
+                });
+    }
 }

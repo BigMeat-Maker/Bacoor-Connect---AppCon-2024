@@ -29,6 +29,8 @@ import com.example.bacoorconnect.General.NavigationHeader;
 import com.example.bacoorconnect.General.NotificationCenter;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Helpers.ReverseImageSearch;
+import com.example.bacoorconnect.Helpers.SightengineAIDetector;
+import com.example.bacoorconnect.Helpers.SightengineConfig;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -68,6 +70,9 @@ public class ReportActivity extends AppCompatActivity {
     private DatabaseReference auditRef;
     private DrawerLayout drawerLayout;
 
+    // Add Sightengine detector
+    private SightengineAIDetector aiDetector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +83,14 @@ public class ReportActivity extends AppCompatActivity {
         setupLocationHandling();
         setupImageSelection();
         setupSubmitButton();
+
+        // Initialize AI detector
+        aiDetector = new SightengineAIDetector(this);
+        if (!aiDetector.isReady()) {
+            Log.w("ReportActivity", "Sightengine AI detector not ready - credentials missing");
+        } else {
+            Log.d("ReportActivity", "Sightengine AI detector initialized with threshold: " + aiDetector.getConfidenceThreshold());
+        }
 
         handleIntentExtras();
 
@@ -363,7 +376,8 @@ public class ReportActivity extends AppCompatActivity {
                     public void onCategoryVerified(boolean matchesCategory,
                                                    List<String> tags, String caption) {
                         if (matchesCategory) {
-                            uploadImageToStorage(reportId);
+                            // Category matches - now check for AI-generated content
+                            performAIDetection(imageUri, reportId, debugInfo, tags, caption);
                         } else {
                             String strikeReason = String.format(
                                     "Category mismatch. Expected %s, found tags: %s",
@@ -379,15 +393,88 @@ public class ReportActivity extends AppCompatActivity {
                         Toast.makeText(ReportActivity.this,
                                 "Image verification incomplete. Report will be reviewed.",
                                 Toast.LENGTH_LONG).show();
-                        uploadImageToStorage(reportId);
+                        // Proceed with AI detection even if category verification failed
+                        performAIDetection(imageUri, reportId, debugInfo, null, null);
                     }
                 });
     }
 
+    /**
+     * New method: Perform AI-generated image detection as the final check
+     */
+    private void performAIDetection(Uri imageUri, String reportId, String debugInfo,
+                                    List<String> tags, String caption) {
+        // Check if AI detector is ready
+        if (!aiDetector.isReady()) {
+            Log.w("ReportActivity", "AI detector not ready, skipping AI check");
+            uploadImageToStorage(reportId);
+            return;
+        }
+
+        // Show progress dialog for AI detection
+        ProgressDialog aiProgress = new ProgressDialog(this);
+        aiProgress.setMessage("Final AI verification...");
+        aiProgress.setCancelable(false);
+        aiProgress.show();
+
+        // Perform AI detection
+        aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
+            @Override
+            public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
+                aiProgress.dismiss();
+
+                // Log the result
+                Log.d("ReportActivity", "AI Detection Result: " + result.getFormattedResult());
+
+                // Check if image is AI-generated above threshold
+                if (result.isAboveThreshold()) {
+                    // AI-generated image detected - BLOCK submission
+                    String strikeReason = String.format(
+                            "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
+                            result.confidence * 100, aiDetector.getConfidenceThreshold() * 100
+                    );
+
+                    String additionalInfo = String.format(
+                            "Detection Type: %s\nTags: %s\nCaption: %s\nDebug: %s",
+                            result.detectionType, tags != null ? tags : "N/A",
+                            caption != null ? caption : "N/A", debugInfo
+                    );
+
+                    handleInappropriateContent(3, strikeReason, imageUri,
+                            getCurrentDescription(), result.rawResponse + "\n" + additionalInfo);
+
+                } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
+                    Log.w("ReportActivity", "Possible AI image below threshold: " + result.confidence);
+                    uploadScanResultToFirebase("WARNING: Possible AI image - " + result.getFormattedResult());
+                    uploadImageToStorage(reportId);
+                } else {
+                    uploadImageToStorage(reportId);
+                }
+            }
+
+            @Override
+            public void onDetectionFailed(String error) {
+                aiProgress.dismiss();
+                Log.e("ReportActivity", "AI detection failed: " + error);
+                Toast.makeText(ReportActivity.this,
+                        "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                uploadImageToStorage(reportId);
+            }
+        });
+    }
+
     private void handleInappropriateContent(int strikeCount, String reason, Uri imageUri, String text, String debugJson) {
-        runOnUiThread(() -> Toast.makeText(ReportActivity.this,
-                "Inappropriate content detected!",
-                Toast.LENGTH_LONG).show());
+        runOnUiThread(() -> {
+            String message;
+            if (reason.contains("AI-generated")) {
+                message = "AI-generated images are not allowed in reports!";
+            } else if (reason.contains("Category mismatch")) {
+                message = "Image content doesn't match selected category!";
+            } else {
+                message = "Inappropriate content detected!";
+            }
+            Toast.makeText(ReportActivity.this, message, Toast.LENGTH_LONG).show();
+        });
         addStrikeToUser(strikeCount, reason, imageUri, text);
         uploadScanResultToFirebase(debugJson);
     }
