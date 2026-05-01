@@ -155,7 +155,7 @@ public class MyApplication extends Application implements Configuration.Provider
         java.util.Map<String, Object> defaults = new java.util.HashMap<>();
         defaults.put("sightengine_api_user", "");
         defaults.put("sightengine_api_secret", "");
-        defaults.put("sightengine_threshold", 0.7);
+        defaults.put("sightengine_threshold", 0.5);
         remoteConfig.setDefaultsAsync(defaults);
 
         FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()

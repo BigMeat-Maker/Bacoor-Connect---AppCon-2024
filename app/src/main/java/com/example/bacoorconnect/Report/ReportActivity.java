@@ -69,6 +69,7 @@ public class ReportActivity extends AppCompatActivity {
     private ImageView DashNotif;
     private DatabaseReference auditRef;
     private DrawerLayout drawerLayout;
+    private Map<String, Object> currentScanResults = new HashMap<>();
 
     // Add Sightengine detector
     private SightengineAIDetector aiDetector;
@@ -256,11 +257,12 @@ public class ReportActivity extends AppCompatActivity {
 
     private void uploadImageAndSubmitReport(String reportId) {
         String description = descriptionEditText.getText().toString();
-
+        currentScanResults.clear();
 
         TextContentAnalyzer.analyzeText(this, description, new TextContentAnalyzer.TextAnalysisCallback() {
             @Override
             public void onTextContentChecked(boolean isSafe, String debugJson) {
+                currentScanResults.put("textScan", debugJson);
                 if (!isSafe) {
                     handleInappropriateContent(1, "Inappropriate text content", null, description, debugJson);
                     return;
@@ -272,6 +274,7 @@ public class ReportActivity extends AppCompatActivity {
                             new ImageContentAnalyzer.ImageAnalysisCallback() {
                                 @Override
                                 public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
+                                    currentScanResults.put("imageScan", debugJson);
                                     if (isRacy) {
                                         handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson);
                                     } else {
@@ -285,6 +288,7 @@ public class ReportActivity extends AppCompatActivity {
                                 @Override
                                 public void onContentCheckFailed(String error) {
                                     Log.e("IMAGE_SCAN", "Image scan failed: " + error);
+                                    currentScanResults.put("imageScanError", error);
                                     runOnUiThread(() -> Toast.makeText(ReportActivity.this,
                                             "Image verification failed. Uploading anyway.",
                                             Toast.LENGTH_SHORT).show());
@@ -302,12 +306,14 @@ public class ReportActivity extends AppCompatActivity {
             @Override
             public void onContentCheckFailed(String error) {
                 Log.e("TEXT_SCAN", "Text scan failed: " + error);
+                currentScanResults.put("textScanError", error);
                 if (imageUri != null) {
                     ImageContentAnalyzer.analyzeImage(ReportActivity.this, imageUri,
                             new ImageContentAnalyzer.ImageAnalysisCallback() {
 
                                 @Override
                                 public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
+                                    currentScanResults.put("imageScan", debugJson);
                                     if (isRacy) {
                                         handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson);
                                     } else {
@@ -317,6 +323,7 @@ public class ReportActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onContentCheckFailed(String error) {
+                                    currentScanResults.put("imageScanError", error);
                                     runOnUiThread(() -> Toast.makeText(ReportActivity.this,
                                             "Content verification failed completely. Report blocked.",
                                             Toast.LENGTH_LONG).show());
@@ -347,6 +354,7 @@ public class ReportActivity extends AppCompatActivity {
                     @Override
                     public void onSearchComplete(boolean isSuspicious, String debugInfo) {
                         progress.dismiss();
+                        currentScanResults.put("reverseImageSearch", debugInfo);
 
                         if (isSuspicious) {
                             handleInappropriateContent(3, "Suspicious image content",
@@ -360,6 +368,7 @@ public class ReportActivity extends AppCompatActivity {
                     public void onSearchFailed(String error) {
                         progress.dismiss();
                         Log.e("ReverseImageSearch", "Search failed: " + error);
+                        currentScanResults.put("reverseImageSearchError", error);
                         verifyImageCategory(imageUri, reportId, "Search failed: " + error);
                     }
                 });
@@ -375,6 +384,12 @@ public class ReportActivity extends AppCompatActivity {
                     @Override
                     public void onCategoryVerified(boolean matchesCategory,
                                                    List<String> tags, String caption) {
+                        Map<String, Object> categoryData = new HashMap<>();
+                        categoryData.put("matchesCategory", matchesCategory);
+                        categoryData.put("tags", tags);
+                        categoryData.put("caption", caption);
+                        currentScanResults.put("categoryVerification", categoryData);
+
                         if (matchesCategory) {
                             // Category matches - now check for AI-generated content
                             performAIDetection(imageUri, reportId, debugInfo, tags, caption);
@@ -390,6 +405,7 @@ public class ReportActivity extends AppCompatActivity {
                     @Override
                     public void onVerificationFailed(String error) {
                         Log.e("CategoryCheck", "Verification failed: " + error);
+                        currentScanResults.put("categoryVerificationError", error);
                         Toast.makeText(ReportActivity.this,
                                 "Image verification incomplete. Report will be reviewed.",
                                 Toast.LENGTH_LONG).show();
@@ -407,6 +423,7 @@ public class ReportActivity extends AppCompatActivity {
         // Check if AI detector is ready
         if (!aiDetector.isReady()) {
             Log.w("ReportActivity", "AI detector not ready, skipping AI check");
+            currentScanResults.put("aiDetection", "Detector not ready");
             uploadImageToStorage(reportId);
             return;
         }
@@ -422,6 +439,7 @@ public class ReportActivity extends AppCompatActivity {
             @Override
             public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
                 aiProgress.dismiss();
+                currentScanResults.put("aiDetection", result.rawResponse);
 
                 // Log the result
                 Log.d("ReportActivity", "AI Detection Result: " + result.getFormattedResult());
@@ -429,12 +447,12 @@ public class ReportActivity extends AppCompatActivity {
                 // Check if image is AI-generated above threshold
                 if (result.isAboveThreshold()) {
                     // AI-generated image detected - BLOCK submission
-                    String strikeReason = String.format(
+                    String strikeReason = String.format(Locale.getDefault(),
                             "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
                             result.confidence * 100, aiDetector.getConfidenceThreshold() * 100
                     );
 
-                    String additionalInfo = String.format(
+                    String additionalInfo = String.format(Locale.getDefault(),
                             "Detection Type: %s\nTags: %s\nCaption: %s\nDebug: %s",
                             result.detectionType, tags != null ? tags : "N/A",
                             caption != null ? caption : "N/A", debugInfo
@@ -456,6 +474,7 @@ public class ReportActivity extends AppCompatActivity {
             public void onDetectionFailed(String error) {
                 aiProgress.dismiss();
                 Log.e("ReportActivity", "AI detection failed: " + error);
+                currentScanResults.put("aiDetectionError", error);
                 Toast.makeText(ReportActivity.this,
                         "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
                 uploadImageToStorage(reportId);
@@ -623,6 +642,7 @@ public class ReportActivity extends AppCompatActivity {
                 reportData.put("comments", new HashMap<>());
                 reportData.put("timestamp", timestamp);
                 reportData.put("userId", currentUserId);
+                reportData.put("scanResults", currentScanResults);
 
                 if (imageUrl != null) {
                     reportData.put("imageUrl", imageUrl);
