@@ -222,8 +222,23 @@ public class MapDash extends AppCompatActivity {
     private void loadMapFragment() {
         Mappart mapFragment = new Mappart();
         Bundle args = new Bundle();
-        args.putDouble("initialLat", currentLat);
-        args.putDouble("initialLon", currentLon);
+
+        // Check if there are target coordinates passed from EmergencyHospitals
+        double targetLat = getIntent().getDoubleExtra("targetLat", 0);
+        double targetLon = getIntent().getDoubleExtra("targetLon", 0);
+        String targetName = getIntent().getStringExtra("targetName");
+        
+        if (targetLat != 0 && targetLon != 0) {
+            args.putDouble("initialLat", targetLat);
+            args.putDouble("initialLon", targetLon);
+            if (targetName != null) {
+                args.putString("targetName", targetName);
+            }
+        } else {
+            args.putDouble("initialLat", currentLat);
+            args.putDouble("initialLon", currentLon);
+        }
+        
         mapFragment.setArguments(args);
 
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -360,3 +375,4 @@ public class MapDash extends AppCompatActivity {
         }
     }
 }
+

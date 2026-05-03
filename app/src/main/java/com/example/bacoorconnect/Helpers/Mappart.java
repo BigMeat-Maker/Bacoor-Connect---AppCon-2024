@@ -153,20 +153,41 @@ public class Mappart extends Fragment {
         if (getArguments() != null) {
             double initialLat = getArguments().getDouble("initialLat", 0);
             double initialLon = getArguments().getDouble("initialLon", 0);
+            String targetName = getArguments().getString("targetName");
             if (initialLat != 0 && initialLon != 0) {
                 lastKnownLocation = new Location("");
                 lastKnownLocation.setLatitude(initialLat);
                 lastKnownLocation.setLongitude(initialLon);
                 centerMapOnUserLocation(lastKnownLocation);
+                
+                if (targetName != null) {
+                    Marker targetMarker = new Marker(mapView);
+                    targetMarker.setPosition(new GeoPoint(initialLat, initialLon));
+                    targetMarker.setTitle(targetName);
+                    
+                    Drawable locationIcon = getResources().getDrawable(R.drawable.location_decider, null);
+                    if (locationIcon != null) {
+                        targetMarker.setIcon(resizeDrawable(locationIcon, 16.0f));
+                    }
+                    mapView.getOverlays().add(targetMarker);
+                    targetMarker.showInfoWindow();
+                }
             }
         }
 
         loadReportsFromFirebase();
 
-        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1001);
+        if (getArguments() == null || getArguments().getString("targetName") == null) {
+            if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1001);
+            } else {
+                locationOverlay.enableMyLocation();
+            }
         } else {
+            // we have a target name, which means this map was opened to view a hospital
+            // we setup my location but don't force follow it
             locationOverlay.enableMyLocation();
+            locationOverlay.disableFollowLocation();
         }
 
         mapView.addMapListener(new MapListener() {
