@@ -11,15 +11,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp"
+        android:padding="16dp"
         android:background="@color/white">
 
+        <!-- Profile Section with Username and Options -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingBottom="12dp"
+            android:paddingBottom="8dp"
             android:paddingTop="8dp">
 
             <ImageView
@@ -44,14 +45,6 @@
                     android:textStyle="bold"
                     android:textColor="@color/black"
                     android:fontFamily="@font/poppins_bold"/>
-
-                <ImageView
-                    android:id="@+id/report_category"
-                    android:layout_width="wrap_content"
-                    android:layout_height="24dp"
-                    android:layout_marginTop="4dp"
-                    android:src="@drawable/tag_roadaccident"
-                    android:adjustViewBounds="true"/>
             </LinearLayout>
 
             <ImageView
@@ -62,7 +55,120 @@
                 android:padding="4dp"/>
         </LinearLayout>
 
+        <!-- Category Tag Section -->
         <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="60dp"
+            android:paddingBottom="16dp">
+
+            <ImageView
+                android:id="@+id/report_category"
+                android:layout_width="wrap_content"
+                android:layout_height="24dp"
+                android:src="@drawable/tag_roadaccident"
+                android:adjustViewBounds="true"/>
+        </LinearLayout>
+
+        <!-- Status Indicators Section -->
+
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Location not verified -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:background="@drawable/button_rounded"
+                    android:backgroundTint="@color/light_gray_background"
+                    android:layout_marginEnd="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📍"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location unverified"
+                        android:textSize="12sp"
+                        android:textColor="@color/dark_gray"
+                        android:fontFamily="@font/poppins_regular"/>
+                </LinearLayout>
+
+                <!-- May contain AI content -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:background="@drawable/button_rounded"
+                    android:backgroundTint="@color/light_gray_background"
+                    android:layout_marginEnd="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✨"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="May contain AI"
+                        android:textSize="12sp"
+                        android:textColor="@color/dark_gray"
+                        android:fontFamily="@font/poppins_regular"/>
+                </LinearLayout>
+
+                <!-- Edited -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:background="@drawable/button_rounded"
+                    android:backgroundTint="@color/light_gray_background"
+                    android:layout_marginEnd="6dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✎"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="4dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Edited"
+                        android:textSize="12sp"
+                        android:textColor="@color/dark_gray"
+                        android:fontFamily="@font/poppins_regular"/>
+                </LinearLayout>
+            </LinearLayout>
+
+        <!-- Location Section -->
+        <LinearLayout
+            android:layout_marginTop="16dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
