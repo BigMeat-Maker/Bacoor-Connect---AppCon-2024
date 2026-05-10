@@ -50,170 +50,13 @@
             android:layout_marginBottom="12dp"
             android:textColor="@color/black" />
 
-        <!-- Hotlines Row 1 -->
-        <LinearLayout
+        <!-- Emergency Hotlines RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/hotlinesRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:layout_marginBottom="12dp">
-
-            <!-- RER 161 -->
-            <LinearLayout
-                android:id="@+id/hotline_rer"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/logo_alert161"
-                    android:scaleType="centerCrop"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="RER 161"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-
-            <!-- BDRRMO -->
-            <LinearLayout
-                android:id="@+id/hotline_bdrrmo"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/hotline_bdrrmo"
-                    android:scaleType="centerCrop"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="BDRRMO"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-
-            <!-- PNP -->
-            <LinearLayout
-                android:id="@+id/hotline_pnp"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/hotline_pnp"
-                    android:scaleType="centerCrop"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="PNP Bacoor"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Hotlines Row 2 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:layout_marginBottom="24dp">
-
-            <!-- BFP -->
-            <LinearLayout
-                android:id="@+id/hotline_bfp"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/hotline_bfp"
-                    android:scaleType="centerCrop"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="BFP Bacoor"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-
-            <!-- Medical -->
-            <LinearLayout
-                android:id="@+id/hotline_medical"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/hotline_medical"
-                    android:scaleType="centerCrop"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="City Info"
-                    android:fontFamily="@font/poppins_regular"
-                    android:textSize="12sp"
-                    android:textColor="@color/black"
-                    android:gravity="center"
-                    android:layout_marginTop="8dp"/>
-            </LinearLayout>
-
-            <!-- Placeholder for symmetry -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:visibility="invisible"/>
-        </LinearLayout>
+            android:nestedScrollingEnabled="false"
+            android:layout_marginBottom="16dp" />
 
         <View
             android:layout_width="match_parent"
@@ -473,7 +316,7 @@
                     android:gravity="center"
                     android:layout_marginTop="6dp"/>
             </LinearLayout>
-+        </LinearLayout>
+        </LinearLayout>
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

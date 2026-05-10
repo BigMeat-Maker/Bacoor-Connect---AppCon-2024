@@ -60,6 +60,7 @@ public class HotlineAdapter extends RecyclerView.Adapter<HotlineAdapter.ViewHold
         
         Glide.with(holder.itemView.getContext())
                 .load(Hotline.getImageUrl())
+                .placeholder(R.drawable.drawer_emergency) // fallback placeholder
                 .into(holder.HotlineImage);
 
         if (userLocation != null) {

@@ -1,6 +1,9 @@
 package com.example.bacoorconnect.Emergency;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,8 +12,13 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.bacoorconnect.General.AboutUs;
 import com.example.bacoorconnect.General.Dashboard;
@@ -19,17 +27,58 @@ import com.example.bacoorconnect.General.MapDash;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportIncident;
 import com.example.bacoorconnect.UserProfile;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
-public class EmergencyHotlines extends Fragment {
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+public class EmergencyHotlines extends Fragment implements HotlineAdapter.OnHotlineInteractionListener {
 
     private DatabaseReference auditRef;
+    private RecyclerView hotlinesRecyclerView;
+    private HotlineAdapter adapter;
+    private List<Hotline> hotlineList;
+    private FusedLocationProviderClient fusedLocationClient;
+    private Location currentUserLocation = null;
+    private boolean hasFetchedLocation = false;
+    private boolean hasFetchedHotlines = false;
+
+    private static final String GOOGLE_PLACES_API_KEY = "AIzaSyAh_s1ran_97S3SWQ63z5zZLMfi_e25cRE"; // Replace with actual API key
+    private final OkHttpClient client = new OkHttpClient();
+
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                boolean granted = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (granted) {
+                    fetchUserLocation();
+                } else {
+                    useDefaultLocation();
+                }
+            });
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -38,12 +87,19 @@ public class EmergencyHotlines extends Fragment {
         auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
         logActivity("Unknown", "Navigation", "Opened Emergency Hotlines", "Emergency Resources", "Success", "User accessed the emergency resources: hotlines page", "N/A");
 
-        // Setup hotline click listeners
-        setupHotlineClick(view, R.id.hotline_rer, "161", "RER 161");
-        setupHotlineClick(view, R.id.hotline_bdrrmo, "(046)4170727", "BDRRMO");
-        setupHotlineClick(view, R.id.hotline_pnp, "09777520819", "PNP Bacoor");
-        setupHotlineClick(view, R.id.hotline_bfp, "09666959711", "BFP Bacoor");
-        setupHotlineClick(view, R.id.hotline_medical, "(046)4814120", "City Information Office");
+        hotlinesRecyclerView = view.findViewById(R.id.hotlinesRecyclerView);
+        hotlineList = new ArrayList<>();
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+
+        if (hasLocationPermission()) {
+            fetchUserLocation();
+        } else {
+            locationPermissionLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
 
         // Setup quick access click listeners
         setupQuickAccessListeners(view);
@@ -51,16 +107,254 @@ public class EmergencyHotlines extends Fragment {
         return view;
     }
 
-    private void setupHotlineClick(View parentView, int layoutId, String phoneNumber, String serviceName) {
-        LinearLayout layout = parentView.findViewById(layoutId);
-        if (layout != null) {
-            layout.setOnClickListener(v -> {
-                Intent callIntent = new Intent(Intent.ACTION_DIAL);
-                callIntent.setData(Uri.parse("tel:" + phoneNumber));
-                startActivity(callIntent);
-                logActivity("Unknown", "Phone Call", "Dialed", serviceName + " - " + phoneNumber, "Success", "User initiated a phone call", "N/A");
+    private boolean hasLocationPermission() {
+        return ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void fetchUserLocation() {
+        try {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+                if (location != null) {
+                    processLocation(location);
+                } else {
+                    CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+                    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, cancellationTokenSource.getToken())
+                            .addOnSuccessListener(loc -> {
+                                if (loc != null) processLocation(loc);
+                                else useDefaultLocation();
+                            })
+                            .addOnFailureListener(e -> useDefaultLocation());
+                }
+            }).addOnFailureListener(e -> useDefaultLocation());
+        } catch (SecurityException e) {
+            useDefaultLocation();
+        }
+    }
+
+    private void useDefaultLocation() {
+        Location defaultLocation = new Location("fallback");
+        // Coordinates for default Bacoor location
+        defaultLocation.setLatitude(14.422);
+        defaultLocation.setLongitude(120.945);
+        processLocation(defaultLocation);
+    }
+
+    private void processLocation(Location location) {
+        currentUserLocation = location;
+        hasFetchedLocation = true;
+        fetchHotlinesFromGooglePlaces(location);
+    }
+
+    private void fetchHotlinesFromGooglePlaces(Location location) {
+        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                "?location=" + location.getLatitude() + "," + location.getLongitude() +
+                "&radius=5000" +
+                "&type=police|fire_station|local_government_office" +
+                "&key=" + GOOGLE_PLACES_API_KEY;
+
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                requireActivity().runOnUiThread(() -> fetchHotlinesFromFirebase());
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    requireActivity().runOnUiThread(() -> parseGooglePlacesResponse(responseData));
+                } else {
+                    requireActivity().runOnUiThread(() -> fetchHotlinesFromFirebase());
+                }
+            }
+        });
+    }
+
+    private void parseGooglePlacesResponse(String jsonData) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonData);
+            JSONArray results = jsonObject.getJSONArray("results");
+
+            hotlineList.clear();
+
+            for (int i = 0; i < results.length(); i++) {
+                JSONObject place = results.getJSONObject(i);
+                String name = place.getString("name");
+                
+                String vicinity = place.optString("vicinity", "No address available");
+                
+                JSONObject locationObj = place.getJSONObject("geometry").getJSONObject("location");
+                double lat = locationObj.getDouble("lat");
+                double lng = locationObj.getDouble("lng");
+                
+                String placeId = place.optString("place_id");
+                
+                Hotline hotline = new Hotline(name, vicinity, "Fetching contact...", lat, lng, "");
+                hotlineList.add(hotline);
+
+                if (placeId != null && !placeId.isEmpty()) {
+                    fetchPlaceDetails(placeId, hotline);
+                } else {
+                    hotline.setPhoneNumber("Phone not available");
+                }
+            }
+
+            if (hotlineList.isEmpty()) {
+                fetchHotlinesFromFirebase();
+            } else {
+                hasFetchedHotlines = true;
+                attemptSyncAndRender();
+            }
+
+        } catch (Exception e) {
+            fetchHotlinesFromFirebase();
+        }
+    }
+
+    private void fetchPlaceDetails(String placeId, Hotline hotline) {
+        String url = "https://maps.googleapis.com/maps/api/place/details/json" +
+                "?place_id=" + placeId +
+                "&fields=formatted_phone_number" +
+                "&key=" + GOOGLE_PLACES_API_KEY;
+
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                hotline.setPhoneNumber("Phone not available");
+                requireActivity().runOnUiThread(() -> {
+                     if (adapter != null) adapter.notifyDataSetChanged();
+                });
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    try {
+                        String responseData = response.body().string();
+                        JSONObject jsonObject = new JSONObject(responseData);
+                        JSONObject result = jsonObject.optJSONObject("result");
+                        if (result != null && result.has("formatted_phone_number")) {
+                            String phone = result.getString("formatted_phone_number");
+                            hotline.setPhoneNumber(phone);
+                        } else {
+                            hotline.setPhoneNumber("Phone not available");
+                        }
+                    } catch (Exception e) {
+                        hotline.setPhoneNumber("Phone not available");
+                    }
+                } else {
+                    hotline.setPhoneNumber("Phone not available");
+                }
+                requireActivity().runOnUiThread(() -> {
+                     if (adapter != null) adapter.notifyDataSetChanged();
+                });
+            }
+        });
+    }
+
+    private void fetchHotlinesFromFirebase() {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Hotlines");
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                hotlineList.clear();
+                if (snapshot.exists()) {
+                    for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                        Hotline hotline = dataSnapshot.getValue(Hotline.class);
+                        if (hotline != null) {
+                            hotlineList.add(hotline);
+                        }
+                    }
+                }
+                
+                if (hotlineList.isEmpty()) {
+                    hotlineList.addAll(getFallbackHotlines());
+                }
+                
+                hasFetchedHotlines = true;
+                attemptSyncAndRender();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (hotlineList.isEmpty()) {
+                    hotlineList.addAll(getFallbackHotlines());
+                }
+                hasFetchedHotlines = true;
+                attemptSyncAndRender();
+            }
+        });
+    }
+
+    private List<Hotline> getFallbackHotlines() {
+        List<Hotline> fallbacks = new ArrayList<>();
+        fallbacks.add(new Hotline("RER 161", "Bacoor", "161", 14.450, 120.960, ""));
+        fallbacks.add(new Hotline("BDRRMO", "Bacoor", "(046)4170727", 14.448, 120.942, ""));
+        fallbacks.add(new Hotline("PNP Bacoor", "Bacoor Police Station", "09777520819", 14.415, 120.947, ""));
+        fallbacks.add(new Hotline("BFP Bacoor", "Bacoor Fire Station", "09666959711", 14.398, 120.963, ""));
+        fallbacks.add(new Hotline("City Information Office", "Bacoor City Hall", "(046)4814120", 14.402, 120.950, ""));
+        return fallbacks;
+    }
+
+    private void attemptSyncAndRender() {
+        if (!hasFetchedLocation || !hasFetchedHotlines) return;
+
+        if (currentUserLocation != null && !hotlineList.isEmpty()) {
+            hotlineList.sort((h1, h2) -> {
+                Location loc1 = new Location("");
+                loc1.setLatitude(h1.getLatitude());
+                loc1.setLongitude(h1.getLongitude());
+                
+                Location loc2 = new Location("");
+                loc2.setLatitude(h2.getLatitude());
+                loc2.setLongitude(h2.getLongitude());
+                
+                float dist1 = currentUserLocation.distanceTo(loc1);
+                float dist2 = currentUserLocation.distanceTo(loc2);
+                return Float.compare(dist1, dist2);
             });
         }
+
+        setupRecyclerView();
+    }
+
+    private void setupRecyclerView() {
+        if (adapter == null) {
+            adapter = new HotlineAdapter(hotlineList, currentUserLocation, this);
+            hotlinesRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+            hotlinesRecyclerView.setAdapter(adapter);
+        } else {
+            adapter.updateData(hotlineList, currentUserLocation);
+        }
+    }
+
+    @Override
+    public void onCallClicked(Hotline hotline) {
+        String phoneStr = hotline.getPhoneNumber();
+        String cleanPhone = phoneStr != null ? phoneStr.replaceAll("[^0-9+]", "") : "";
+        if (cleanPhone.isEmpty()) {
+            Toast.makeText(getContext(), "No valid phone number available.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent callIntent = new Intent(Intent.ACTION_DIAL);
+        callIntent.setData(Uri.parse("tel:" + cleanPhone));
+        startActivity(callIntent);
+        logActivity("Unknown", "Phone Call", "Dialed", hotline.getName() + " - " + hotline.getPhoneNumber(), "Success", "User initiated a phone call", "N/A");
+    }
+
+    @Override
+    public void onLocationClicked(Hotline hotline) {
+        Intent intent = new Intent(getContext(), com.example.bacoorconnect.General.MapDash.class);
+        intent.putExtra("targetLat", hotline.getLatitude());
+        intent.putExtra("targetLon", hotline.getLongitude());
+        intent.putExtra("targetName", hotline.getName());
+        startActivity(intent);
+        logActivity("Location", "Map Open", "Viewed", hotline.getAddress(), "Success", "user opened location internally", "N/A");
     }
 
     private void setupQuickAccessListeners(View view) {

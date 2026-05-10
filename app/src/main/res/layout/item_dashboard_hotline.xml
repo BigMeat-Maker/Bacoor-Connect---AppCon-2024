@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="100dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp"
+    android:layout_marginEnd="6dp"
+    android:background="?attr/selectableItemBackground"
+    android:backgroundTint="#F5F5F5">
+    <!-- Using a default icon for dynamic nearby hotlines -->
+    <ImageView
+        android:id="@+id/hotline_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/logo_alert161"
+        android:scaleType="centerCrop"/>
+    <TextView
+        android:id="@+id/hotline_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hotline"
+        android:fontFamily="@font/poppins_regular"
+        android:textSize="12sp"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:textAlignment="center"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:layout_marginTop="10dp"/>
+</LinearLayout>
