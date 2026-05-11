@@ -2,13 +2,13 @@ package com.example.bacoorconnect.Helpers;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +48,8 @@ public class SightengineAIDetector {
                 apiSecret != null && !apiSecret.isEmpty());
 
         if (isInitialized) {
-            Log.d(TAG, "Sightengine detector initialized with credentials");
+            Log.d(TAG, "Sightengine detector initialized");
+            Log.d(TAG, "API User: " + (apiUser.length() > 8 ? apiUser.substring(0, 8) + "..." : apiUser));
             Log.d(TAG, "Confidence threshold: " + confidenceThreshold);
         } else {
             Log.w(TAG, "Sightengine credentials not found");
@@ -87,21 +88,24 @@ public class SightengineAIDetector {
                 return;
             }
 
+            String url = SightengineConfig.getBaseUrl();
+
+            Log.d(TAG, "Calling Sightengine API with model: genai");
+
             RequestBody requestBody = new MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
-                    .addFormDataPart("models", "ai-generated")
-                    .addFormDataPart("api_user", apiUser)
-                    .addFormDataPart("api_secret", apiSecret)
                     .addFormDataPart("media", "image.jpg",
                             RequestBody.create(MediaType.parse("image/jpeg"), imageBytes))
+                    .addFormDataPart("models", "genai")
+                    .addFormDataPart("api_user", apiUser)
+                    .addFormDataPart("api_secret", apiSecret)
                     .build();
 
             Request request = new Request.Builder()
-                    .url(SightengineConfig.getBaseUrl())
+                    .url(url)
                     .post(requestBody)
                     .build();
 
-            // Execute async
             client.newCall(request).enqueue(new okhttp3.Callback() {
                 @Override
                 public void onFailure(okhttp3.Call call, IOException e) {
@@ -111,20 +115,31 @@ public class SightengineAIDetector {
 
                 @Override
                 public void onResponse(okhttp3.Call call, Response response) throws IOException {
-                    if (response.isSuccessful() && response.body() != null) {
-                        String jsonResponse = response.body().string();
-                        Log.d(TAG, "API Response: " + jsonResponse);
+                    String responseBody = response.body() != null ? response.body().string() : "";
 
-                        AIDetectionResult result = parseResponse(jsonResponse);
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "API Response: " + responseBody);
+                        AIDetectionResult result = parseResponse(responseBody);
                         if (result != null) {
-                            // Check against threshold
                             result.setThreshold(confidenceThreshold);
                             callback.onDetectionComplete(result);
                         } else {
                             callback.onDetectionFailed("Failed to parse API response");
                         }
                     } else {
-                        callback.onDetectionFailed("API error: " + response.code());
+                        String errorMsg = "API error: " + response.code();
+                        try {
+                            Gson gson = new Gson();
+                            ErrorResponse errorResp = gson.fromJson(responseBody, ErrorResponse.class);
+                            if (errorResp.error != null) {
+                                errorMsg += " - " + errorResp.error.message;
+                                Log.e(TAG, "Sightengine error: " + errorResp.error.type + " - " + errorResp.error.message);
+                            }
+                        } catch (Exception e) {
+                            errorMsg += " - " + responseBody;
+                        }
+                        Log.e(TAG, errorMsg);
+                        callback.onDetectionFailed(errorMsg);
                     }
                 }
             });
@@ -139,9 +154,13 @@ public class SightengineAIDetector {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
             if (inputStream != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    return inputStream.readAllBytes();
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                byte[] data = new byte[4096];
+                int nRead;
+                while ((nRead = inputStream.read(data)) != -1) {
+                    buffer.write(data, 0, nRead);
                 }
+                return buffer.toByteArray();
             }
         } catch (IOException e) {
             Log.e(TAG, "Failed to read image", e);
@@ -152,10 +171,12 @@ public class SightengineAIDetector {
     private AIDetectionResult parseResponse(String json) {
         try {
             Gson gson = new Gson();
+
+            // Response structure is - { "status": "success", "type": { "ai_generated": 0.001 } }
             ApiResponse response = gson.fromJson(json, ApiResponse.class);
 
             if (response.status != null && response.status.equals("failure")) {
-                Log.e(TAG, "API returned failure: " + response.error);
+                Log.e(TAG, "API returned failure");
                 return null;
             }
 
@@ -163,37 +184,74 @@ public class SightengineAIDetector {
             double confidence = 0.0;
             String detectionType = "unknown";
 
-            if (response.type != null) {
-                detectionType = response.type;
-                isAIGenerated = "ai-generated".equalsIgnoreCase(response.type);
-                confidence = response.prob != null ? response.prob : 0.0;
+            if (response.type != null && response.type.ai_generated != null) {
+                confidence = response.type.ai_generated;
+                isAIGenerated = confidence > confidenceThreshold;
+                detectionType = "ai_generated";
+                Log.d(TAG, "Found ai_generated score: " + confidence);
             }
 
-            // Alternative: check for ai_generated field
-            if (response.aiGenerated != null) {
-                isAIGenerated = response.aiGenerated;
-                if (response.aiGeneratedProb != null) {
-                    confidence = response.aiGeneratedProb;
-                }
+            if (response.type != null && response.type.ai_generators != null) {
+                Log.d(TAG, "Per-generator scores available");
             }
+
+            Log.d(TAG, String.format(Locale.US, "Result - AI Generated: %s, Confidence: %.3f%%, Type: %s",
+                    isAIGenerated, confidence * 100, detectionType));
 
             return new AIDetectionResult(isAIGenerated, confidence, detectionType, json);
 
         } catch (Exception e) {
             Log.e(TAG, "JSON parsing error", e);
+            Log.e(TAG, "Raw JSON: " + json);
             return null;
         }
     }
 
     private static class ApiResponse {
         String status;
-        String error;
+        RequestInfo request;
+        TypeResult type;
+        MediaInfo media;
+    }
+
+    private static class RequestInfo {
+        String id;
+        float timestamp;
+        int operations;
+    }
+
+    private static class TypeResult {
+        @SerializedName("ai_generated")
+        Double ai_generated;
+
+        @SerializedName("ai_generators")
+        AiGenerators ai_generators;
+    }
+
+    private static class AiGenerators {
+        Double dalle;
+        Double firefly;
+        Double flux;
+        Double gan;
+        Double gpt;
+        Double midjourney;
+        @SerializedName("stable_diffusion")
+        Double stable_diffusion;
+    }
+
+    private static class MediaInfo {
+        String id;
+        String uri;
+    }
+
+    private static class ErrorResponse {
+        ErrorDetail error;
+    }
+
+    private static class ErrorDetail {
         String type;
-        Double prob;
-        @SerializedName("ai-generated")
-        Boolean aiGenerated;
-        @SerializedName("ai-generated_prob")
-        Double aiGeneratedProb;
+        int code;
+        String message;
     }
 
     public static class AIDetectionResult {
