@@ -24,13 +24,9 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
-import com.example.bacoorconnect.General.NavigationHandler;
-import com.example.bacoorconnect.General.NavigationHeader;
-import com.example.bacoorconnect.General.NotificationCenter;
+import com.example.bacoorconnect.Helpers.ReverseImageSearchV2;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.Helpers.ReverseImageSearch;
 import com.example.bacoorconnect.Helpers.SightengineAIDetector;
-import com.example.bacoorconnect.Helpers.SightengineConfig;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -71,7 +67,6 @@ public class ReportActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private Map<String, Object> currentScanResults = new HashMap<>();
 
-    // Add Sightengine detector
     private SightengineAIDetector aiDetector;
 
     @Override
@@ -85,7 +80,6 @@ public class ReportActivity extends AppCompatActivity {
         setupImageSelection();
         setupSubmitButton();
 
-        // Initialize AI detector
         aiDetector = new SightengineAIDetector(this);
         if (!aiDetector.isReady()) {
             Log.w("ReportActivity", "Sightengine AI detector not ready - credentials missing");
@@ -124,7 +118,6 @@ public class ReportActivity extends AppCompatActivity {
     }
 
     private void updateLocationFromLatLon(double latitude, double longitude) {
-        // Show coordinates while loading
         String coordText = String.format(Locale.getDefault(), "%.6f, %.6f", latitude, longitude);
         locationText.setText(coordText + " (Getting address...)");
 
@@ -346,21 +339,25 @@ public class ReportActivity extends AppCompatActivity {
         progress.setCancelable(false);
         progress.show();
 
-        String apiKey = "AIzaSyC9Fox3bylVocReIelel79lUzEkkR0smhU";
-        String cseId = "257c747f0be954590";
-
-        ReverseImageSearch.searchImage(this, imageUri, apiKey, cseId,
-                new ReverseImageSearch.SearchCallback() {
+        ReverseImageSearchV2.searchImage(this, imageUri,
+                new ReverseImageSearchV2.SearchCallback() {
                     @Override
-                    public void onSearchComplete(boolean isSuspicious, String debugInfo) {
+                    public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
                         progress.dismiss();
-                        currentScanResults.put("reverseImageSearch", debugInfo);
 
-                        if (isSuspicious) {
-                            handleInappropriateContent(3, "Suspicious image content",
-                                    imageUri, getCurrentDescription(), debugInfo);
+                        currentScanResults.put("reverseImageSearch", result.debugInfo);
+                        currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
+                        currentScanResults.put("reverseImageSearch_resultType", result.resultType);
+                        currentScanResults.put("reverseImageSearch_summary", result.summary);
+
+                        Log.d("ReportActivity", "Reverse search - Type: " + result.resultType +
+                                ", Matches: " + result.matchCount);
+
+                        if (result.shouldBlock) {
+                            handleInappropriateContent(3, result.summary, imageUri,
+                                    getCurrentDescription(), result.debugInfo);
                         } else {
-                            verifyImageCategory(imageUri, reportId, debugInfo);
+                            verifyImageCategory(imageUri, reportId, result.debugInfo);
                         }
                     }
 
@@ -391,7 +388,7 @@ public class ReportActivity extends AppCompatActivity {
                         currentScanResults.put("categoryVerification", categoryData);
 
                         if (matchesCategory) {
-                            // Category matches - now check for AI-generated content
+
                             performAIDetection(imageUri, reportId, debugInfo, tags, caption);
                         } else {
                             String strikeReason = String.format(
@@ -409,7 +406,7 @@ public class ReportActivity extends AppCompatActivity {
                         Toast.makeText(ReportActivity.this,
                                 "Image verification incomplete. Report will be reviewed.",
                                 Toast.LENGTH_LONG).show();
-                        // Proceed with AI detection even if category verification failed
+
                         performAIDetection(imageUri, reportId, debugInfo, null, null);
                     }
                 });
@@ -420,7 +417,7 @@ public class ReportActivity extends AppCompatActivity {
      */
     private void performAIDetection(Uri imageUri, String reportId, String debugInfo,
                                     List<String> tags, String caption) {
-        // Check if AI detector is ready
+
         if (!aiDetector.isReady()) {
             Log.w("ReportActivity", "AI detector not ready, skipping AI check");
             currentScanResults.put("aiDetection", "Detector not ready");
@@ -428,25 +425,25 @@ public class ReportActivity extends AppCompatActivity {
             return;
         }
 
-        // Show progress dialog for AI detection
+
         ProgressDialog aiProgress = new ProgressDialog(this);
         aiProgress.setMessage("Final AI verification...");
         aiProgress.setCancelable(false);
         aiProgress.show();
 
-        // Perform AI detection
+
         aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
             @Override
             public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
                 aiProgress.dismiss();
                 currentScanResults.put("aiDetection", result.rawResponse);
 
-                // Log the result
+
                 Log.d("ReportActivity", "AI Detection Result: " + result.getFormattedResult());
 
-                // Check if image is AI-generated above threshold
+
                 if (result.isAboveThreshold()) {
-                    // AI-generated image detected - BLOCK submission
+
                     String strikeReason = String.format(Locale.getDefault(),
                             "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
                             result.confidence * 100, aiDetector.getConfidenceThreshold() * 100

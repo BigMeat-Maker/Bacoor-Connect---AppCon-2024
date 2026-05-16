@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.work.Configuration;
 
+import com.example.bacoorconnect.Helpers.SerpApiConfig;
 import com.example.bacoorconnect.Helpers.AzureConfig;
 import com.example.bacoorconnect.Helpers.AzureVisionConfig;
 import com.example.bacoorconnect.Helpers.ContentSafetyConfig;
@@ -37,6 +38,7 @@ public class MyApplication extends Application implements Configuration.Provider
         setupContentSafetyFromRemoteConfig();
         setupAzureVisionFromRemoteConfig();
         setupSightengineFromRemoteConfig();
+        setupSerpApiFromRemoteConfig();
     }
 
     private void setupAzureVisionFromRemoteConfig() {
@@ -90,6 +92,27 @@ public class MyApplication extends Application implements Configuration.Provider
                         }
                     } else {
                         Log.e(TAG, "Failed to fetch Remote Config", task.getException());
+                    }
+                });
+    }
+
+    private void setupSerpApiFromRemoteConfig() {
+        FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+
+        java.util.Map<String, Object> defaults = new java.util.HashMap<>();
+        defaults.put("serpapi_key", "");
+        remoteConfig.setDefaultsAsync(defaults);
+
+        remoteConfig.fetchAndActivate()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String serpApiKey = remoteConfig.getString("serpapi_key");
+                        if (!serpApiKey.isEmpty()) {
+                            SerpApiConfig.setCredentials(this, serpApiKey);
+                            Log.d(TAG, "SERPAPI credentials saved");
+                        } else {
+                            Log.e(TAG, "SERPAPI key not found in Remote Config");
+                        }
                     }
                 });
     }

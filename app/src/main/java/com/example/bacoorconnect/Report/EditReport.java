@@ -23,9 +23,10 @@ import com.bumptech.glide.Glide;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
+import com.example.bacoorconnect.Helpers.ReverseImageSearchV2;
+import com.example.bacoorconnect.Helpers.SightengineAIDetector;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.Helpers.ReverseImageSearch;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -42,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class EditReport extends AppCompatActivity {
 
@@ -65,6 +67,8 @@ public class EditReport extends AppCompatActivity {
     private String originalImageUrl = "";
     private String selectedCategory = "";
     private boolean contentChecksPassed = false;
+    private Map<String, Object> currentScanResults = new HashMap<>();
+    private SightengineAIDetector aiDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +79,13 @@ public class EditReport extends AppCompatActivity {
         setupImagePicker();
         setupButtonListeners();
         loadReportDetails();
+
+        aiDetector = new SightengineAIDetector(this);
+        if (!aiDetector.isReady()) {
+            Log.w("EditReport", "Sightengine AI detector not ready - credentials missing");
+        } else {
+            Log.d("EditReport", "Sightengine AI detector initialized with threshold: " + aiDetector.getConfidenceThreshold());
+        }
 
         selectedCategory = "";
         verificationProgress = new ProgressDialog(this);
@@ -194,27 +205,10 @@ public class EditReport extends AppCompatActivity {
                 })
                 .show();
     }
+
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         imagePickerLauncher.launch(cameraIntent);
-    }
-
-    private File createImageFile() throws Exception {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "IMG_" + timeStamp + "_";
-
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        if (storageDir != null && !storageDir.exists()) {
-            storageDir.mkdirs();
-        }
-
-        File imageFile = File.createTempFile(
-                imageFileName,
-                ".jpg",
-                storageDir
-        );
-
-        return imageFile;
     }
 
     private void openGallery() {
@@ -252,7 +246,7 @@ public class EditReport extends AppCompatActivity {
 
                     Double firebaseLat = snapshot.child("latitude").getValue(Double.class);
                     if (firebaseLat == null) firebaseLat = snapshot.child("lat").getValue(Double.class);
-                    
+
                     Double firebaseLon = snapshot.child("longitude").getValue(Double.class);
                     if (firebaseLon == null) firebaseLon = snapshot.child("lon").getValue(Double.class);
 
@@ -279,6 +273,7 @@ public class EditReport extends AppCompatActivity {
 
                     if (category != null) {
                         updateCategoryUI(category.toLowerCase());
+                        selectedCategory = category.toLowerCase();
                     }
                 } else {
                     Toast.makeText(EditReport.this, "Report not found.", Toast.LENGTH_SHORT).show();
@@ -294,7 +289,6 @@ public class EditReport extends AppCompatActivity {
     }
 
     private void updateCategoryUI(String selectedCategory) {
-
         roadAccidentRadioButton.setChecked(false);
         disasterAccidentRadioButton.setChecked(false);
         fireAccidentRadioButton.setChecked(false);
@@ -334,6 +328,7 @@ public class EditReport extends AppCompatActivity {
             return;
         }
 
+        currentScanResults.clear();
         contentChecksPassed = false;
         verificationProgress.setMessage("Verifying content...");
         verificationProgress.show();
@@ -342,6 +337,7 @@ public class EditReport extends AppCompatActivity {
                 new TextContentAnalyzer.TextAnalysisCallback() {
                     @Override
                     public void onTextContentChecked(boolean isSafe, String debugJson) {
+                        currentScanResults.put("textScan", debugJson);
                         if (!isSafe) {
                             verificationProgress.dismiss();
                             handleContentViolation("Inappropriate text content",
@@ -350,7 +346,7 @@ public class EditReport extends AppCompatActivity {
                         }
 
                         if (isImageChanged && selectedImageUri != null) {
-                            verifyImageContent(updatedDescription, selectedCategory);
+                            verifyImageContent(updatedDescription);
                         } else {
                             verificationProgress.dismiss();
                             contentChecksPassed = true;
@@ -361,6 +357,7 @@ public class EditReport extends AppCompatActivity {
                     @Override
                     public void onContentCheckFailed(String error) {
                         verificationProgress.dismiss();
+                        currentScanResults.put("textScanError", error);
                         Toast.makeText(EditReport.this,
                                 "Content verification service unavailable. Please try again later.",
                                 Toast.LENGTH_LONG).show();
@@ -369,21 +366,23 @@ public class EditReport extends AppCompatActivity {
                 });
     }
 
-    private void verifyImageContent(String description, String category) {
+    private void verifyImageContent(String description) {
         ImageContentAnalyzer.analyzeImage(EditReport.this, selectedImageUri,
                 new ImageContentAnalyzer.ImageAnalysisCallback() {
                     @Override
                     public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
+                        currentScanResults.put("imageScan", debugJson);
                         if (isRacy) {
                             handleContentViolation("Inappropriate image content",
                                     selectedImageUri, description, debugJson);
                         } else {
-                            performReverseImageSearch(description, category);
+                            performReverseImageSearch(description);
                         }
                     }
 
                     @Override
                     public void onContentCheckFailed(String error) {
+                        currentScanResults.put("imageScanError", error);
                         Toast.makeText(EditReport.this,
                                 "Image verification service unavailable. Cannot update report.",
                                 Toast.LENGTH_LONG).show();
@@ -392,51 +391,55 @@ public class EditReport extends AppCompatActivity {
                 });
     }
 
-    private void performReverseImageSearch(String description, String category) {
-        ProgressDialog progress = new ProgressDialog(this);
-        progress.setMessage("Verifying image...");
-        progress.setCancelable(false);
-        progress.show();
+    private void performReverseImageSearch(String description) {
+        verificationProgress.setMessage("Verifying image...");
 
-        String apiKey = "AIzaSyC9Fox3bylVocReIelel79lUzEkkR0smhU";
-        String cseId = "257c747f0be954590";
-
-        ReverseImageSearch.searchImage(EditReport.this, selectedImageUri, apiKey, cseId,
-                new ReverseImageSearch.SearchCallback() {
+        ReverseImageSearchV2.searchImage(this, selectedImageUri,
+                new ReverseImageSearchV2.SearchCallback() {
                     @Override
-                    public void onSearchComplete(boolean isSuspicious, String debugInfo) {
-                        progress.dismiss();
+                    public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
+                        currentScanResults.put("reverseImageSearch", result.debugInfo);
+                        currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
+                        currentScanResults.put("reverseImageSearch_resultType", result.resultType);
+                        currentScanResults.put("reverseImageSearch_summary", result.summary);
 
-                        if (isSuspicious) {
-                            handleContentViolation("Suspicious image content",
-                                    selectedImageUri, description, debugInfo);
+                        Log.d("EditReport", "Reverse search - Type: " + result.resultType +
+                                ", Matches: " + result.matchCount);
+
+                        if (result.shouldBlock) {
+                            verificationProgress.dismiss();
+                            handleContentViolation(result.summary, selectedImageUri, description, result.debugInfo);
                         } else {
-                            verifyImageCategory(description, category);
+                            verifyImageCategory(description);
                         }
                     }
 
                     @Override
                     public void onSearchFailed(String error) {
-                        progress.dismiss();
-                        Toast.makeText(EditReport.this,
-                                "Image verification service unavailable. Cannot update report.",
-                                Toast.LENGTH_LONG).show();
-                        logFailedVerification("Reverse image search failed", error);
+                        Log.e("EditReport", "Reverse search failed: " + error);
+                        currentScanResults.put("reverseImageSearchError", error);
+                        verifyImageCategory(description);
                     }
                 });
     }
 
-    private void verifyImageCategory(String description, String category) {
-        CategoryVerifier.verifyImageCategory(EditReport.this, selectedImageUri, category,
+    private void verifyImageCategory(String description) {
+        CategoryVerifier.verifyImageCategory(EditReport.this, selectedImageUri, selectedCategory,
                 new CategoryVerifier.VerificationCallback() {
                     @Override
                     public void onCategoryVerified(boolean matchesCategory, List<String> tags, String caption) {
+                        Map<String, Object> categoryData = new HashMap<>();
+                        categoryData.put("matchesCategory", matchesCategory);
+                        categoryData.put("tags", tags);
+                        categoryData.put("caption", caption);
+                        currentScanResults.put("categoryVerification", categoryData);
+
                         if (matchesCategory) {
-                            contentChecksPassed = true;
-                            uploadImageAndUpdateReport(description, category);
+                            performAIDetection(description, tags, caption);
                         } else {
+                            verificationProgress.dismiss();
                             String reason = String.format("Image doesn't match %s category. Detected: %s",
-                                    category, tags != null ? tags.toString() : "unknown");
+                                    selectedCategory, tags != null ? tags.toString() : "unknown");
                             handleContentViolation(reason, selectedImageUri, description,
                                     "Tags: " + tags + ", Caption: " + caption);
                         }
@@ -444,12 +447,59 @@ public class EditReport extends AppCompatActivity {
 
                     @Override
                     public void onVerificationFailed(String error) {
-                        Toast.makeText(EditReport.this,
-                                "Category verification service unavailable. Cannot update report.",
-                                Toast.LENGTH_LONG).show();
-                        logFailedVerification("Category verification failed", error);
+                        currentScanResults.put("categoryVerificationError", error);
+                        performAIDetection(description, null, null);
                     }
                 });
+    }
+
+    private void performAIDetection(String description, List<String> tags, String caption) {
+        if (!aiDetector.isReady()) {
+            Log.w("EditReport", "AI detector not ready, skipping AI check");
+            currentScanResults.put("aiDetection", "Detector not ready");
+            verificationProgress.dismiss();
+            contentChecksPassed = true;
+            uploadImageAndUpdateReport(description, selectedCategory);
+            return;
+        }
+
+        verificationProgress.setMessage("Final AI verification...");
+
+        aiDetector.detectAIGeneratedImage(selectedImageUri, new SightengineAIDetector.AIDetectionCallback() {
+            @Override
+            public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
+                verificationProgress.dismiss();
+                currentScanResults.put("aiDetection", result.rawResponse);
+
+                Log.d("EditReport", "AI Detection Result: " + result.getFormattedResult());
+
+                if (result.isAboveThreshold()) {
+                    String strikeReason = String.format(Locale.getDefault(),
+                            "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
+                            result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
+                    handleContentViolation(strikeReason, selectedImageUri, description, result.rawResponse);
+                } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
+                    Log.w("EditReport", "Possible AI image below threshold: " + result.confidence);
+                    uploadScanResultToFirebase("WARNING: Possible AI image - " + result.getFormattedResult());
+                    contentChecksPassed = true;
+                    uploadImageAndUpdateReport(description, selectedCategory);
+                } else {
+                    contentChecksPassed = true;
+                    uploadImageAndUpdateReport(description, selectedCategory);
+                }
+            }
+
+            @Override
+            public void onDetectionFailed(String error) {
+                verificationProgress.dismiss();
+                Log.e("EditReport", "AI detection failed: " + error);
+                currentScanResults.put("aiDetectionError", error);
+                Toast.makeText(EditReport.this,
+                        "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                contentChecksPassed = true;
+                uploadImageAndUpdateReport(description, selectedCategory);
+            }
+        });
     }
 
     private void handleContentViolation(String reason, Uri imageUri, String text, String debugInfo) {
@@ -460,8 +510,52 @@ public class EditReport extends AppCompatActivity {
                     .setPositiveButton("OK", null)
                     .show();
         });
-
+        addStrikeToUser(reason, imageUri, text);
         uploadScanResultToFirebase(debugInfo);
+    }
+
+    private void addStrikeToUser(String reason, Uri imageInQuestion, String textInQuestion) {
+        String userId = getCurrentUserID();
+        if (userId == null) return;
+
+        DatabaseReference userStrikesRef = FirebaseDatabase.getInstance()
+                .getReference("Users")
+                .child(userId)
+                .child("strikes");
+
+        String strikeId = userStrikesRef.push().getKey();
+
+        Map<String, Object> strikeData = new HashMap<>();
+        strikeData.put("time", System.currentTimeMillis());
+        strikeData.put("reason", reason);
+        strikeData.put("textInQuestion", textInQuestion);
+        strikeData.put("reportId", reportId);
+
+        if (imageInQuestion != null) {
+            ImageUploader.uploadImage(EditReport.this, imageInQuestion, new ImageUploader.UploadCallback() {
+                @Override
+                public void onUploadSuccess(String imageUrl) {
+                    strikeData.put("imageInQuestion", imageUrl);
+                    if (strikeId != null) {
+                        userStrikesRef.child(strikeId).setValue(strikeData);
+                    }
+                }
+
+                @Override
+                public void onUploadFailed(String error) {
+                    Log.e("EditReport", "Image upload failed for strike: " + error);
+                    strikeData.put("imageInQuestion", null);
+                    if (strikeId != null) {
+                        userStrikesRef.child(strikeId).setValue(strikeData);
+                    }
+                }
+            });
+        } else {
+            strikeData.put("imageInQuestion", null);
+            if (strikeId != null) {
+                userStrikesRef.child(strikeId).setValue(strikeData);
+            }
+        }
     }
 
     private void uploadImageAndUpdateReport(String description, String category) {
@@ -500,10 +594,10 @@ public class EditReport extends AppCompatActivity {
         HashMap<String, Object> updates = new HashMap<>();
         updates.put("description", description);
         updates.put("category", category);
-
         updates.put("latitude", lat);
         updates.put("longitude", lon);
         updates.put("location", locationText.getText().toString());
+        updates.put("scanResults", currentScanResults);
 
         if (isImageChanged) {
             updates.put("imageUrl", imageUrl != null ? imageUrl : "");

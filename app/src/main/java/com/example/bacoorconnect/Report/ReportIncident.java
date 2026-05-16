@@ -31,7 +31,7 @@ import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.Helpers.ReverseImageSearch;
+import com.example.bacoorconnect.Helpers.ReverseImageSearchV2;
 import com.example.bacoorconnect.Helpers.SightengineAIDetector;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -59,6 +59,8 @@ public class ReportIncident extends AppCompatActivity {
 
     private static final int PICK_IMAGE_REQUEST = 1;
     private static final int CAPTURE_IMAGE_REQUEST = 2;
+    private static final int LOCATION_PERMISSION_REQUEST = 100;
+
     private Uri imageUri;
     private String selectedCategory = "";
     private RadioButton preciseRadioButton, generalRadioButton;
@@ -82,6 +84,7 @@ public class ReportIncident extends AppCompatActivity {
         setContentView(R.layout.activity_report_incident);
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
 
         initializeViews();
         setupNavigation();
@@ -91,6 +94,11 @@ public class ReportIncident extends AppCompatActivity {
         setupSubmitButton();
 
         aiDetector = new SightengineAIDetector(this);
+        if (!aiDetector.isReady()) {
+            Log.w("ReportIncident", "Sightengine AI detector not ready - credentials missing");
+        } else {
+            Log.d("ReportIncident", "Sightengine AI detector initialized with threshold: " + aiDetector.getConfidenceThreshold());
+        }
 
         handleIntentExtras();
 
@@ -100,7 +108,6 @@ public class ReportIncident extends AppCompatActivity {
     }
 
     private void updateLocationFromLatLon(double latitude, double longitude) {
-        // Show coordinates while loading
         String coordText = String.format(Locale.getDefault(), "%.6f, %.6f", latitude, longitude);
         locationText.setText(coordText + " (Getting address...)");
 
@@ -132,9 +139,7 @@ public class ReportIncident extends AppCompatActivity {
                             lon = location.getLongitude();
                             userLat = lat;
                             userLon = lon;
-
                             updateLocationFromLatLon(lat, lon);
-
                             Log.d("ReportIncident", "Got location: " + lat + ", " + lon);
                         } else {
                             Log.e("ReportIncident", "Location is null");
@@ -143,40 +148,40 @@ public class ReportIncident extends AppCompatActivity {
                     })
                     .addOnFailureListener(e -> {
                         Log.e("ReportIncident", "Failed to get location: " + e.getMessage());
+                        Toast.makeText(this, "Failed to get location", Toast.LENGTH_SHORT).show();
                     });
         } else {
-            // Request permission
             ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 100) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 getCurrentLocation();
             } else {
-                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Location permission denied. Using default location.", Toast.LENGTH_SHORT).show();
+                lat = 14.4450;
+                lon = 120.9405;
+                updateLocationFromLatLon(lat, lon);
             }
         }
     }
 
     private void initializeViews() {
-        auditRef = FirebaseDatabase.getInstance().getReference("audit_trail");
         preciseRadioButton = findViewById(R.id.Precise);
         generalRadioButton = findViewById(R.id.General);
         descriptionEditText = findViewById(R.id.description_edit_text);
         locationText = findViewById(R.id.location_text_view);
         imagePreview = findViewById(R.id.image_preview);
         selectImageButton = findViewById(R.id.select_image_button);
-
         bottomNavigationView = findViewById(R.id.bottom_navigation);
     }
 
     private void setupNavigation() {
-        bottomNavigationView = findViewById(R.id.bottom_navigation);
         BottomNavHelper.setupBottomNavigation(this, bottomNavigationView, R.id.nav_ri);
     }
 
@@ -223,12 +228,7 @@ public class ReportIncident extends AppCompatActivity {
             userLat = arguments.getDouble("userLat", lat != 0 ? lat : 14.4450);
             userLon = arguments.getDouble("userLon", lon != 0 ? lon : 120.9405);
 
-            // ADD LOGGING
-            Log.d("ReportIncident", "=== INTENT EXTRAS ===");
-            Log.d("ReportIncident", "Location string: " + location);
-            Log.d("ReportIncident", "Latitude: " + lat);
-            Log.d("ReportIncident", "Longitude: " + lon);
-            Log.d("ReportIncident", "All extras keys: " + arguments.keySet());
+            Log.d("ReportIncident", "Intent extras - Lat: " + lat + ", Lon: " + lon);
 
             if (location != null && !location.isEmpty() && locationText != null) {
                 locationText.setText(location);
@@ -238,10 +238,9 @@ public class ReportIncident extends AppCompatActivity {
                 updateLocationFromLatLon(lat, lon);
             }
         } else {
-            Log.e("ReportIncident", "NO INTENT EXTRAS FOUND!");
+            Log.d("ReportIncident", "No intent extras found");
         }
     }
-
 
     private void openGallery() {
         Intent intent = new Intent();
@@ -282,13 +281,11 @@ public class ReportIncident extends AppCompatActivity {
             if (requestCode == PICK_IMAGE_REQUEST && data != null && data.getData() != null) {
                 imageUri = data.getData();
                 Log.d("IMAGE", "Gallery image selected: " + imageUri);
-            }
-            else if (requestCode == CAPTURE_IMAGE_REQUEST) {
+            } else if (requestCode == CAPTURE_IMAGE_REQUEST) {
                 Log.d("IMAGE", "Camera image captured: " + imageUri);
             }
 
             if (imageUri != null) {
-                Log.d("IMAGE", "Setting image preview");
                 imagePreview.setImageURI(imageUri);
                 imagePreview.setVisibility(View.VISIBLE);
             } else {
@@ -313,7 +310,6 @@ public class ReportIncident extends AppCompatActivity {
                 }
 
                 if (imageUri != null) {
-
                     ImageContentAnalyzer.analyzeImage(ReportIncident.this, imageUri,
                             new ImageContentAnalyzer.ImageAnalysisCallback() {
                                 @Override
@@ -354,7 +350,6 @@ public class ReportIncident extends AppCompatActivity {
                 if (imageUri != null) {
                     ImageContentAnalyzer.analyzeImage(ReportIncident.this, imageUri,
                             new ImageContentAnalyzer.ImageAnalysisCallback() {
-
                                 @Override
                                 public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
                                     currentScanResults.put("imageScan", debugJson);
@@ -385,43 +380,40 @@ public class ReportIncident extends AppCompatActivity {
     }
 
     private void performReverseImageSearch(Uri imageUri, String reportId) {
-        // Run ProgressDialog creation on UI thread
-        runOnUiThread(() -> {
-            ProgressDialog progress = new ProgressDialog(this);
-            progress.setMessage("Verifying image...");
-            progress.setCancelable(false);
-            progress.show();
+        ProgressDialog progress = new ProgressDialog(this);
+        progress.setMessage("Verifying image...");
+        progress.setCancelable(false);
+        progress.show();
 
-            String apiKey = "AIzaSyC9Fox3bylVocReIelel79lUzEkkR0smhU";
-            String cseId = "257c747f0be954590";
+        ReverseImageSearchV2.searchImage(this, imageUri,
+                new ReverseImageSearchV2.SearchCallback() {
+                    @Override
+                    public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
+                        progress.dismiss();
+                        currentScanResults.put("reverseImageSearch", result.debugInfo);
+                        currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
+                        currentScanResults.put("reverseImageSearch_resultType", result.resultType);
+                        currentScanResults.put("reverseImageSearch_summary", result.summary);
 
-            ReverseImageSearch.searchImage(this, imageUri, apiKey, cseId,
-                    new ReverseImageSearch.SearchCallback() {
-                        @Override
-                        public void onSearchComplete(boolean isSuspicious, String debugInfo) {
-                            runOnUiThread(() -> {
-                                progress.dismiss();
-                                currentScanResults.put("reverseImageSearch", debugInfo);
-                                if (isSuspicious) {
-                                    handleInappropriateContent(3, "Suspicious image content",
-                                            imageUri, getCurrentDescription(), debugInfo);
-                                } else {
-                                    verifyImageCategory(imageUri, reportId, debugInfo);
-                                }
-                            });
+                        Log.d("ReportIncident", "Reverse search - Type: " + result.resultType +
+                                ", Matches: " + result.matchCount);
+
+                        if (result.shouldBlock) {
+                            handleInappropriateContent(3, result.summary, imageUri,
+                                    getCurrentDescription(), result.debugInfo);
+                        } else {
+                            verifyImageCategory(imageUri, reportId, result.debugInfo);
                         }
+                    }
 
-                        @Override
-                        public void onSearchFailed(String error) {
-                            runOnUiThread(() -> {
-                                progress.dismiss();
-                                Log.e("ReverseImageSearch", "Search failed: " + error);
-                                currentScanResults.put("reverseImageSearchError", error);
-                                verifyImageCategory(imageUri, reportId, "Search failed: " + error);
-                            });
-                        }
-                    });
-        });
+                    @Override
+                    public void onSearchFailed(String error) {
+                        progress.dismiss();
+                        Log.e("ReverseImageSearch", "Search failed: " + error);
+                        currentScanResults.put("reverseImageSearchError", error);
+                        verifyImageCategory(imageUri, reportId, "Search failed: " + error);
+                    }
+                });
     }
 
     private String getCurrentDescription() {
@@ -466,63 +458,75 @@ public class ReportIncident extends AppCompatActivity {
     private void performAIDetection(Uri imageUri, String reportId, String debugInfo,
                                     List<String> tags, String caption) {
         if (!aiDetector.isReady()) {
+            Log.w("ReportIncident", "AI detector not ready, skipping AI check");
             currentScanResults.put("aiDetection", "Detector not ready");
             uploadImageToStorage(reportId);
             return;
         }
 
-        runOnUiThread(() -> {
-            ProgressDialog aiProgress = new ProgressDialog(this);
-            aiProgress.setMessage("Final AI verification...");
-            aiProgress.setCancelable(false);
-            aiProgress.show();
+        ProgressDialog aiProgress = new ProgressDialog(this);
+        aiProgress.setMessage("Final AI verification...");
+        aiProgress.setCancelable(false);
+        aiProgress.show();
 
-            aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
-                @Override
-                public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
-                    aiProgress.dismiss();
-                    currentScanResults.put("aiDetection", result.rawResponse);
+        aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
+            @Override
+            public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
+                aiProgress.dismiss();
+                currentScanResults.put("aiDetection", result.rawResponse);
 
-                    if (result.isAboveThreshold()) {
-                        String strikeReason = String.format(Locale.getDefault(),
-                                "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
-                                result.confidence * 100, aiDetector.getConfidenceThreshold() * 100
-                        );
-                        String additionalInfo = String.format(Locale.getDefault(),
-                                "Detection Type: %s\nTags: %s\nCaption: %s\nDebug: %s",
-                                result.detectionType, tags != null ? tags : "N/A",
-                                caption != null ? caption : "N/A", debugInfo
-                        );
-                        handleInappropriateContent(3, strikeReason, imageUri,
-                                getCurrentDescription(), result.rawResponse + "\n" + additionalInfo);
-                    } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
-                        uploadScanResultToFirebase("WARNING: Possible AI image - " + result.getFormattedResult());
-                        uploadImageToStorage(reportId);
-                    } else {
-                        uploadImageToStorage(reportId);
-                    }
-                }
+                Log.d("ReportIncident", "AI Detection Result: " + result.getFormattedResult());
 
-                @Override
-                public void onDetectionFailed(String error) {
-                    aiProgress.dismiss();
-                    currentScanResults.put("aiDetectionError", error);
+                if (result.isAboveThreshold()) {
+                    String strikeReason = String.format(Locale.getDefault(),
+                            "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
+                            result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
+                    String additionalInfo = String.format(Locale.getDefault(),
+                            "Detection Type: %s\nTags: %s\nCaption: %s\nDebug: %s",
+                            result.detectionType, tags != null ? tags : "N/A",
+                            caption != null ? caption : "N/A", debugInfo);
+                    handleInappropriateContent(3, strikeReason, imageUri,
+                            getCurrentDescription(), result.rawResponse + "\n" + additionalInfo);
+                } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
+                    Log.w("ReportIncident", "Possible AI image below threshold: " + result.confidence);
+                    uploadScanResultToFirebase("WARNING: Possible AI image - " + result.getFormattedResult());
+                    uploadImageToStorage(reportId);
+                } else {
                     uploadImageToStorage(reportId);
                 }
-            });
+            }
+
+            @Override
+            public void onDetectionFailed(String error) {
+                aiProgress.dismiss();
+                Log.e("ReportIncident", "AI detection failed: " + error);
+                currentScanResults.put("aiDetectionError", error);
+                Toast.makeText(ReportIncident.this,
+                        "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                uploadImageToStorage(reportId);
+            }
         });
     }
 
     private void handleInappropriateContent(int strikeCount, String reason, Uri imageUri, String text, String debugJson) {
-        runOnUiThread(() -> Toast.makeText(ReportIncident.this,
-                "Inappropriate content detected!",
-                Toast.LENGTH_LONG).show());
+        runOnUiThread(() -> {
+            String message;
+            if (reason.contains("AI-generated")) {
+                message = "AI-generated images are not allowed in reports!";
+            } else if (reason.contains("Category mismatch")) {
+                message = "Image content doesn't match selected category!";
+            } else if (reason.contains("online")) {
+                message = "Image found online! Please use original photos only.";
+            } else {
+                message = "Inappropriate content detected!";
+            }
+            Toast.makeText(ReportIncident.this, message, Toast.LENGTH_LONG).show();
+        });
         addStrikeToUser(strikeCount, reason, imageUri, text);
         uploadScanResultToFirebase(debugJson);
     }
 
     private void uploadImageToStorage(String reportId) {
-
         ImageUploader.uploadImage(this, imageUri, new ImageUploader.UploadCallback() {
             @Override
             public void onUploadSuccess(String imageUrl) {
@@ -537,8 +541,6 @@ public class ReportIncident extends AppCompatActivity {
         });
     }
 
-
-
     private void checkUserStrikesAndSubmitReport(String reportId, String imageUrl, OnStrikeCheckCompleteListener listener) {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference userStrikesRef = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("strikes");
@@ -551,7 +553,6 @@ public class ReportIncident extends AppCompatActivity {
                 if (strikeCount > 5) {
                     runOnUiThread(() -> {
                         Toast.makeText(ReportIncident.this, "You have exceeded the maximum allowed strikes.", Toast.LENGTH_LONG).show();
-
                     });
                     listener.onStrikeCheckComplete(false);
                 } else {
@@ -562,7 +563,6 @@ public class ReportIncident extends AppCompatActivity {
             @Override
             public void onCancelled(DatabaseError databaseError) {
                 Log.e("StrikeCheck", "Failed to check user strikes", databaseError.toException());
-
                 listener.onStrikeCheckComplete(true);
             }
         });
@@ -597,7 +597,7 @@ public class ReportIncident extends AppCompatActivity {
                     saveStrikeToDatabase(userStrikesRef, strikeId, strikeData, reason);
                 }
             });
-        }else {
+        } else {
             strikeData.put("imageInQuestion", null);
             saveStrikeToDatabase(userStrikesRef, strikeId, strikeData, reason);
         }
@@ -627,9 +627,10 @@ public class ReportIncident extends AppCompatActivity {
     }
 
     private void submitReport(String reportId, String imageUrl) {
-        if (selectedCategory.isEmpty() && !preciseRadioButton.isChecked() && !generalRadioButton.isChecked()) {
+        if (selectedCategory.isEmpty()) {
             runOnUiThread(() -> {
-                Toast.makeText(this, "Please select a category.", Toast.LENGTH_SHORT).show();});
+                Toast.makeText(this, "Please select a category.", Toast.LENGTH_SHORT).show();
+            });
             return;
         }
 
@@ -677,10 +678,8 @@ public class ReportIncident extends AppCompatActivity {
                     reportsRef.child(reportId).setValue(reportData)
                             .addOnSuccessListener(aVoid -> {
                                 logActivity("Submit Report", "Report Submitted", currentUserId, "Success");
-
                                 Intent resultIntent = new Intent();
                                 setResult(RESULT_OK, resultIntent);
-
                                 finish();
                             })
                             .addOnFailureListener(e -> {
@@ -716,7 +715,6 @@ public class ReportIncident extends AppCompatActivity {
 
     private void setSelectedCategory(String category, ImageView selectedImage) {
         selectedCategory = category;
-
         clearCategoryHighlights();
         selectedImage.setAlpha(1.0f);
     }
@@ -741,32 +739,8 @@ public class ReportIncident extends AppCompatActivity {
                 .show();
     }
 
-
     public interface OnStrikeCheckCompleteListener {
         void onStrikeCheckComplete(boolean canSubmit);
-    }
-
-    public interface OnImageUploadedListener {
-        void onImageUploaded(String imageUrl);
-    }
-
-    interface OnImageUploadListener {
-        void onImageUploadSuccess(String imageUrl);
-
-        void onImageUploadFailure(String error);
-    }
-
-    interface OnContentCheckListener {
-        void onTextContentChecked(boolean isSafe, String debugJson);
-
-        void onImageContentChecked(boolean isRacy, double score, String debugJson);
-
-        void onContentCheckFailed(String error);
-    }
-
-    interface OnCategoryVerificationListener {
-        void onCategoryVerified(boolean matchesCategory, List<String> tags, String caption);
-        void onVerificationFailed(String error);
     }
 
     @Override
@@ -776,5 +750,4 @@ public class ReportIncident extends AppCompatActivity {
             bottomNavigationView.setSelectedItemId(R.id.nav_ri);
         }
     }
-
 }
