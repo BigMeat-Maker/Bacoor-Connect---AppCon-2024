@@ -69,11 +69,6 @@ public class SightengineAIDetector {
         return confidenceThreshold;
     }
 
-    /**
-     * Check if an image is AI-generated using Sightengine
-     * @param imageUri The URI of the image to check
-     * @param callback Callback for the result
-     */
     public void detectAIGeneratedImage(Uri imageUri, final AIDetectionCallback callback) {
         if (!isInitialized) {
             Log.e(TAG, "Sightengine not initialized - missing credentials");
@@ -172,7 +167,6 @@ public class SightengineAIDetector {
         try {
             Gson gson = new Gson();
 
-            // Response structure is - { "status": "success", "type": { "ai_generated": 0.001 } }
             ApiResponse response = gson.fromJson(json, ApiResponse.class);
 
             if (response.status != null && response.status.equals("failure")) {

@@ -340,6 +340,7 @@ public class EditReport extends AppCompatActivity {
                         currentScanResults.put("textScan", debugJson);
                         if (!isSafe) {
                             verificationProgress.dismiss();
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT", debugJson);
                             handleContentViolation("Inappropriate text content",
                                     null, updatedDescription, debugJson);
                             return;
@@ -358,6 +359,7 @@ public class EditReport extends AppCompatActivity {
                     public void onContentCheckFailed(String error) {
                         verificationProgress.dismiss();
                         currentScanResults.put("textScanError", error);
+                        uploadScanResultToFirebase(reportId, "FAILED", "SCAN_ERROR", "Text scan failed: " + error);
                         Toast.makeText(EditReport.this,
                                 "Content verification service unavailable. Please try again later.",
                                 Toast.LENGTH_LONG).show();
@@ -373,6 +375,7 @@ public class EditReport extends AppCompatActivity {
                     public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
                         currentScanResults.put("imageScan", debugJson);
                         if (isRacy) {
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
                             handleContentViolation("Inappropriate image content",
                                     selectedImageUri, description, debugJson);
                         } else {
@@ -383,6 +386,7 @@ public class EditReport extends AppCompatActivity {
                     @Override
                     public void onContentCheckFailed(String error) {
                         currentScanResults.put("imageScanError", error);
+                        uploadScanResultToFirebase(reportId, "FAILED", "SCAN_ERROR", "Image scan failed: " + error);
                         Toast.makeText(EditReport.this,
                                 "Image verification service unavailable. Cannot update report.",
                                 Toast.LENGTH_LONG).show();
@@ -408,6 +412,7 @@ public class EditReport extends AppCompatActivity {
 
                         if (result.shouldBlock) {
                             verificationProgress.dismiss();
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
                             handleContentViolation(result.summary, selectedImageUri, description, result.debugInfo);
                         } else {
                             verifyImageCategory(description);
@@ -440,6 +445,7 @@ public class EditReport extends AppCompatActivity {
                             verificationProgress.dismiss();
                             String reason = String.format("Image doesn't match %s category. Detected: %s",
                                     selectedCategory, tags != null ? tags.toString() : "unknown");
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_CATEGORY", reason);
                             handleContentViolation(reason, selectedImageUri, description,
                                     "Tags: " + tags + ", Caption: " + caption);
                         }
@@ -477,10 +483,11 @@ public class EditReport extends AppCompatActivity {
                     String strikeReason = String.format(Locale.getDefault(),
                             "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
                             result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
+                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
                     handleContentViolation(strikeReason, selectedImageUri, description, result.rawResponse);
                 } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
                     Log.w("EditReport", "Possible AI image below threshold: " + result.confidence);
-                    uploadScanResultToFirebase("WARNING: Possible AI image - " + result.getFormattedResult());
+                    uploadScanResultToFirebase(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
                     contentChecksPassed = true;
                     uploadImageAndUpdateReport(description, selectedCategory);
                 } else {
@@ -494,6 +501,7 @@ public class EditReport extends AppCompatActivity {
                 verificationProgress.dismiss();
                 Log.e("EditReport", "AI detection failed: " + error);
                 currentScanResults.put("aiDetectionError", error);
+                uploadScanResultToFirebase(reportId, "WARNING", "AI_CHECK_FAILED", error);
                 Toast.makeText(EditReport.this,
                         "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
                 contentChecksPassed = true;
@@ -511,7 +519,7 @@ public class EditReport extends AppCompatActivity {
                     .show();
         });
         addStrikeToUser(reason, imageUri, text);
-        uploadScanResultToFirebase(debugInfo);
+        // Note: uploadScanResultToFirebase is already called before this method
     }
 
     private void addStrikeToUser(String reason, Uri imageInQuestion, String textInQuestion) {
@@ -577,6 +585,7 @@ public class EditReport extends AppCompatActivity {
             @Override
             public void onUploadFailed(String error) {
                 verificationProgress.dismiss();
+                uploadScanResultToFirebase(reportId, "FAILED", "UPLOAD_FAILED", error);
                 Toast.makeText(EditReport.this,
                         "Failed to upload image. Report not updated.",
                         Toast.LENGTH_LONG).show();
@@ -605,26 +614,47 @@ public class EditReport extends AppCompatActivity {
 
         reportRef.updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
+                    uploadScanResultToFirebase(reportId, "SUCCESS", "APPROVED", null);
                     Toast.makeText(this, "Report updated successfully.", Toast.LENGTH_SHORT).show();
                     logActivity("Report updated", reportId);
                     finish();
                 })
                 .addOnFailureListener(e -> {
+                    uploadScanResultToFirebase(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
                     Toast.makeText(this, "Failed to update report.", Toast.LENGTH_SHORT).show();
                     logActivity("Failed to update report: " + e.getMessage(), reportId);
                 });
     }
 
-    private void uploadScanResultToFirebase(String debugJson) {
+    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails) {
+        String userId = getCurrentUserID();
         String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
+
         HashMap<String, Object> log = new HashMap<>();
-        log.put("userId", currentUserId);
-        log.put("scanResult", debugJson);
-        log.put("timestamp", System.currentTimeMillis());
+        log.put("userId", userId);
         log.put("reportId", reportId);
+        log.put("timestamp", System.currentTimeMillis());
+        log.put("status", status);
+        log.put("verdict", verdict);
+        log.put("scanResults", currentScanResults);
+        log.put("errorDetails", errorDetails != null ? errorDetails : "");
+
+        // Build summary for quick viewing
+        StringBuilder summary = new StringBuilder();
+        summary.append("Text: ").append(currentScanResults.containsKey("textScan") ? "✓" : "✗");
+        summary.append(" | Image: ").append(currentScanResults.containsKey("imageScan") ? "✓" : "✗");
+        summary.append(" | Reverse: ").append(currentScanResults.containsKey("reverseImageSearch_resultType") ?
+                currentScanResults.get("reverseImageSearch_resultType") : "✗");
+        summary.append(" | Category: ").append(currentScanResults.containsKey("categoryVerification") ?
+                (currentScanResults.get("categoryVerification") instanceof Map ?
+                        ((Map<?, ?>) currentScanResults.get("categoryVerification")).get("matchesCategory") : "✓") : "✗");
+        summary.append(" | AI: ").append(currentScanResults.containsKey("aiDetection") ? "✓" : "✗");
+        log.put("summary", summary.toString());
 
         if (logId != null) {
-            FirebaseDatabase.getInstance().getReference("ScanLogs").child(logId).setValue(log);
+            FirebaseDatabase.getInstance().getReference("ScanLogs").child(logId).setValue(log)
+                    .addOnSuccessListener(aVoid -> Log.d("ScanLogs", "Scan log saved for report: " + reportId))
+                    .addOnFailureListener(e -> Log.e("ScanLogs", "Failed to save scan log", e));
         }
     }
 

@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class Report {
     // Firebase fields
@@ -16,16 +17,14 @@ public class Report {
     private int downvotes = 0;
     private long timestamp;
 
-    // Additional fields from your Firebase
     private double latitude;
     private double longitude;
-    private String location; // This is the "location" field in Firebase
+    private String location;
     private String addressPrecision;
-    private String reportMessage; // If you still want this
 
-    // Constructors
+    private Map<String, Object> scanResults;
+
     public Report() {
-        // Default constructor required for Firebase
     }
 
     public Report(double lat, double lon, String category, String description,
@@ -37,17 +36,17 @@ public class Report {
         this.reportId = reportId;
         this.userId = userId;
         this.imageUrl = imageUrl;
-        // Set other fields as needed
         this.location = "Lat: " + lat + ", Lon: " + lon;
         this.timestamp = System.currentTimeMillis();
         this.upvotes = 0;
         this.downvotes = 0;
     }
 
-
-    // Getters and Setters
     public String getReportId() { return reportId; }
     public void setReportId(String reportId) { this.reportId = reportId; }
+
+    public Map<String, Object> getScanResults() { return scanResults; }
+    public void setScanResults(Map<String, Object> scanResults) { this.scanResults = scanResults; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -82,12 +81,10 @@ public class Report {
     public String getAddressPrecision() { return addressPrecision; }
     public void setAddressPrecision(String addressPrecision) { this.addressPrecision = addressPrecision; }
 
-    // For compatibility with old code
     public double getLat() { return latitude; }
     public double getLon() { return longitude; }
-    public String getReportMessage() { return description; } // Use description as reportMessage
+    public String getReportMessage() { return description; }
 
-    // Helper methods
     public String getFormattedTime() {
         if (timestamp == 0) return "";
 
@@ -113,7 +110,6 @@ public class Report {
         }
     }
 
-    // Parse coordinates from location string if needed
     public void parseCoordinatesFromLocation() {
         if (location != null && location.contains("Lat:") && location.contains("Lon:")) {
             try {

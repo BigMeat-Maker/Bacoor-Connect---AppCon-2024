@@ -31,6 +31,7 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ReportFeedActivity extends Fragment {
     private RecyclerView recyclerView;
@@ -61,7 +62,6 @@ public class ReportFeedActivity extends Fragment {
     public void onDetach() {
         super.onDetach();
         isFragmentAttached = false;
-        // Remove any pending callbacks
         handler.removeCallbacksAndMessages(null);
     }
 
@@ -70,7 +70,6 @@ public class ReportFeedActivity extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_report_feed, container, false);
 
-        // Get arguments
         if (getArguments() != null) {
             focusReportId = getArguments().getString("FOCUS_REPORT_ID");
         }
@@ -81,15 +80,12 @@ public class ReportFeedActivity extends Fragment {
 
         getCurrentLocation();
 
-        // Initialize adapter with location and highlight callback
         adapter = new ReportAdapter(requireContext(), reportList, currentLatitude, currentLongitude,
                 position -> {
-                    // Callback when adapter is ready to highlight
                     if (position >= 0 && isFragmentAttached) {
                         handler.postDelayed(() -> {
                             if (isFragmentAttached && recyclerView != null) {
                                 recyclerView.smoothScrollToPosition(position);
-                                // Optional: Add a subtle animation to highlight
                                 recyclerView.post(() -> {
                                     if (isFragmentAttached && recyclerView != null) {
                                         RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(position);
@@ -97,7 +93,6 @@ public class ReportFeedActivity extends Fragment {
                                             holder.itemView.setBackgroundColor(
                                                     requireContext().getColor(R.color.highlight_color)
                                             );
-                                            // Fade out the highlight after 2 seconds
                                             handler.postDelayed(() -> {
                                                 if (isFragmentAttached && holder.itemView != null) {
                                                     holder.itemView.setBackgroundColor(
@@ -109,7 +104,7 @@ public class ReportFeedActivity extends Fragment {
                                     }
                                 });
                             }
-                        }, 500); // Delay to ensure list is loaded
+                        }, 500);
                     }
                 });
         recyclerView.setAdapter(adapter);
@@ -122,7 +117,6 @@ public class ReportFeedActivity extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Remove any pending callbacks
         handler.removeCallbacksAndMessages(null);
     }
 
@@ -162,7 +156,6 @@ public class ReportFeedActivity extends Fragment {
                         if (report != null) {
                             reportList.add(report);
 
-                            // Check if this is the focused report
                             if (focusReportId != null && focusReportId.equals(reportSnap.getKey())) {
                                 focusPosition = reportList.size() - 1;
                             }
@@ -173,7 +166,6 @@ public class ReportFeedActivity extends Fragment {
                 }
                 Collections.reverse(reportList);
 
-                // Adjust focus position after reversing
                 if (focusPosition != -1) {
                     focusPosition = reportList.size() - 1 - focusPosition;
                 }
@@ -237,6 +229,11 @@ public class ReportFeedActivity extends Fragment {
 
         if ((report.getLatitude() == 0 || report.getLongitude() == 0) && report.getLocation() != null) {
             report.parseCoordinatesFromLocation();
+        }
+
+        Object scanResultsObj = reportSnap.child("scanResults").getValue();
+        if (scanResultsObj instanceof Map) {
+            report.setScanResults((Map<String, Object>) scanResultsObj);
         }
 
         return report;

@@ -32,12 +32,14 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 public class ReportListDialog extends DialogFragment {
 
     private String category;
     private LinearLayout containerReports;
-    private double userLat = 14.4444; // Default Bacoor coordinates
+    private double userLat = 14.4444;
+
     private double userLon = 120.9515;
 
     public static ReportListDialog newInstance(String category, double userLat, double userLon) {
@@ -97,7 +99,6 @@ public class ReportListDialog extends DialogFragment {
                     if (category.equals("all") || (reportCategory != null && reportCategory.equals(category))) {
                         reportCount++;
 
-                        // Get ALL report data fields
                         String reportId = reportSnapshot.getKey();
                         String description = reportSnapshot.child("description").getValue(String.class);
                         String userId = reportSnapshot.child("userId").getValue(String.class);
@@ -122,15 +123,21 @@ public class ReportListDialog extends DialogFragment {
                         Long timestamp = reportSnapshot.child("timestamp").getValue(Long.class);
                         Integer upvotes = reportSnapshot.child("upvotes").getValue(Integer.class);
                         Integer downvotes = reportSnapshot.child("downvotes").getValue(Integer.class);
+                        Map<String, Object> scanResults = null;
+                        DataSnapshot scanResultsSnap = reportSnapshot.child("scanResults");
+                        if (scanResultsSnap.exists()) {
+                            scanResults = (Map<String, Object>) scanResultsSnap.getValue();
+                        }
 
                         Log.d("ReportListDialog", "Processing report " + reportId + ":");
                         Log.d("ReportListDialog", "  Category: " + reportCategory);
                         Log.d("ReportListDialog", "  Description: " + description);
                         Log.d("ReportListDialog", "  Lat: " + latitude + ", Lon: " + longitude);
+                        Log.d("ReportListDialog", "  Has scanResults: " + (scanResults != null));
 
                         View cardView = createReportCard(
                                 reportId, userId, reportCategory, description,
-                                latitude, longitude, timestamp, upvotes, downvotes
+                                latitude, longitude, timestamp, upvotes, downvotes, scanResults
                         );
 
                         containerReports.addView(cardView);
@@ -167,7 +174,8 @@ public class ReportListDialog extends DialogFragment {
 
     private View createReportCard(String reportId, String userId, String category,
                                   String description, Double latitude, Double longitude,
-                                  Long timestamp, Integer upvotes, Integer downvotes) {
+                                  Long timestamp, Integer upvotes, Integer downvotes,
+                                  Map<String, Object> scanResults) {
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
         View cardView = inflater.inflate(R.layout.item_report_card_simple, null);
@@ -180,6 +188,7 @@ public class ReportListDialog extends DialogFragment {
         TextView upvotesText = cardView.findViewById(R.id.text_upvotes);
         TextView downvotesText = cardView.findViewById(R.id.text_downvotes);
 
+        LinearLayout badgesContainer = cardView.findViewById(R.id.badges_container);
 
         if (categoryTag != null) {
             String catText = category != null ? category.toUpperCase() : "UNKNOWN";
@@ -229,6 +238,15 @@ public class ReportListDialog extends DialogFragment {
             downvotesText.setText(String.valueOf(downvotes != null ? downvotes : 0));
         }
 
+        if (badgesContainer != null) {
+            if (scanResults != null && !scanResults.isEmpty()) {
+                VerificationBadgeHelper.addBadgesToContainer(getContext(), badgesContainer, scanResults);
+                badgesContainer.setVisibility(View.VISIBLE);
+            } else {
+                badgesContainer.setVisibility(View.GONE);
+            }
+        }
+
         cardView.setOnClickListener(v -> {
             if (getActivity() instanceof MapDash) {
                 Mappart mapFragment = (Mappart) getParentFragmentManager()
@@ -244,19 +262,20 @@ public class ReportListDialog extends DialogFragment {
     }
 
     private int getCategoryColor(String category) {
-        if (category == null) return 0xFF757575; // Default gray
+        if (category == null) return 0xFF757575;
+
 
         switch (category.toLowerCase()) {
             case "accident":
-                return 0xFFF5C12E; // Yellow - #f5c12e
+                return 0xFFF5C12E;
             case "traffic":
-                return 0xFF77B255; // Green - #77b255
+                return 0xFF77B255;
             case "fire":
-                return 0xFFF56B00; // Orange - #f56b00
+                return 0xFFF56B00;
             case "naturaldisaster":
-                return 0xFFAA2F8E; // Purple - #aa2f8e
+                return 0xFFAA2F8E;
             default:
-                return 0xFF757575; // Default gray
+                return 0xFF757575;
         }
     }
 
@@ -297,7 +316,6 @@ public class ReportListDialog extends DialogFragment {
             getActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
             int screenHeight = displayMetrics.heightPixels;
 
-            // Set dialog to 65% of screen height
             int dialogHeight = (int) (screenHeight * 0.65);
 
             window.setLayout(

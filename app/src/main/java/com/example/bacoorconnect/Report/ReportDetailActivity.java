@@ -32,31 +32,26 @@ public class ReportDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_report_detail);
 
-        // Initialize views
         rvReportHistory = findViewById(R.id.rvReportHistory);
         btnPrintReport = findViewById(R.id.btnPrintReport);
         btnExportReport = findViewById(R.id.btnExportReport);
         backButton = findViewById(R.id.back_button);
         toolbarTitle = findViewById(R.id.toolbar_title);
 
-        // Set up back button click listener
         backButton.setOnClickListener(v -> {
             onBackPressed();
         });
 
-        // Set title if passed from intent
         String title = getIntent().getStringExtra("title");
         if (title != null && toolbarTitle != null) {
             toolbarTitle.setText(title);
         }
 
-        // Set up RecyclerView
         rvReportHistory.setLayoutManager(new LinearLayoutManager(this));
         List<ReportItem> reportItems = getReportFromIntent();
         ReportHistoryAdapter adapter = new ReportHistoryAdapter(reportItems);
         rvReportHistory.setAdapter(adapter);
 
-        // Set button click listeners
         btnPrintReport.setOnClickListener(v -> {
             Toast.makeText(this, "Printing report...", Toast.LENGTH_SHORT).show();
             printReport();
@@ -124,7 +119,6 @@ public class ReportDetailActivity extends AppCompatActivity {
         }
     }
 
-    // Adapter for RecyclerView
     private class ReportHistoryAdapter extends RecyclerView.Adapter<ReportHistoryAdapter.ViewHolder> {
         private List<ReportItem> reportItems;
 
@@ -149,7 +143,6 @@ public class ReportDetailActivity extends AppCompatActivity {
             holder.dateTextView.setText(item.getDate());
             holder.statusTextView.setText(item.getStatus());
 
-            // Set status background color
             int statusColor;
             switch(item.getStatus()) {
                 case "Positive":
@@ -183,7 +176,6 @@ public class ReportDetailActivity extends AppCompatActivity {
         }
     }
 
-    // ReportItem class stays the same
     public static class ReportItem {
         private final String type;
         private final String location;
