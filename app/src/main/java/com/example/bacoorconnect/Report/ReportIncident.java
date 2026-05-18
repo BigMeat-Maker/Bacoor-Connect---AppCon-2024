@@ -384,41 +384,47 @@ public class ReportIncident extends AppCompatActivity {
     }
 
     private void performReverseImageSearch(Uri imageUri, String reportId) {
-        ProgressDialog progress = new ProgressDialog(this);
-        progress.setMessage("Verifying image...");
-        progress.setCancelable(false);
-        progress.show();
+        runOnUiThread(() -> {
+            ProgressDialog progress = new ProgressDialog(this);
+            progress.setMessage("Verifying image...");
+            progress.setCancelable(false);
+            progress.show();
 
-        ReverseImageSearchV2.searchImage(this, imageUri,
-                new ReverseImageSearchV2.SearchCallback() {
-                    @Override
-                    public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
-                        progress.dismiss();
-                        currentScanResults.put("reverseImageSearch", result.debugInfo);
-                        currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
-                        currentScanResults.put("reverseImageSearch_resultType", result.resultType);
-                        currentScanResults.put("reverseImageSearch_summary", result.summary);
+            ReverseImageSearchV2.searchImage(this, imageUri,
+                    new ReverseImageSearchV2.SearchCallback() {
+                        @Override
+                        public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
+                            runOnUiThread(() -> {
+                                progress.dismiss();
+                                currentScanResults.put("reverseImageSearch", result.debugInfo);
+                                currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
+                                currentScanResults.put("reverseImageSearch_resultType", result.resultType);
+                                currentScanResults.put("reverseImageSearch_summary", result.summary);
 
-                        Log.d("ReportIncident", "Reverse search - Type: " + result.resultType +
-                                ", Matches: " + result.matchCount);
+                                Log.d("ReportIncident", "Reverse search - Type: " + result.resultType +
+                                        ", Matches: " + result.matchCount);
 
-                        if (result.shouldBlock) {
-                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
-                            handleInappropriateContent(3, result.summary, imageUri,
-                                    getCurrentDescription(), result.debugInfo);
-                        } else {
-                            verifyImageCategory(imageUri, reportId, result.debugInfo);
+                                if (result.shouldBlock) {
+                                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
+                                    handleInappropriateContent(3, result.summary, imageUri,
+                                            getCurrentDescription(), result.debugInfo);
+                                } else {
+                                    verifyImageCategory(imageUri, reportId, result.debugInfo);
+                                }
+                            });
                         }
-                    }
 
-                    @Override
-                    public void onSearchFailed(String error) {
-                        progress.dismiss();
-                        Log.e("ReverseImageSearch", "Search failed: " + error);
-                        currentScanResults.put("reverseImageSearchError", error);
-                        verifyImageCategory(imageUri, reportId, "Search failed: " + error);
-                    }
-                });
+                        @Override
+                        public void onSearchFailed(String error) {
+                            runOnUiThread(() -> {
+                                progress.dismiss();
+                                Log.e("ReverseImageSearch", "Search failed: " + error);
+                                currentScanResults.put("reverseImageSearchError", error);
+                                verifyImageCategory(imageUri, reportId, "Search failed: " + error);
+                            });
+                        }
+                    });
+        });
     }
 
     private String getCurrentDescription() {
@@ -470,45 +476,52 @@ public class ReportIncident extends AppCompatActivity {
             return;
         }
 
-        ProgressDialog aiProgress = new ProgressDialog(this);
-        aiProgress.setMessage("Final AI verification...");
-        aiProgress.setCancelable(false);
-        aiProgress.show();
+        // Run UI operations on main thread
+        runOnUiThread(() -> {
+            ProgressDialog aiProgress = new ProgressDialog(this);
+            aiProgress.setMessage("Final AI verification...");
+            aiProgress.setCancelable(false);
+            aiProgress.show();
 
-        aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
-            @Override
-            public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
-                aiProgress.dismiss();
-                currentScanResults.put("aiDetection", result.rawResponse);
+            aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
+                @Override
+                public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
+                    runOnUiThread(() -> {
+                        aiProgress.dismiss();
+                        currentScanResults.put("aiDetection", result.rawResponse);
 
-                Log.d("ReportIncident", "AI Detection Result: " + result.getFormattedResult());
+                        Log.d("ReportIncident", "AI Detection Result: " + result.getFormattedResult());
 
-                if (result.isAboveThreshold()) {
-                    String strikeReason = String.format(Locale.getDefault(),
-                            "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
-                            result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
-                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
-                    handleInappropriateContent(3, strikeReason, imageUri,
-                            getCurrentDescription(), result.rawResponse);
-                } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
-                    Log.w("ReportIncident", "Possible AI image below threshold: " + result.confidence);
-                    uploadScanResultToFirebase(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
-                    uploadImageToStorage(reportId);
-                } else {
-                    uploadImageToStorage(reportId);
+                        if (result.isAboveThreshold()) {
+                            String strikeReason = String.format(Locale.getDefault(),
+                                    "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
+                                    result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
+                            handleInappropriateContent(3, strikeReason, imageUri,
+                                    getCurrentDescription(), result.rawResponse);
+                        } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
+                            Log.w("ReportIncident", "Possible AI image below threshold: " + result.confidence);
+                            uploadScanResultToFirebase(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
+                            uploadImageToStorage(reportId);
+                        } else {
+                            uploadImageToStorage(reportId);
+                        }
+                    });
                 }
-            }
 
-            @Override
-            public void onDetectionFailed(String error) {
-                aiProgress.dismiss();
-                Log.e("ReportIncident", "AI detection failed: " + error);
-                currentScanResults.put("aiDetectionError", error);
-                uploadScanResultToFirebase(reportId, "WARNING", "AI_CHECK_FAILED", error);
-                Toast.makeText(ReportIncident.this,
-                        "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
-                uploadImageToStorage(reportId);
-            }
+                @Override
+                public void onDetectionFailed(String error) {
+                    runOnUiThread(() -> {
+                        aiProgress.dismiss();
+                        Log.e("ReportIncident", "AI detection failed: " + error);
+                        currentScanResults.put("aiDetectionError", error);
+                        uploadScanResultToFirebase(reportId, "WARNING", "AI_CHECK_FAILED", error);
+                        Toast.makeText(ReportIncident.this,
+                                "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                        uploadImageToStorage(reportId);
+                    });
+                }
+            });
         });
     }
 
