@@ -712,6 +712,9 @@ public class ReportActivity extends AppCompatActivity {
                     reportsRef.child(reportId).setValue(reportData)
                             .addOnSuccessListener(aVoid -> {
                                 logActivity("Submit Report", "Report Submitted", currentUserId, "Success");
+
+                                uploadScanResultToFirebase(reportId, "SUCCESS", "APPROVED", null);
+
                                 updateTrustScore(reportId, "SUCCESS", "APPROVED");
 
                                 Intent resultIntent = new Intent();
