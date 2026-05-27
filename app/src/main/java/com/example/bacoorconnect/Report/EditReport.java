@@ -48,7 +48,11 @@ import java.util.Map;
 
 public class EditReport extends AppCompatActivity {
 
-    private ProgressDialog verificationProgress;
+    //  THIS IS NOT UPLOADING TO SCANLOGS SHOULD FIX IT AS WELL AS TRUSTSCORE HELPER TO HAVE ANOTHER TYPE LIKE SUBMISSION AND EDIT IT WILL NOT COUNT IT FOR REPORT COUNT AND TRUST RATING IF SUCCESS BUT WILL COUNT FAILURES
+
+    private static final int PICK_IMAGE_REQUEST = 1;
+    private static final int CAPTURE_IMAGE_REQUEST = 2;
+
     private TextView locationText;
     private double lat = 14.4597;
     private double lon = 120.9333;
@@ -71,6 +75,11 @@ public class EditReport extends AppCompatActivity {
     private Map<String, Object> currentScanResults = new HashMap<>();
     private SightengineAIDetector aiDetector;
 
+    // Single ProgressDialog for all operations
+    private ProgressDialog mainProgressDialog;
+    private boolean isFinishing = false;
+    private boolean updateSuccessful = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,8 +98,41 @@ public class EditReport extends AppCompatActivity {
         }
 
         selectedCategory = "";
-        verificationProgress = new ProgressDialog(this);
-        verificationProgress.setCancelable(false);
+
+        // Initialize main progress dialog
+        mainProgressDialog = new ProgressDialog(this);
+        mainProgressDialog.setCancelable(false);
+        mainProgressDialog.setCanceledOnTouchOutside(false);
+    }
+
+    private void showLoading(String message) {
+        runOnUiThread(() -> {
+            if (mainProgressDialog != null && !mainProgressDialog.isShowing()) {
+                mainProgressDialog.setMessage(message);
+                mainProgressDialog.show();
+            } else if (mainProgressDialog != null && mainProgressDialog.isShowing()) {
+                mainProgressDialog.setMessage(message);
+            }
+        });
+    }
+
+    private void hideLoading() {
+        runOnUiThread(() -> {
+            if (mainProgressDialog != null && mainProgressDialog.isShowing()) {
+                mainProgressDialog.dismiss();
+            }
+        });
+    }
+
+    private void finishToFrontpage() {
+        if (!isFinishing) {
+            isFinishing = true;
+            hideLoading();
+
+            Intent intent = new Intent();
+            setResult(updateSuccessful ? RESULT_OK : RESULT_CANCELED, intent);
+            finish();
+        }
     }
 
     private void initializeViews() {
@@ -120,7 +162,7 @@ public class EditReport extends AppCompatActivity {
 
         if (reportId == null) {
             Toast.makeText(this, "Error: Report ID missing.", Toast.LENGTH_SHORT).show();
-            finish();
+            finishToFrontpage();
             return;
         }
         reportRef = FirebaseDatabase.getInstance().getReference("Report").child(reportId);
@@ -174,8 +216,11 @@ public class EditReport extends AppCompatActivity {
 
     private void setupButtonListeners() {
         findViewById(R.id.Addimage).setOnClickListener(v -> showImageSelectionDialog());
-        findViewById(R.id.exit_edit).setOnClickListener(v -> onBackPressed());
-        findViewById(R.id.Updatepost).setOnClickListener(v -> updateReport());
+        findViewById(R.id.exit_edit).setOnClickListener(v -> finishToFrontpage());
+        findViewById(R.id.Updatepost).setOnClickListener(v -> {
+            v.setEnabled(false);
+            updateReport();
+        });
 
         userUploadedImage1.setOnClickListener(v -> showDeleteImageDialog());
 
@@ -236,6 +281,8 @@ public class EditReport extends AppCompatActivity {
     }
 
     private void loadReportDetails() {
+        showLoading("Loading report...");
+
         reportRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -276,15 +323,20 @@ public class EditReport extends AppCompatActivity {
                         updateCategoryUI(category.toLowerCase());
                         selectedCategory = category.toLowerCase();
                     }
+
+                    hideLoading();
                 } else {
+                    hideLoading();
                     Toast.makeText(EditReport.this, "Report not found.", Toast.LENGTH_SHORT).show();
-                    finish();
+                    finishToFrontpage();
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                hideLoading();
                 Toast.makeText(EditReport.this, "Failed to load report.", Toast.LENGTH_SHORT).show();
+                finishToFrontpage();
             }
         });
     }
@@ -320,14 +372,18 @@ public class EditReport extends AppCompatActivity {
         }
     }
 
-    private void updateTrustScore(String reportId, String status, String verdict) {
+    /**
+     * Update trust score - ONLY for failures (abuse prevention)
+     * Successful edits should NOT affect trust score
+     */
+    private void updateTrustScoreForFailure(String reportId, String status, String verdict) {
         String currentUserId = getCurrentUserID();
         if (currentUserId != null) {
-            Log.d("EditReport", "Updating trust score - Status: " + status + ", Verdict: " + verdict);
+            Log.d("EditReport", "Updating trust score due to content violation - Status: " + status + ", Verdict: " + verdict);
             TrustScoreHelper.calculateAndUpdateTrustScore(currentUserId, new TrustScoreHelper.TrustScoreCallback() {
                 @Override
                 public void onScoreCalculated(double trustScore, int totalReports, int approvedReports) {
-                    Log.d("EditReport", "Trust score updated: " + trustScore + "% (Total: " + totalReports + ", Approved: " + approvedReports + ")");
+                    Log.d("EditReport", "Trust score updated after violation: " + trustScore + "% (Total: " + totalReports + ", Approved: " + approvedReports + ")");
                 }
 
                 @Override
@@ -338,19 +394,53 @@ public class EditReport extends AppCompatActivity {
         }
     }
 
+    /**
+     * Upload scan result for failures only (type = "edit")
+     */
+    private void uploadFailureScanResult(String reportId, String status, String verdict, String errorDetails) {
+        String userId = getCurrentUserID();
+        String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
+
+        HashMap<String, Object> log = new HashMap<>();
+        log.put("userId", userId);
+        log.put("reportId", reportId);
+        log.put("timestamp", System.currentTimeMillis());
+        log.put("status", status);
+        log.put("verdict", verdict);
+        log.put("type", "edit");  // Mark as edit attempt
+        log.put("scanResults", currentScanResults);
+        log.put("errorDetails", errorDetails != null ? errorDetails : "");
+
+        StringBuilder summary = new StringBuilder();
+        summary.append("Text: ").append(currentScanResults.containsKey("textScan") ? "✓" : "✗");
+        summary.append(" | Image: ").append(currentScanResults.containsKey("imageScan") ? "✓" : "✗");
+        summary.append(" | Reverse: ").append(currentScanResults.containsKey("reverseImageSearch_resultType") ?
+                currentScanResults.get("reverseImageSearch_resultType") : "✗");
+        summary.append(" | Category: ").append(currentScanResults.containsKey("categoryVerification") ?
+                (currentScanResults.get("categoryVerification") instanceof Map ?
+                        ((Map<?, ?>) currentScanResults.get("categoryVerification")).get("matchesCategory") : "✓") : "✗");
+        summary.append(" | AI: ").append(currentScanResults.containsKey("aiDetection") ? "✓" : "✗");
+        log.put("summary", summary.toString());
+
+        if (logId != null) {
+            FirebaseDatabase.getInstance().getReference("ScanLogs").child(logId).setValue(log);
+        }
+    }
+
     private void updateReport() {
         String updatedDescription = descriptionEditText.getText().toString().trim();
         selectedCategory = getSelectedCategory();
 
         if (updatedDescription.isEmpty() || selectedCategory.isEmpty()) {
             Toast.makeText(this, "Please provide description and select a category.", Toast.LENGTH_SHORT).show();
+            findViewById(R.id.Updatepost).setEnabled(true);
             return;
         }
 
         currentScanResults.clear();
         contentChecksPassed = false;
-        verificationProgress.setMessage("Verifying content...");
-        verificationProgress.show();
+
+        showLoading("Verifying content...");
 
         TextContentAnalyzer.analyzeText(this, updatedDescription,
                 new TextContentAnalyzer.TextAnalysisCallback() {
@@ -358,18 +448,18 @@ public class EditReport extends AppCompatActivity {
                     public void onTextContentChecked(boolean isSafe, String debugJson) {
                         currentScanResults.put("textScan", debugJson);
                         if (!isSafe) {
-                            verificationProgress.dismiss();
-                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT", debugJson);
+                            uploadFailureScanResult(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT", debugJson);
                             handleContentViolation("Inappropriate text content",
                                     null, updatedDescription, debugJson);
-                            updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT");
+                            updateTrustScoreForFailure(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT");
+                            finishToFrontpage();
                             return;
                         }
 
                         if (isImageChanged && selectedImageUri != null) {
                             verifyImageContent(updatedDescription);
                         } else {
-                            verificationProgress.dismiss();
+                            hideLoading();
                             contentChecksPassed = true;
                             proceedWithUpdate(updatedDescription, selectedCategory, originalImageUrl);
                         }
@@ -377,29 +467,32 @@ public class EditReport extends AppCompatActivity {
 
                     @Override
                     public void onContentCheckFailed(String error) {
-                        verificationProgress.dismiss();
                         currentScanResults.put("textScanError", error);
-                        uploadScanResultToFirebase(reportId, "FAILED", "SCAN_ERROR", "Text scan failed: " + error);
-                        updateTrustScore(reportId, "FAILED", "SCAN_ERROR");
+                        uploadFailureScanResult(reportId, "FAILED", "SCAN_ERROR", "Text scan failed: " + error);
+                        updateTrustScoreForFailure(reportId, "FAILED", "SCAN_ERROR");
                         Toast.makeText(EditReport.this,
                                 "Content verification service unavailable. Please try again later.",
                                 Toast.LENGTH_LONG).show();
                         logFailedVerification("Text analysis failed", error);
+                        finishToFrontpage();
                     }
                 });
     }
 
     private void verifyImageContent(String description) {
+        showLoading("Checking image content...");
+
         ImageContentAnalyzer.analyzeImage(EditReport.this, selectedImageUri,
                 new ImageContentAnalyzer.ImageAnalysisCallback() {
                     @Override
                     public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
                         currentScanResults.put("imageScan", debugJson);
                         if (isRacy) {
-                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
+                            uploadFailureScanResult(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
                             handleContentViolation("Inappropriate image content",
                                     selectedImageUri, description, debugJson);
-                            updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE");
+                            updateTrustScoreForFailure(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE");
+                            finishToFrontpage();
                         } else {
                             performReverseImageSearch(description);
                         }
@@ -408,18 +501,19 @@ public class EditReport extends AppCompatActivity {
                     @Override
                     public void onContentCheckFailed(String error) {
                         currentScanResults.put("imageScanError", error);
-                        uploadScanResultToFirebase(reportId, "FAILED", "SCAN_ERROR", "Image scan failed: " + error);
-                        updateTrustScore(reportId, "FAILED", "SCAN_ERROR");
+                        uploadFailureScanResult(reportId, "FAILED", "SCAN_ERROR", "Image scan failed: " + error);
+                        updateTrustScoreForFailure(reportId, "FAILED", "SCAN_ERROR");
                         Toast.makeText(EditReport.this,
                                 "Image verification service unavailable. Cannot update report.",
                                 Toast.LENGTH_LONG).show();
                         logFailedVerification("Image analysis failed", error);
+                        finishToFrontpage();
                     }
                 });
     }
 
     private void performReverseImageSearch(String description) {
-        verificationProgress.setMessage("Verifying image...");
+        showLoading("Verifying image online...");
 
         ReverseImageSearchV2.searchImage(this, selectedImageUri,
                 new ReverseImageSearchV2.SearchCallback() {
@@ -434,10 +528,10 @@ public class EditReport extends AppCompatActivity {
                                 ", Matches: " + result.matchCount);
 
                         if (result.shouldBlock) {
-                            verificationProgress.dismiss();
-                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
+                            uploadFailureScanResult(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
                             handleContentViolation(result.summary, selectedImageUri, description, result.debugInfo);
-                            updateTrustScore(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE");
+                            updateTrustScoreForFailure(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE");
+                            finishToFrontpage();
                         } else {
                             verifyImageCategory(description);
                         }
@@ -453,6 +547,8 @@ public class EditReport extends AppCompatActivity {
     }
 
     private void verifyImageCategory(String description) {
+        showLoading("Verifying category match...");
+
         CategoryVerifier.verifyImageCategory(EditReport.this, selectedImageUri, selectedCategory,
                 new CategoryVerifier.VerificationCallback() {
                     @Override
@@ -466,13 +562,13 @@ public class EditReport extends AppCompatActivity {
                         if (matchesCategory) {
                             performAIDetection(description, tags, caption);
                         } else {
-                            verificationProgress.dismiss();
                             String reason = String.format("Image doesn't match %s category. Detected: %s",
                                     selectedCategory, tags != null ? tags.toString() : "unknown");
-                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_CATEGORY", reason);
+                            uploadFailureScanResult(reportId, "BLOCKED", "REJECTED_CATEGORY", reason);
                             handleContentViolation(reason, selectedImageUri, description,
                                     "Tags: " + tags + ", Caption: " + caption);
-                            updateTrustScore(reportId, "BLOCKED", "REJECTED_CATEGORY");
+                            updateTrustScoreForFailure(reportId, "BLOCKED", "REJECTED_CATEGORY");
+                            finishToFrontpage();
                         }
                     }
 
@@ -488,18 +584,17 @@ public class EditReport extends AppCompatActivity {
         if (!aiDetector.isReady()) {
             Log.w("EditReport", "AI detector not ready, skipping AI check");
             currentScanResults.put("aiDetection", "Detector not ready");
-            verificationProgress.dismiss();
+            hideLoading();
             contentChecksPassed = true;
             uploadImageAndUpdateReport(description, selectedCategory);
             return;
         }
 
-        verificationProgress.setMessage("Final AI verification...");
+        showLoading("Final AI verification...");
 
         aiDetector.detectAIGeneratedImage(selectedImageUri, new SightengineAIDetector.AIDetectionCallback() {
             @Override
             public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
-                verificationProgress.dismiss();
                 currentScanResults.put("aiDetection", result.rawResponse);
 
                 Log.d("EditReport", "AI Detection Result: " + result.getFormattedResult());
@@ -508,15 +603,18 @@ public class EditReport extends AppCompatActivity {
                     String strikeReason = String.format(Locale.getDefault(),
                             "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
                             result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
-                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
+                    uploadFailureScanResult(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
                     handleContentViolation(strikeReason, selectedImageUri, description, result.rawResponse);
-                    updateTrustScore(reportId, "BLOCKED", "REJECTED_AI");
+                    updateTrustScoreForFailure(reportId, "BLOCKED", "REJECTED_AI");
+                    finishToFrontpage();
                 } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
                     Log.w("EditReport", "Possible AI image below threshold: " + result.confidence);
-                    uploadScanResultToFirebase(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
+                    uploadFailureScanResult(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
+                    hideLoading();
                     contentChecksPassed = true;
                     uploadImageAndUpdateReport(description, selectedCategory);
                 } else {
+                    hideLoading();
                     contentChecksPassed = true;
                     uploadImageAndUpdateReport(description, selectedCategory);
                 }
@@ -524,13 +622,12 @@ public class EditReport extends AppCompatActivity {
 
             @Override
             public void onDetectionFailed(String error) {
-                verificationProgress.dismiss();
                 Log.e("EditReport", "AI detection failed: " + error);
                 currentScanResults.put("aiDetectionError", error);
-                uploadScanResultToFirebase(reportId, "WARNING", "AI_CHECK_FAILED", error);
-                updateTrustScore(reportId, "WARNING", "AI_CHECK_FAILED");
+                uploadFailureScanResult(reportId, "WARNING", "AI_CHECK_FAILED", error);
                 Toast.makeText(EditReport.this,
                         "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                hideLoading();
                 contentChecksPassed = true;
                 uploadImageAndUpdateReport(description, selectedCategory);
             }
@@ -542,11 +639,10 @@ public class EditReport extends AppCompatActivity {
             new AlertDialog.Builder(EditReport.this)
                     .setTitle("Content Issue Detected")
                     .setMessage(reason + "\n\nReport cannot be updated with this content.")
-                    .setPositiveButton("OK", null)
+                    .setPositiveButton("OK", (dialog, which) -> finishToFrontpage())
                     .show();
         });
         addStrikeToUser(reason, imageUri, text);
-        // Note: uploadScanResultToFirebase and updateTrustScore are already called before this
     }
 
     private void addStrikeToUser(String reason, Uri imageInQuestion, String textInQuestion) {
@@ -596,28 +692,27 @@ public class EditReport extends AppCompatActivity {
     private void uploadImageAndUpdateReport(String description, String category) {
         if (!contentChecksPassed) {
             Toast.makeText(this, "Content verification failed. Report not updated.", Toast.LENGTH_LONG).show();
+            finishToFrontpage();
             return;
         }
 
-        verificationProgress.setMessage("Uploading image...");
-        verificationProgress.show();
+        showLoading("Uploading image...");
 
         ImageUploader.uploadImage(this, selectedImageUri, new ImageUploader.UploadCallback() {
             @Override
             public void onUploadSuccess(String imageUrl) {
-                verificationProgress.dismiss();
                 proceedWithUpdate(description, category, imageUrl);
             }
 
             @Override
             public void onUploadFailed(String error) {
-                verificationProgress.dismiss();
-                uploadScanResultToFirebase(reportId, "FAILED", "UPLOAD_FAILED", error);
-                updateTrustScore(reportId, "FAILED", "UPLOAD_FAILED");
+                uploadFailureScanResult(reportId, "FAILED", "UPLOAD_FAILED", error);
+                updateTrustScoreForFailure(reportId, "FAILED", "UPLOAD_FAILED");
                 Toast.makeText(EditReport.this,
                         "Failed to upload image. Report not updated.",
                         Toast.LENGTH_LONG).show();
                 logFailedVerification("Image upload failed", error);
+                finishToFrontpage();
             }
         });
     }
@@ -625,8 +720,11 @@ public class EditReport extends AppCompatActivity {
     private void proceedWithUpdate(String description, String category, String imageUrl) {
         if (!contentChecksPassed) {
             Toast.makeText(this, "Content verification failed. Report not updated.", Toast.LENGTH_LONG).show();
+            finishToFrontpage();
             return;
         }
+
+        showLoading("Updating report...");
 
         HashMap<String, Object> updates = new HashMap<>();
         updates.put("description", description);
@@ -643,51 +741,20 @@ public class EditReport extends AppCompatActivity {
         reportRef.updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
                     logActivity("Report Updated", reportId);
-                    uploadScanResultToFirebase(reportId, "SUCCESS", "APPROVED", null);
-                    updateTrustScore(reportId, "SUCCESS", "APPROVED");
+                    // ✅ SUCCESSFUL EDIT - NO SCAN LOG, NO TRUST SCORE UPDATE
+                    Log.d("EditReport", "✅ Report updated successfully - Trust score NOT affected (edit only)");
 
+                    updateSuccessful = true;
                     Toast.makeText(EditReport.this, "Report updated successfully.", Toast.LENGTH_SHORT).show();
-                    Intent resultIntent = new Intent();
-                    setResult(RESULT_OK, resultIntent);
-                    finish();
+                    finishToFrontpage();
                 })
                 .addOnFailureListener(e -> {
                     logActivity("Failed to update report: " + e.getMessage(), reportId);
-                    uploadScanResultToFirebase(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
-                    updateTrustScore(reportId, "FAILED", "DATABASE_ERROR");
+                    uploadFailureScanResult(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
+                    updateTrustScoreForFailure(reportId, "FAILED", "DATABASE_ERROR");
                     Toast.makeText(EditReport.this, "Failed to update report.", Toast.LENGTH_SHORT).show();
+                    finishToFrontpage();
                 });
-    }
-
-    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails) {
-        String userId = getCurrentUserID();
-        String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
-
-        HashMap<String, Object> log = new HashMap<>();
-        log.put("userId", userId);
-        log.put("reportId", reportId);
-        log.put("timestamp", System.currentTimeMillis());
-        log.put("status", status);
-        log.put("verdict", verdict);
-        log.put("scanResults", currentScanResults);
-        log.put("errorDetails", errorDetails != null ? errorDetails : "");
-
-        StringBuilder summary = new StringBuilder();
-        summary.append("Text: ").append(currentScanResults.containsKey("textScan") ? "✓" : "✗");
-        summary.append(" | Image: ").append(currentScanResults.containsKey("imageScan") ? "✓" : "✗");
-        summary.append(" | Reverse: ").append(currentScanResults.containsKey("reverseImageSearch_resultType") ?
-                currentScanResults.get("reverseImageSearch_resultType") : "✗");
-        summary.append(" | Category: ").append(currentScanResults.containsKey("categoryVerification") ?
-                (currentScanResults.get("categoryVerification") instanceof Map ?
-                        ((Map<?, ?>) currentScanResults.get("categoryVerification")).get("matchesCategory") : "✓") : "✗");
-        summary.append(" | AI: ").append(currentScanResults.containsKey("aiDetection") ? "✓" : "✗");
-        log.put("summary", summary.toString());
-
-        if (logId != null) {
-            FirebaseDatabase.getInstance().getReference("ScanLogs").child(logId).setValue(log)
-                    .addOnSuccessListener(aVoid -> Log.d("ScanLogs", "Scan log saved for report: " + reportId))
-                    .addOnFailureListener(e -> Log.e("ScanLogs", "Failed to save scan log", e));
-        }
     }
 
     private void logFailedVerification(String type, String error) {
@@ -723,5 +790,13 @@ public class EditReport extends AppCompatActivity {
         logData.put("reportId", reportId);
 
         auditRef.push().setValue(logData);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mainProgressDialog != null && mainProgressDialog.isShowing()) {
+            mainProgressDialog.dismiss();
+        }
     }
 }

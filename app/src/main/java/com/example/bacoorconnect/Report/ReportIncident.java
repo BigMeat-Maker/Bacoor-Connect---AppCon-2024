@@ -24,8 +24,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
-import androidx.drawerlayout.widget.DrawerLayout;
-
 import com.example.bacoorconnect.General.BottomNavHelper;
 import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
@@ -38,7 +36,6 @@ import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -79,6 +76,10 @@ public class ReportIncident extends AppCompatActivity {
     private SightengineAIDetector aiDetector;
     private Map<String, Object> currentScanResults = new HashMap<>();
 
+    // Single ProgressDialog for all operations
+    private ProgressDialog mainProgressDialog;
+    private boolean isFinishing = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,6 +106,41 @@ public class ReportIncident extends AppCompatActivity {
 
         if (lat == 0.0 && lon == 0.0) {
             getCurrentLocation();
+        }
+
+        // Initialize main progress dialog
+        mainProgressDialog = new ProgressDialog(this);
+        mainProgressDialog.setCancelable(false);
+        mainProgressDialog.setCanceledOnTouchOutside(false);
+    }
+
+    private void showLoading(String message) {
+        runOnUiThread(() -> {
+            if (mainProgressDialog != null && !mainProgressDialog.isShowing()) {
+                mainProgressDialog.setMessage(message);
+                mainProgressDialog.show();
+            } else if (mainProgressDialog != null && mainProgressDialog.isShowing()) {
+                mainProgressDialog.setMessage(message);
+            }
+        });
+    }
+
+    private void hideLoading() {
+        runOnUiThread(() -> {
+            if (mainProgressDialog != null && mainProgressDialog.isShowing()) {
+                mainProgressDialog.dismiss();
+            }
+        });
+    }
+
+    private void finishToFrontpage() {
+        if (!isFinishing) {
+            isFinishing = true;
+            hideLoading();
+
+            Intent intent = new Intent();
+            setResult(RESULT_OK, intent);
+            finish();
         }
     }
 
@@ -202,6 +238,9 @@ public class ReportIncident extends AppCompatActivity {
 
     private void setupSubmitButton() {
         findViewById(R.id.submit_report_button).setOnClickListener(v -> {
+            // Prevent multiple clicks
+            v.setEnabled(false);
+
             String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             DatabaseReference reportsRef = FirebaseDatabase.getInstance().getReference("Report");
             String reportId = reportsRef.push().getKey();
@@ -214,7 +253,9 @@ public class ReportIncident extends AppCompatActivity {
                         Toast.makeText(ReportIncident.this,
                                 "You have exceeded the maximum allowed strikes. You cannot submit a report.",
                                 Toast.LENGTH_LONG).show();
+                        finishToFrontpage();
                     }
+                    v.setEnabled(true);
                 });
             });
         });
@@ -319,6 +360,8 @@ public class ReportIncident extends AppCompatActivity {
         String description = descriptionEditText.getText().toString();
         currentScanResults.clear();
 
+        showLoading("Checking text content...");
+
         TextContentAnalyzer.analyzeText(this, description, new TextContentAnalyzer.TextAnalysisCallback() {
             @Override
             public void onTextContentChecked(boolean isSafe, String debugJson) {
@@ -327,10 +370,12 @@ public class ReportIncident extends AppCompatActivity {
                     uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT", debugJson);
                     handleInappropriateContent(1, "Inappropriate text content", null, description, debugJson, reportId);
                     updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT");
+                    finishToFrontpage();
                     return;
                 }
 
                 if (imageUri != null) {
+                    showLoading("Checking image content...");
                     ImageContentAnalyzer.analyzeImage(ReportIncident.this, imageUri,
                             new ImageContentAnalyzer.ImageAnalysisCallback() {
                                 @Override
@@ -340,6 +385,7 @@ public class ReportIncident extends AppCompatActivity {
                                         uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
                                         handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson, reportId);
                                         updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE");
+                                        finishToFrontpage();
                                     } else {
                                         runOnUiThread(() -> Toast.makeText(ReportIncident.this,
                                                 "Content is safe. Verifying image...",
@@ -381,6 +427,7 @@ public class ReportIncident extends AppCompatActivity {
                                         uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
                                         handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson, reportId);
                                         updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE");
+                                        finishToFrontpage();
                                     } else {
                                         performReverseImageSearch(imageUri, reportId);
                                     }
@@ -394,6 +441,7 @@ public class ReportIncident extends AppCompatActivity {
                                             "Content verification failed completely. Report blocked.",
                                             Toast.LENGTH_LONG).show());
                                     updateTrustScore(reportId, "FAILED", "SCAN_ERROR");
+                                    finishToFrontpage();
                                 }
                             });
                 } else {
@@ -402,54 +450,49 @@ public class ReportIncident extends AppCompatActivity {
                             "Content verification failed. Report blocked.",
                             Toast.LENGTH_LONG).show());
                     updateTrustScore(reportId, "FAILED", "SCAN_ERROR");
+                    finishToFrontpage();
                 }
             }
         });
     }
 
     private void performReverseImageSearch(Uri imageUri, String reportId) {
-        runOnUiThread(() -> {
-            ProgressDialog progress = new ProgressDialog(this);
-            progress.setMessage("Verifying image...");
-            progress.setCancelable(false);
-            progress.show();
+        showLoading("Searching for image online...");
 
-            ReverseImageSearchV2.searchImage(this, imageUri,
-                    new ReverseImageSearchV2.SearchCallback() {
-                        @Override
-                        public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
-                            runOnUiThread(() -> {
-                                progress.dismiss();
-                                currentScanResults.put("reverseImageSearch", result.debugInfo);
-                                currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
-                                currentScanResults.put("reverseImageSearch_resultType", result.resultType);
-                                currentScanResults.put("reverseImageSearch_summary", result.summary);
+        ReverseImageSearchV2.searchImage(this, imageUri,
+                new ReverseImageSearchV2.SearchCallback() {
+                    @Override
+                    public void onSearchComplete(ReverseImageSearchV2.SearchResult result) {
+                        runOnUiThread(() -> {
+                            currentScanResults.put("reverseImageSearch", result.debugInfo);
+                            currentScanResults.put("reverseImageSearch_matchCount", result.matchCount);
+                            currentScanResults.put("reverseImageSearch_resultType", result.resultType);
+                            currentScanResults.put("reverseImageSearch_summary", result.summary);
 
-                                Log.d("ReportIncident", "Reverse search - Type: " + result.resultType +
-                                        ", Matches: " + result.matchCount);
+                            Log.d("ReportIncident", "Reverse search - Type: " + result.resultType +
+                                    ", Matches: " + result.matchCount);
 
-                                if (result.shouldBlock) {
-                                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
-                                    handleInappropriateContent(3, result.summary, imageUri,
-                                            getCurrentDescription(), result.debugInfo, reportId);
-                                    updateTrustScore(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE");
-                                } else {
-                                    verifyImageCategory(imageUri, reportId, result.debugInfo);
-                                }
-                            });
-                        }
+                            if (result.shouldBlock) {
+                                uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
+                                handleInappropriateContent(3, result.summary, imageUri,
+                                        getCurrentDescription(), result.debugInfo, reportId);
+                                updateTrustScore(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE");
+                                finishToFrontpage();
+                            } else {
+                                verifyImageCategory(imageUri, reportId, result.debugInfo);
+                            }
+                        });
+                    }
 
-                        @Override
-                        public void onSearchFailed(String error) {
-                            runOnUiThread(() -> {
-                                progress.dismiss();
-                                Log.e("ReverseImageSearch", "Search failed: " + error);
-                                currentScanResults.put("reverseImageSearchError", error);
-                                verifyImageCategory(imageUri, reportId, "Search failed: " + error);
-                            });
-                        }
-                    });
-        });
+                    @Override
+                    public void onSearchFailed(String error) {
+                        runOnUiThread(() -> {
+                            Log.e("ReverseImageSearch", "Search failed: " + error);
+                            currentScanResults.put("reverseImageSearchError", error);
+                            verifyImageCategory(imageUri, reportId, "Search failed: " + error);
+                        });
+                    }
+                });
     }
 
     private String getCurrentDescription() {
@@ -457,6 +500,8 @@ public class ReportIncident extends AppCompatActivity {
     }
 
     private void verifyImageCategory(Uri imageUri, String reportId, String debugInfo) {
+        showLoading("Verifying category match...");
+
         CategoryVerifier.verifyImageCategory(this, imageUri, selectedCategory,
                 new CategoryVerifier.VerificationCallback() {
                     @Override
@@ -478,6 +523,7 @@ public class ReportIncident extends AppCompatActivity {
                             handleInappropriateContent(3, strikeReason,
                                     imageUri, caption, debugInfo, reportId);
                             updateTrustScore(reportId, "BLOCKED", "REJECTED_CATEGORY");
+                            finishToFrontpage();
                         }
                     }
 
@@ -502,52 +548,46 @@ public class ReportIncident extends AppCompatActivity {
             return;
         }
 
-        runOnUiThread(() -> {
-            ProgressDialog aiProgress = new ProgressDialog(this);
-            aiProgress.setMessage("Final AI verification...");
-            aiProgress.setCancelable(false);
-            aiProgress.show();
+        showLoading("Final AI verification...");
 
-            aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
-                @Override
-                public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
-                    runOnUiThread(() -> {
-                        aiProgress.dismiss();
-                        currentScanResults.put("aiDetection", result.rawResponse);
+        aiDetector.detectAIGeneratedImage(imageUri, new SightengineAIDetector.AIDetectionCallback() {
+            @Override
+            public void onDetectionComplete(SightengineAIDetector.AIDetectionResult result) {
+                runOnUiThread(() -> {
+                    currentScanResults.put("aiDetection", result.rawResponse);
 
-                        Log.d("ReportIncident", "AI Detection Result: " + result.getFormattedResult());
+                    Log.d("ReportIncident", "AI Detection Result: " + result.getFormattedResult());
 
-                        if (result.isAboveThreshold()) {
-                            String strikeReason = String.format(Locale.getDefault(),
-                                    "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
-                                    result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
-                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
-                            handleInappropriateContent(3, strikeReason, imageUri,
-                                    getCurrentDescription(), result.rawResponse, reportId);
-                            updateTrustScore(reportId, "BLOCKED", "REJECTED_AI");
-                        } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
-                            Log.w("ReportIncident", "Possible AI image below threshold: " + result.confidence);
-                            uploadScanResultToFirebase(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
-                            uploadImageToStorage(reportId);
-                        } else {
-                            uploadImageToStorage(reportId);
-                        }
-                    });
-                }
-
-                @Override
-                public void onDetectionFailed(String error) {
-                    runOnUiThread(() -> {
-                        aiProgress.dismiss();
-                        Log.e("ReportIncident", "AI detection failed: " + error);
-                        currentScanResults.put("aiDetectionError", error);
-                        uploadScanResultToFirebase(reportId, "WARNING", "AI_CHECK_FAILED", error);
-                        Toast.makeText(ReportIncident.this,
-                                "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                    if (result.isAboveThreshold()) {
+                        String strikeReason = String.format(Locale.getDefault(),
+                                "AI-generated image detected (Confidence: %.1f%%, Threshold: %.1f%%)",
+                                result.confidence * 100, aiDetector.getConfidenceThreshold() * 100);
+                        uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason);
+                        handleInappropriateContent(3, strikeReason, imageUri,
+                                getCurrentDescription(), result.rawResponse, reportId);
+                        updateTrustScore(reportId, "BLOCKED", "REJECTED_AI");
+                        finishToFrontpage();
+                    } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
+                        Log.w("ReportIncident", "Possible AI image below threshold: " + result.confidence);
+                        uploadScanResultToFirebase(reportId, "WARNING", "POSSIBLE_AI", "Possible AI image - " + result.getFormattedResult());
                         uploadImageToStorage(reportId);
-                    });
-                }
-            });
+                    } else {
+                        uploadImageToStorage(reportId);
+                    }
+                });
+            }
+
+            @Override
+            public void onDetectionFailed(String error) {
+                runOnUiThread(() -> {
+                    Log.e("ReportIncident", "AI detection failed: " + error);
+                    currentScanResults.put("aiDetectionError", error);
+                    uploadScanResultToFirebase(reportId, "WARNING", "AI_CHECK_FAILED", error);
+                    Toast.makeText(ReportIncident.this,
+                            "AI verification unavailable, continuing...", Toast.LENGTH_SHORT).show();
+                    uploadImageToStorage(reportId);
+                });
+            }
         });
     }
 
@@ -577,10 +617,11 @@ public class ReportIncident extends AppCompatActivity {
         runOnUiThread(() -> Toast.makeText(ReportIncident.this, message, Toast.LENGTH_LONG).show());
 
         addStrikeToUser(strikeCount, reason, imageUri, text);
-        // Note: uploadScanResultToFirebase and updateTrustScore are called before this
     }
 
     private void uploadImageToStorage(String reportId) {
+        showLoading("Uploading image...");
+
         ImageUploader.uploadImage(this, imageUri, new ImageUploader.UploadCallback() {
             @Override
             public void onUploadSuccess(String imageUrl) {
@@ -709,8 +750,11 @@ public class ReportIncident extends AppCompatActivity {
             runOnUiThread(() -> {
                 Toast.makeText(this, "Please select a category.", Toast.LENGTH_SHORT).show();
             });
+            finishToFrontpage();
             return;
         }
+
+        showLoading("Submitting report...");
 
         checkUserStrikesAndSubmitReport(reportId, imageUrl, new OnStrikeCheckCompleteListener() {
             @Override
@@ -723,6 +767,7 @@ public class ReportIncident extends AppCompatActivity {
                                 .setPositiveButton("OK", null)
                                 .show();
                     });
+                    finishToFrontpage();
                     return;
                 }
 
@@ -758,17 +803,21 @@ public class ReportIncident extends AppCompatActivity {
                                 logActivity("Submit Report", "Report Submitted", currentUserId, "Success");
 
                                 uploadScanResultToFirebase(reportId, "SUCCESS", "APPROVED", null);
-
                                 updateTrustScore(reportId, "SUCCESS", "APPROVED");
 
-                                Intent resultIntent = new Intent();
-                                setResult(RESULT_OK, resultIntent);
-                                finish();
+                                runOnUiThread(() -> Toast.makeText(ReportIncident.this,
+                                        "Report submitted successfully!", Toast.LENGTH_SHORT).show());
+
+                                finishToFrontpage();
                             })
                             .addOnFailureListener(e -> {
                                 uploadScanResultToFirebase(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
                                 updateTrustScore(reportId, "FAILED", "DATABASE_ERROR");
                                 logActivity("Submit Report", "Report Submission Failed", currentUserId, "Failure");
+
+                                runOnUiThread(() -> Toast.makeText(ReportIncident.this,
+                                        "Failed to submit report. Please try again.", Toast.LENGTH_SHORT).show());
+                                finishToFrontpage();
                             });
                 }
             }
@@ -833,6 +882,14 @@ public class ReportIncident extends AppCompatActivity {
         super.onResume();
         if (bottomNavigationView != null) {
             bottomNavigationView.setSelectedItemId(R.id.nav_ri);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mainProgressDialog != null && mainProgressDialog.isShowing()) {
+            mainProgressDialog.dismiss();
         }
     }
 }
