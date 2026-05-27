@@ -41,8 +41,11 @@
     <color name="weather_text_secondary">#666666</color>
 
 
-    <color name="badge_high">#4CAF50</color>  <!-- Green -->
-    <color name="badge_medium">#FFC107</color> <!-- Yellow/Orange -->
-    <color name="badge_low">#F44336</color>    <!-- Red -->
+    <color name="badge_high">#4CAF50</color>
+    <color name="badge_medium">#FFC107</color>
+    <color name="badge_low">#F44336</color>
+    <color name="badge_neutral">#9E9E9E</color>
+
+
 
 </resources>

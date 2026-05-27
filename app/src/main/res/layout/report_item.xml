@@ -1,19 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:paddingHorizontal="15dp"
-    android:layout_marginTop="15dp"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp"
     android:background="#FAFAFA">
 
-    <!-- Profile pic, location tag, post flair tag, and time -->
-
     <androidx.cardview.widget.CardView
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_margin="5dp"
-        app:cardCornerRadius="12dp">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        android:elevation="4dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -21,196 +21,210 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <ImageView
-            android:id="@+id/userProfile"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:src="@drawable/profile"
-            android:layout_marginRight="10dp" />
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
+            <!-- Profile Row -->
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <TextView
-                    android:id="@+id/reportUsername"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/poppins_regular"
-                    android:text="user"
-                    android:textColor="@android:color/black"
-                    android:textSize="15sp" />
+                <ImageView
+                    android:id="@+id/userProfile"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/profile"
+                    android:layout_marginEnd="12dp"
+                    android:scaleType="centerCrop" />
 
-                <View
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1" />
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/reportUsername"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/poppins_regular"
+                            android:text="User Name"
+                            android:textColor="@android:color/black"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/trustBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:gravity="center"
+                            android:textSize="10sp"
+                            android:textColor="@android:color/white"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/distanceToUser"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.5 km"
+                            android:textSize="12sp"
+                            android:textColor="#757575"
+                            android:fontFamily="@font/poppins_light" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:id="@+id/reporttypelabel"
+                            android:layout_width="90dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/tag_roadaccident"
+                            android:scaleType="fitCenter" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <ImageView
+                            android:id="@+id/threedots"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/post_option"
+                            android:padding="2dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Location Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/location"
+                    android:layout_marginEnd="8dp"
+                    app:tint="#757575" />
 
                 <TextView
-                    android:id="@+id/distanceToUser"
+                    android:id="@+id/locationtext"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="37m"
+                    android:text="Location"
                     android:textSize="13sp"
-                    android:textColor="@android:color/black"
-                    android:fontFamily=""/>
+                    android:textColor="#757575"
+                    android:fontFamily="@font/poppins_regular" />
             </LinearLayout>
 
+            <!-- Description -->
+            <TextView
+                android:id="@+id/reportDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Description"
+                android:textSize="14sp"
+                android:textColor="@android:color/black"
+                android:fontFamily="@font/poppins_regular"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginTop="12dp" />
+
+            <com.google.android.flexbox.FlexboxLayout
+                android:id="@+id/badges_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:flexWrap="wrap"
+                app:alignItems="center"
+                android:visibility="gone" />
+
+            <!-- Report Image -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                android:layout_marginTop="12dp">
+
+                <ImageView
+                    android:id="@+id/reportImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:src="@drawable/carcrash"
+                    android:scaleType="centerCrop" />
+            </androidx.cardview.widget.CardView>
+
+            <!-- Voting Row -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="5dp"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
 
+                <!-- Upvote -->
                 <ImageView
-                    android:id="@+id/reporttypelabel"
-                    android:layout_width="100dp"
-                    android:layout_height="25dp"
-                    android:src="@drawable/tag_roadaccident"
-                    android:layout_marginTop="5dp" />
+                    android:id="@+id/upvote"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/upvote_blank"
+                    android:padding="4dp" />
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1" />
+                <TextView
+                    android:id="@+id/upvotecount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="12dp"
+                    android:textColor="#4CAF50"
+                    android:fontFamily="@font/poppins_regular" />
 
+                <!-- Downvote -->
                 <ImageView
-                    android:id="@+id/threedots"
-                    android:layout_margin="5dp"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/post_option"
-                    android:layout_marginTop="5dp" />
+                    android:id="@+id/downvote"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/downvote_blank"
+                    android:padding="4dp" />
+
+                <TextView
+                    android:id="@+id/downvotecount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:layout_marginStart="4dp"
+                    android:textColor="#F44336"
+                    android:fontFamily="@font/poppins_regular" />
+
             </LinearLayout>
+
         </LinearLayout>
-    </LinearLayout>
 
-    <!-- Spacer for visual separation -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="10dp" />
-
-    <!-- Location -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:src="@drawable/location"
-            android:layout_marginEnd="10dp" />
-
-        <TextView
-            android:id="@+id/locationtext"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="location_text"
-            android:gravity="center_horizontal"
-            android:textSize="14sp"
-            android:textColor="@android:color/black"
-            android:fontFamily="@font/poppins_regular"/>
-    </LinearLayout>
-
-    <!-- Spacer for visual separation -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="10dp" />
-
-    <TextView
-        android:id="@+id/reportDescription"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Description"
-        android:gravity="center_horizontal"
-        android:textSize="14sp"
-        android:textColor="@android:color/black"
-        android:fontFamily="@font/poppins_regular"/>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="10dp" />
-
-    <!-- Image attached to the post -->
-    <androidx.cardview.widget.CardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="20dp">
-
-        <ImageView
-            android:id="@+id/reportImage"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:src="@drawable/carcrash"
-            android:scaleType="centerCrop" />
     </androidx.cardview.widget.CardView>
-
-    <!-- Upvote and Downvote section -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginTop="10dp">
-
-        <!-- Upvote -->
-        <ImageView
-            android:id="@+id/upvote"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:src="@drawable/upvote_filled" />
-
-        <TextView
-            android:id="@+id/upvotecount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="6"
-            android:textSize="18sp"
-            android:layout_marginLeft="5dp"
-            android:fontFamily="@font/poppins_regular"/>
-
-        <View
-            android:layout_width="10dp"
-            android:layout_height="10dp" />
-
-        <!-- Downvote -->
-        <ImageView
-            android:id="@+id/downvote"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:src="@drawable/downvote_blank" />
-
-        <TextView
-            android:id="@+id/downvotecount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="6"
-            android:textSize="18sp"
-            android:layout_marginLeft="5dp"
-            android:fontFamily="@font/poppins_regular"/>
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-    </LinearLayout>
-</LinearLayout>
-    </androidx.cardview.widget.CardView>
-
 
 </LinearLayout>

@@ -5,7 +5,6 @@ import android.os.Bundle;
 
 import com.example.bacoorconnect.Emergency.EmergencyResources;
 import com.example.bacoorconnect.R;
-import com.example.bacoorconnect.Report.ReportHistoryActivity;
 import com.example.bacoorconnect.UserProfile;
 import com.example.bacoorconnect.Weather.weatherDash;
 import com.google.android.material.bottomnavigation.BottomNavigationView;

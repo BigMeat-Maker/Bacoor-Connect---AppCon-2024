@@ -23,13 +23,15 @@ import okhttp3.Response;
 
 public class ImageContentAnalyzer {
 
+    private static final String TAG = "ImageContentAnalyzer";
+
     public interface ImageAnalysisCallback {
         void onImageContentChecked(boolean isRacy, double score, String debugJson);
         void onContentCheckFailed(String error);
     }
 
     public static void analyzeImage(Context context, Uri imageUri, ImageAnalysisCallback callback) {
-        Log.d("ImageContentAnalyzer", "Starting image analysis");
+        Log.d(TAG, "Starting image analysis");
 
         String apiKey = ContentSafetyConfig.getContentSafetyKey(context);
 
@@ -61,22 +63,30 @@ public class ImageContentAnalyzer {
             new OkHttpClient().newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    callback.onContentCheckFailed(e.getMessage());
+                    Log.e(TAG, "API call failed", e);
+                    callback.onContentCheckFailed("Network error: " + e.getMessage());
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
+                    String responseBody = response.body().string();
+                    Log.d(TAG, "API Response: " + responseBody);
+
                     if (!response.isSuccessful()) {
+                        Log.e(TAG, "API error: " + response.code() + " - " + responseBody);
                         callback.onContentCheckFailed("API error: " + response.code());
                         return;
                     }
 
                     try {
-                        JSONObject jsonObject = new JSONObject(response.body().string());
+                        JSONObject jsonObject = new JSONObject(responseBody);
+
+                        boolean isRacy = false;
+                        double maxSeverity = 0;
+                        boolean contentIsSafe = true;
+
                         if (jsonObject.has("categoriesAnalysis")) {
                             JSONArray categoriesAnalysis = jsonObject.getJSONArray("categoriesAnalysis");
-                            boolean contentIsSafe = true;
-                            double maxSeverity = 0;
 
                             for (int i = 0; i < categoriesAnalysis.length(); i++) {
                                 JSONObject category = categoriesAnalysis.getJSONObject(i);
@@ -85,20 +95,38 @@ public class ImageContentAnalyzer {
                                 maxSeverity = Math.max(maxSeverity, severity);
 
                                 if ("Sexual".equals(categoryName)) {
+                                    isRacy = severity > 0;
                                     contentIsSafe = severity == 0;
                                 }
                             }
-
-                            callback.onImageContentChecked(!contentIsSafe, maxSeverity, jsonObject.toString());
-                        } else {
-                            callback.onContentCheckFailed("No categoriesAnalysis in response");
                         }
+
+                        JSONObject debugJson = new JSONObject();
+                        debugJson.put("isRacy", isRacy);
+                        debugJson.put("isSafe", contentIsSafe);
+                        debugJson.put("maxSeverity", maxSeverity);
+                        debugJson.put("fullResponse", jsonObject);
+
+                        String debugString = debugJson.toString();
+                        Log.d(TAG, "Image analysis result - isRacy: " + isRacy + ", isSafe: " + contentIsSafe + ", maxSeverity: " + maxSeverity);
+
+                        callback.onImageContentChecked(isRacy, maxSeverity, debugString);
+
                     } catch (JSONException e) {
-                        callback.onContentCheckFailed("JSON parsing error");
+                        Log.e(TAG, "JSON parsing error", e);
+
+                        JSONObject errorJson = new JSONObject();
+                        try {
+                            errorJson.put("error", "Failed to parse API response");
+                            errorJson.put("rawResponse", responseBody);
+                        } catch (JSONException ignored) {}
+
+                        callback.onImageContentChecked(false, 0, errorJson.toString());
                     }
                 }
             });
         } catch (Exception e) {
+            Log.e(TAG, "Image processing error", e);
             callback.onContentCheckFailed("Image processing error: " + e.getMessage());
         }
     }

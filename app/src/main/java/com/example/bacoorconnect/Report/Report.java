@@ -22,6 +22,11 @@ public class Report {
     private String location;
     private String addressPrecision;
 
+    private double trustScore;
+    private String trustLevel;
+    private int totalReports;
+    private int approvedReports;
+    private long joinDate;
     private Map<String, Object> scanResults;
 
     public Report() {
@@ -41,6 +46,21 @@ public class Report {
         this.upvotes = 0;
         this.downvotes = 0;
     }
+
+    public double getTrustScore() { return trustScore; }
+    public void setTrustScore(double trustScore) { this.trustScore = trustScore; }
+
+    public int getTotalReports() { return totalReports; }
+    public void setTotalReports(int totalReports) { this.totalReports = totalReports; }
+
+    public long getJoinDate() { return joinDate; }
+    public void setJoinDate(long joinDate) { this.joinDate = joinDate; }
+    public String getTrustLevel() { return trustLevel; }
+    public void setTrustLevel(String trustLevel) { this.trustLevel = trustLevel; }
+    public double getSuccessRate() {
+        return totalReports > 0 ? (double) approvedReports / totalReports * 100 : 0;}
+    public int getApprovedReports() { return approvedReports; }
+    public void setApprovedReports(int approvedReports) { this.approvedReports = approvedReports; }
 
     public String getReportId() { return reportId; }
     public void setReportId(String reportId) { this.reportId = reportId; }

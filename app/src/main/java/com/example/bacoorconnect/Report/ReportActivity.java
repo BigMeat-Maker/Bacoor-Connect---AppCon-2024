@@ -25,6 +25,7 @@ import com.example.bacoorconnect.Helpers.CategoryVerifier;
 import com.example.bacoorconnect.Helpers.ImageContentAnalyzer;
 import com.example.bacoorconnect.Helpers.ImageUploader;
 import com.example.bacoorconnect.Helpers.ReverseImageSearchV2;
+import com.example.bacoorconnect.Helpers.TrustScoreHelper;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Helpers.SightengineAIDetector;
 import com.example.bacoorconnect.Helpers.TextContentAnalyzer;
@@ -191,7 +192,6 @@ public class ReportActivity extends AppCompatActivity {
         }
     }
 
-
     private void openGallery() {
         Intent intent = new Intent();
         intent.setType("image/*");
@@ -248,6 +248,24 @@ public class ReportActivity extends AppCompatActivity {
         }
     }
 
+    private void updateTrustScore(String reportId, String status, String verdict) {
+        String currentUserId = getCurrentUserID();
+        if (currentUserId != null) {
+            Log.d("ReportActivity", "Updating trust score - Status: " + status + ", Verdict: " + verdict);
+            TrustScoreHelper.calculateAndUpdateTrustScore(currentUserId, new TrustScoreHelper.TrustScoreCallback() {
+                @Override
+                public void onScoreCalculated(double trustScore, int totalReports, int approvedReports) {
+                    Log.d("ReportActivity", "Trust score updated: " + trustScore + "% (Total: " + totalReports + ", Approved: " + approvedReports + ")");
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e("ReportActivity", "Failed to update trust score: " + error);
+                }
+            });
+        }
+    }
+
     private void uploadImageAndSubmitReport(String reportId) {
         String description = descriptionEditText.getText().toString();
         currentScanResults.clear();
@@ -257,8 +275,9 @@ public class ReportActivity extends AppCompatActivity {
             public void onTextContentChecked(boolean isSafe, String debugJson) {
                 currentScanResults.put("textScan", debugJson);
                 if (!isSafe) {
-                    uploadScanResultToFirebase(null, "BLOCKED", "REJECTED_OFFENSIVE_TEXT", debugJson);
-                    handleInappropriateContent(1, "Inappropriate text content", null, description, debugJson);
+                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT", debugJson);
+                    handleInappropriateContent(1, "Inappropriate text content", null, description, debugJson, reportId);
+                    updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_TEXT");
                     return;
                 }
 
@@ -270,8 +289,9 @@ public class ReportActivity extends AppCompatActivity {
                                 public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
                                     currentScanResults.put("imageScan", debugJson);
                                     if (isRacy) {
-                                        uploadScanResultToFirebase(null, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
-                                        handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson);
+                                        uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
+                                        handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson, reportId);
+                                        updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE");
                                     } else {
                                         runOnUiThread(() -> Toast.makeText(ReportActivity.this,
                                                 "Content is safe. Verifying image...",
@@ -310,8 +330,9 @@ public class ReportActivity extends AppCompatActivity {
                                 public void onImageContentChecked(boolean isRacy, double score, String debugJson) {
                                     currentScanResults.put("imageScan", debugJson);
                                     if (isRacy) {
-                                        uploadScanResultToFirebase(null, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
-                                        handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson);
+                                        uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE", debugJson);
+                                        handleInappropriateContent(2, "Inappropriate image content", imageUri, description, debugJson, reportId);
+                                        updateTrustScore(reportId, "BLOCKED", "REJECTED_OFFENSIVE_IMAGE");
                                     } else {
                                         performReverseImageSearch(imageUri, reportId);
                                     }
@@ -323,14 +344,16 @@ public class ReportActivity extends AppCompatActivity {
                                     runOnUiThread(() -> Toast.makeText(ReportActivity.this,
                                             "Content verification failed completely. Report blocked.",
                                             Toast.LENGTH_LONG).show());
-                                    uploadScanResultToFirebase(null, "FAILED", "SCAN_ERROR", "Text scan: " + error + ", Image scan: " + error);
+                                    uploadScanResultToFirebase(reportId, "FAILED", "SCAN_ERROR", "Text scan: " + error + ", Image scan: " + error);
+                                    updateTrustScore(reportId, "FAILED", "SCAN_ERROR");
                                 }
                             });
                 } else {
                     runOnUiThread(() -> Toast.makeText(ReportActivity.this,
                             "Content verification failed. Report blocked.",
                             Toast.LENGTH_LONG).show());
-                    uploadScanResultToFirebase(null, "FAILED", "SCAN_ERROR", "Text scan failed: " + error);
+                    uploadScanResultToFirebase(reportId, "FAILED", "SCAN_ERROR", "Text scan failed: " + error);
+                    updateTrustScore(reportId, "FAILED", "SCAN_ERROR");
                 }
             }
         });
@@ -357,8 +380,10 @@ public class ReportActivity extends AppCompatActivity {
                                 ", Matches: " + result.matchCount);
 
                         if (result.shouldBlock) {
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE", result.summary + " | " + result.debugInfo);
                             handleInappropriateContent(3, result.summary, imageUri,
-                                    getCurrentDescription(), result.debugInfo);
+                                    getCurrentDescription(), result.debugInfo, reportId);
+                            updateTrustScore(reportId, "BLOCKED", "REJECTED_ONLINE_IMAGE");
                         } else {
                             verifyImageCategory(imageUri, reportId, result.debugInfo);
                         }
@@ -397,8 +422,10 @@ public class ReportActivity extends AppCompatActivity {
                             String strikeReason = String.format(
                                     "Category mismatch. Expected %s, found tags: %s",
                                     selectedCategory, tags);
+                            uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_CATEGORY", strikeReason);
                             handleInappropriateContent(3, strikeReason,
-                                    imageUri, caption, debugInfo);
+                                    imageUri, caption, debugInfo, reportId);
+                            updateTrustScore(reportId, "BLOCKED", "REJECTED_CATEGORY");
                         }
                     }
 
@@ -452,7 +479,8 @@ public class ReportActivity extends AppCompatActivity {
 
                     uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_AI", strikeReason + " | " + additionalInfo);
                     handleInappropriateContent(3, strikeReason, imageUri,
-                            getCurrentDescription(), result.rawResponse + "\n" + additionalInfo);
+                            getCurrentDescription(), result.rawResponse + "\n" + additionalInfo, reportId);
+                    updateTrustScore(reportId, "BLOCKED", "REJECTED_AI");
 
                 } else if (result.isAIGenerated && result.confidence > aiDetector.getConfidenceThreshold() - 0.1) {
                     Log.w("ReportActivity", "Possible AI image below threshold: " + result.confidence);
@@ -475,7 +503,7 @@ public class ReportActivity extends AppCompatActivity {
         });
     }
 
-    private void handleInappropriateContent(int strikeCount, String reason, Uri imageUri, String text, String debugJson) {
+    private void handleInappropriateContent(int strikeCount, String reason, Uri imageUri, String text, String debugJson, String reportId) {
         String verdict;
         if (reason.contains("AI-generated")) {
             verdict = "REJECTED_AI";
@@ -502,7 +530,7 @@ public class ReportActivity extends AppCompatActivity {
 
         addStrikeToUser(strikeCount, reason, imageUri, text);
 
-        uploadScanResultToFirebase(null, "BLOCKED", verdict, reason + " | " + debugJson);
+        // Note: uploadScanResultToFirebase and updateTrustScore are called before this
     }
 
     private void uploadImageToStorage(String reportId) {
@@ -516,12 +544,12 @@ public class ReportActivity extends AppCompatActivity {
             @Override
             public void onUploadFailed(String error) {
                 Log.e("ReportActivity", "Image upload failed: " + error);
+                uploadScanResultToFirebase(reportId, "FAILED", "UPLOAD_FAILED", error);
+                updateTrustScore(reportId, "FAILED", "UPLOAD_FAILED");
                 submitReport(reportId, null);
             }
         });
     }
-
-
 
     private void checkUserStrikesAndSubmitReport(String reportId, String imageUrl, OnStrikeCheckCompleteListener listener) {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -537,6 +565,8 @@ public class ReportActivity extends AppCompatActivity {
                         Toast.makeText(ReportActivity.this, "You have exceeded the maximum allowed strikes.", Toast.LENGTH_LONG).show();
 
                     });
+                    uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_STRIKE_LIMIT", "User has exceeded strike limit");
+                    updateTrustScore(reportId, "BLOCKED", "REJECTED_STRIKE_LIMIT");
                     listener.onStrikeCheckComplete(false);
                 } else {
                     listener.onStrikeCheckComplete(true);
@@ -648,6 +678,7 @@ public class ReportActivity extends AppCompatActivity {
                                 .show();
                     });
                     uploadScanResultToFirebase(reportId, "BLOCKED", "REJECTED_STRIKE_LIMIT", "User has exceeded strike limit");
+                    updateTrustScore(reportId, "BLOCKED", "REJECTED_STRIKE_LIMIT");
                     return;
                 }
 
@@ -681,8 +712,7 @@ public class ReportActivity extends AppCompatActivity {
                     reportsRef.child(reportId).setValue(reportData)
                             .addOnSuccessListener(aVoid -> {
                                 logActivity("Submit Report", "Report Submitted", currentUserId, "Success");
-
-                                uploadScanResultToFirebase(reportId, "SUCCESS", "APPROVED", null);
+                                updateTrustScore(reportId, "SUCCESS", "APPROVED");
 
                                 Intent resultIntent = new Intent();
                                 setResult(RESULT_OK, resultIntent);
@@ -691,6 +721,7 @@ public class ReportActivity extends AppCompatActivity {
                             .addOnFailureListener(e -> {
                                 logActivity("Submit Report", "Report Submission Failed", currentUserId, "Failure");
                                 uploadScanResultToFirebase(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
+                                updateTrustScore(reportId, "FAILED", "DATABASE_ERROR");
                             });
                 }
             }
@@ -747,7 +778,6 @@ public class ReportActivity extends AppCompatActivity {
                 .show();
     }
 
-
     public interface OnStrikeCheckCompleteListener {
         void onStrikeCheckComplete(boolean canSubmit);
     }
@@ -774,5 +804,4 @@ public class ReportActivity extends AppCompatActivity {
         void onCategoryVerified(boolean matchesCategory, List<String> tags, String caption);
         void onVerificationFailed(String error);
     }
-
 }

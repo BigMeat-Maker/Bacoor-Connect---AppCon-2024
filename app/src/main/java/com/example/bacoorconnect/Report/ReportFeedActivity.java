@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bacoorconnect.Helpers.TrustScoreHelper;
 import com.example.bacoorconnect.R;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -236,7 +237,44 @@ public class ReportFeedActivity extends Fragment {
             report.setScanResults((Map<String, Object>) scanResultsObj);
         }
 
+        // Load user stats from the Users node
+        loadUserStatsForReport(report, reportSnap.child("userId").getValue(String.class));
+
         return report;
+    }
+
+    private void loadUserStatsForReport(Report report, String userId) {
+        if (userId == null || userId.isEmpty()) return;
+
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users").child(userId);
+        usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    Double trustScore = snapshot.child("trustScore").getValue(Double.class);
+                    Integer totalReports = snapshot.child("totalReports").getValue(Integer.class);
+                    Integer approvedReports = snapshot.child("approvedReports").getValue(Integer.class);
+                    Long joinDate = snapshot.child("joinDate").getValue(Long.class);
+
+                    if (trustScore != null) report.setTrustScore(trustScore);
+                    if (totalReports != null) report.setTotalReports(totalReports);
+                    if (approvedReports != null) report.setApprovedReports(approvedReports);
+                    if (joinDate != null) report.setJoinDate(joinDate);
+
+                    if (adapter != null) {
+                        int index = reportList.indexOf(report);
+                        if (index != -1) {
+                            adapter.notifyItemChanged(index);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("ReportFeed", "Failed to load user stats", error.toException());
+            }
+        });
     }
 
     private String readString(DataSnapshot parent, String key) {

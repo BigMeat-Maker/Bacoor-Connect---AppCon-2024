@@ -21,8 +21,11 @@ public class ReverseImageSearchV2 {
     private static final String TAG = "ReverseImageSearchV2";
     private static final String SERPAPI_BASE_URL = "https://serpapi.com/search";
 
-    // Threshold: 4+ matches = block, 1-3 = log for review
-    private static final int SUSPICIOUS_RESULT_COUNT = 4;
+    // TESTING BOOLEAN HERE
+    // Set to true to disable blocking in testing
+    // Set to false to enable actual blocking in production
+    private static final boolean TESTING_MODE = true;
+    // ========================
 
     public interface SearchCallback {
         void onSearchComplete(SearchResult result);
@@ -115,6 +118,8 @@ public class ReverseImageSearchV2 {
     private static SearchResult analyzeLensResults(String jsonResponse) throws JSONException {
         JSONObject json = new JSONObject(jsonResponse);
 
+        Log.d(TAG, "Google Lens Response: " + jsonResponse);
+
         if (json.has("search_metadata")) {
             JSONObject metadata = json.getJSONObject("search_metadata");
             String status = metadata.optString("status", "");
@@ -133,6 +138,19 @@ public class ReverseImageSearchV2 {
         if (json.has("visual_matches")) {
             JSONArray visualMatches = json.getJSONArray("visual_matches");
             matchCount = visualMatches.length();
+            Log.d(TAG, "Found " + matchCount + " visual matches");
+        }
+
+        if (matchCount == 0 && json.has("image_results")) {
+            JSONArray imageResults = json.getJSONArray("image_results");
+            matchCount = imageResults.length();
+            Log.d(TAG, "Found " + matchCount + " image results");
+        }
+
+        if (matchCount == 0 && json.has("inline_images")) {
+            JSONArray inlineImages = json.getJSONArray("inline_images");
+            matchCount = inlineImages.length();
+            Log.d(TAG, "Found " + matchCount + " inline images");
         }
 
         boolean hasExactMatch = false;
@@ -142,45 +160,64 @@ public class ReverseImageSearchV2 {
                 JSONObject match = visualMatches.getJSONObject(i);
                 if (match.optBoolean("exact_matches", false)) {
                     hasExactMatch = true;
+                    Log.d(TAG, "Found exact match at position " + (i + 1));
                     break;
                 }
             }
+        }
+
+        boolean hasKnowledgeGraph = json.has("knowledge_graph");
+        if (hasKnowledgeGraph) {
+            JSONObject kg = json.getJSONObject("knowledge_graph");
+            String title = kg.optString("title", "Unknown");
+            Log.d(TAG, "Has knowledge graph - Image recognized as: " + title);
         }
 
         String resultType;
         boolean shouldBlock;
         String summary;
 
-        if (matchCount == 0) {
+        if (matchCount == 0 && !hasKnowledgeGraph) {
             resultType = "NO_MATCHES";
-            shouldBlock = false;
-            summary = "No matching images found online - Original content";
-
+            summary = "No matching images found online";
+        } else if (matchCount == 0 && hasKnowledgeGraph) {
+            resultType = "KNOWLEDGE_GRAPH";
+            summary = "Image recognized by Google Lens but no visual matches";
         } else if (matchCount >= 1 && matchCount <= 3) {
             resultType = "FEW_MATCHES";
-            shouldBlock = false;
-            summary = String.format("Found %d matching image(s) online - May be reused", matchCount);
-
+            summary = String.format("Found %d matching image(s) online", matchCount);
         } else {
             resultType = "MANY_MATCHES";
-            shouldBlock = true;
-            summary = String.format("Found %d matching images online - Likely fake report", matchCount);
+            summary = String.format("Found %d matching images online", matchCount);
         }
 
-        if (hasExactMatch && matchCount > 0) {
+        if (hasExactMatch) {
             summary += " (Exact match detected)";
-            if (matchCount <= 3) {
-                shouldBlock = true;
-                resultType = "EXACT_MATCH";
-            }
+            resultType = "EXACT_MATCH";
         }
+
+        // TESTING TESTING NOTHING IS GETTING BLOCKED HERE
+        if (TESTING_MODE) {
+            shouldBlock = false;  // NOT BLOCKING IN TESTING
+            summary = "[TEST MODE] " + summary + " - Would " +
+                    (matchCount > 0 ? "BLOCK" : "ALLOW") + " in production";
+            Log.w(TAG, "TESTING MODE: " + summary);
+        } else {
+            // THIS IS THE PRODUCTION VALUE
+            shouldBlock = matchCount >= 4 || hasExactMatch;
+        }
+
 
         JSONObject debug = new JSONObject();
         debug.put("matchCount", matchCount);
         debug.put("resultType", resultType);
         debug.put("hasExactMatch", hasExactMatch);
+        debug.put("hasKnowledgeGraph", hasKnowledgeGraph);
         debug.put("summary", summary);
         debug.put("fullResponse", new JSONObject(jsonResponse));
+
+        Log.d(TAG, "Analysis result - Type: " + resultType + ", Matches: " + matchCount +
+                ", ShouldBlock: " + shouldBlock + ", TestingMode: " + TESTING_MODE);
 
         return new SearchResult(
                 resultType,

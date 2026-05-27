@@ -1,12 +1,15 @@
 package com.example.bacoorconnect.Report;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 
@@ -15,7 +18,9 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.bacoorconnect.Helpers.VerificationBadgeHelper;
 import com.example.bacoorconnect.R;
+import com.google.android.flexbox.FlexboxLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -27,8 +32,8 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-// Add this interface
 interface OnHighlightReadyListener {
     void onHighlightReady(int position);
 }
@@ -39,14 +44,13 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     private Context context;
     private DatabaseReference reportRef, usersRef;
     private String currentUserId;
-    private double currentLatitude = 14.4597; // Default Bacoor coordinates
+    private double currentLatitude = 14.4597;
     private double currentLongitude = 120.9333;
     private int highlightedPosition = -1;
     private OnHighlightReadyListener highlightListener;
     private Handler highlightHandler = new Handler();
     private Runnable clearHighlightRunnable;
 
-    // Original constructor
     public ReportAdapter(Context context, List<Report> reportList, double currentLatitude, double currentLongitude) {
         this.context = context;
         this.reportList = reportList;
@@ -58,7 +62,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         this.currentLongitude = currentLongitude;
     }
 
-    // New constructor with highlight listener
     public ReportAdapter(Context context, List<Report> reportList, double currentLatitude, double currentLongitude, OnHighlightReadyListener listener) {
         this(context, reportList, currentLatitude, currentLongitude);
         this.highlightListener = listener;
@@ -68,12 +71,10 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         this.highlightedPosition = position;
         notifyDataSetChanged();
 
-        // Notify listener to scroll to position
         if (highlightListener != null) {
             highlightListener.onHighlightReady(position);
         }
 
-        // Clear highlight after 3 seconds
         if (clearHighlightRunnable != null) {
             highlightHandler.removeCallbacks(clearHighlightRunnable);
         }
@@ -91,6 +92,28 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         notifyDataSetChanged();
     }
 
+    private int getTrustBadgeColor(double trustScore) {
+        if (trustScore >= 80) {
+            return ContextCompat.getColor(context, R.color.badge_high);
+        } else if (trustScore >= 50) {
+            return ContextCompat.getColor(context, R.color.badge_medium);
+        } else {
+            return ContextCompat.getColor(context, R.color.badge_low);
+        }
+    }
+
+    private String getTrustLevelText(double trustScore) {
+        if (trustScore >= 80) {
+            return "Verified";
+        } else if (trustScore >= 50) {
+            return "Contributor";
+        } else if (trustScore > 0) {
+            return "New";
+        } else {
+            return null;
+        }
+    }
+
     @NonNull
     @Override
     public ReportViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -102,7 +125,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     public void onBindViewHolder(@NonNull ReportViewHolder holder, int position) {
         Report report = reportList.get(position);
 
-        // Apply highlight if this position is highlighted
         if (position == highlightedPosition) {
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.highlight_color));
         } else {
@@ -122,7 +144,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             holder.locationTextView.setText("Location not specified");
         }
 
-        loadUserData(report.getUserId(), holder);
+        loadUserData(report.getUserId(), holder, report);
 
         if (report.getLat() != 0 && report.getLon() != 0) {
             double distance = calculateDistance(currentLatitude, currentLongitude,
@@ -139,6 +161,16 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             holder.reportImage.setVisibility(View.VISIBLE);
         } else {
             holder.reportImage.setVisibility(View.GONE);
+        }
+
+        Map<String, Object> scanResults = report.getScanResults();
+        if (holder.badgesContainer != null) {
+            if (scanResults != null && !scanResults.isEmpty()) {
+                VerificationBadgeHelper.addBadgesToContainer(context, holder.badgesContainer, scanResults);
+                holder.badgesContainer.setVisibility(View.VISIBLE);
+            } else {
+                holder.badgesContainer.setVisibility(View.GONE);
+            }
         }
 
         loadUserVote(report.getReportId(), holder.upvoteButton, holder.downvoteButton);
@@ -171,7 +203,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         } else {
             holder.optionsButton.setVisibility(View.GONE);
         }
-
+        /* i hate this damn clickable son of a bitch im removing it
         holder.itemView.setOnClickListener(v -> {
             Intent detailIntent = new Intent(context, ReportDetailActivity.class);
             detailIntent.putExtra("title", "Report Details");
@@ -188,7 +220,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             detailIntent.putExtra("report_userId", report.getUserId());
             detailIntent.putExtra("report_image_url", report.getImageUrl());
             context.startActivity(detailIntent);
-        });
+        }); */
     }
 
     private String resolveStatus(Report report) {
@@ -204,9 +236,12 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         return "Neutral";
     }
 
-    private void loadUserData(String userId, ReportViewHolder holder) {
+    private void loadUserData(String userId, ReportViewHolder holder, Report report) {
         if (userId == null || userId.isEmpty()) {
             holder.usernameView.setText("Unknown User");
+            if (holder.trustBadge != null) {
+                holder.trustBadge.setVisibility(View.GONE);
+            }
             return;
         }
 
@@ -214,6 +249,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
+                    // Load name
                     String firstName = snapshot.child("firstName").getValue(String.class);
                     String lastName = snapshot.child("lastName").getValue(String.class);
                     if (firstName != null && lastName != null) {
@@ -224,6 +260,41 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                         holder.usernameView.setText("Unknown User");
                     }
 
+                    // Load stats
+                    Double trustScore = snapshot.child("trustScore").getValue(Double.class);
+                    Integer totalReports = snapshot.child("totalReports").getValue(Integer.class);
+                    Integer approvedReports = snapshot.child("approvedReports").getValue(Integer.class);
+                    Long joinDate = snapshot.child("joinDate").getValue(Long.class);
+
+                    if (report != null) {
+                        if (trustScore != null) report.setTrustScore(trustScore);
+                        if (totalReports != null) report.setTotalReports(totalReports);
+                        if (approvedReports != null) report.setApprovedReports(approvedReports);
+                        if (joinDate != null) report.setJoinDate(joinDate);
+                    }
+
+                    // Display trust badge
+                    if (holder.trustBadge != null && trustScore != null && trustScore > 0) {
+                        String trustText = getTrustLevelText(trustScore);
+                        if (trustText != null) {
+                            holder.trustBadge.setText(trustText + " " + (int)Math.round(trustScore) + "%");
+                            holder.trustBadge.setVisibility(View.VISIBLE);
+
+                            GradientDrawable badgeBg = new GradientDrawable();
+                            badgeBg.setCornerRadius(10f);
+                            badgeBg.setColor(getTrustBadgeColor(trustScore));
+                            holder.trustBadge.setBackground(badgeBg);
+
+                            // FIXED: Pass both report AND holder
+                            holder.trustBadge.setOnClickListener(v -> showUserStatsDialog(report, holder));
+                        } else {
+                            holder.trustBadge.setVisibility(View.GONE);
+                        }
+                    } else {
+                        holder.trustBadge.setVisibility(View.GONE);
+                    }
+
+                    // Load profile image
                     String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
                     if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
                         Glide.with(context)
@@ -234,14 +305,64 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                     }
                 } else {
                     holder.usernameView.setText("Unknown User");
+                    if (holder.trustBadge != null) {
+                        holder.trustBadge.setVisibility(View.GONE);
+                    }
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 holder.usernameView.setText("Unknown User");
+                if (holder.trustBadge != null) {
+                    holder.trustBadge.setVisibility(View.GONE);
+                }
             }
         });
+    }
+
+    private void showUserStatsDialog(Report report, ReportViewHolder holder) {
+        String userName = holder.usernameView.getText().toString();
+        double trustScore = report.getTrustScore();
+        int totalReports = report.getTotalReports();
+        int approvedReports = report.getApprovedReports();
+        double successRate = report.getSuccessRate();
+        long joinDate = report.getJoinDate();
+
+        String joinDateString = joinDate > 0 ? formatJoinDate(joinDate) : "Unknown";
+
+        String message = "📊 User Statistics\n\n" +
+                "👤 " + userName + "\n" +
+                "⭐ Trust Score: " + (int)Math.round(trustScore) + "%\n" +
+                "📝 Total Reports: " + totalReports + "\n" +
+                "✅ Approved Reports: " + approvedReports + "\n" +
+                "📈 Success Rate: " + String.format("%.1f", successRate) + "%\n" +
+                "📅 Joined: " + joinDateString;
+
+        new AlertDialog.Builder(context)
+                .setTitle("User Reputation")
+                .setMessage(message)
+                .setPositiveButton("Close", null)
+                .show();
+    }
+
+    private String formatJoinDate(long joinDate) {
+        long now = System.currentTimeMillis();
+        long diff = now - joinDate;
+
+        long days = diff / (1000 * 60 * 60 * 24);
+        long months = days / 30;
+        long years = days / 365;
+
+        if (years > 0) {
+            return years + " year" + (years > 1 ? "s" : "") + " ago";
+        } else if (months > 0) {
+            return months + " month" + (months > 1 ? "s" : "") + " ago";
+        } else if (days > 0) {
+            return days + " day" + (days > 1 ? "s" : "") + " ago";
+        } else {
+            return "Today";
+        }
     }
 
     private void loadUserVote(String reportId, ImageView upvoteButton, ImageView downvoteButton) {
@@ -417,6 +538,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
 
     public static class ReportViewHolder extends RecyclerView.ViewHolder {
         TextView usernameView;
+        TextView trustBadge;
         TextView distanceView;
         TextView locationTextView;
         TextView descriptionView;
@@ -430,10 +552,13 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         ImageView downvoteButton;
         ImageView optionsButton;
 
+        FlexboxLayout badgesContainer;
+
         public ReportViewHolder(View itemView) {
             super(itemView);
 
             usernameView = itemView.findViewById(R.id.reportUsername);
+            trustBadge = itemView.findViewById(R.id.trustBadge);
             distanceView = itemView.findViewById(R.id.distanceToUser);
             locationTextView = itemView.findViewById(R.id.locationtext);
             descriptionView = itemView.findViewById(R.id.reportDescription);
@@ -446,6 +571,8 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             upvoteButton = itemView.findViewById(R.id.upvote);
             downvoteButton = itemView.findViewById(R.id.downvote);
             optionsButton = itemView.findViewById(R.id.threedots);
+
+            badgesContainer = itemView.findViewById(R.id.badges_container);
         }
     }
 }

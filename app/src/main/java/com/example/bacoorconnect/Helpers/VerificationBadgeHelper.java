@@ -5,8 +5,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -14,66 +13,50 @@ import androidx.core.content.ContextCompat;
 
 import com.example.bacoorconnect.R;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class VerificationBadgeHelper {
 
+    private static final DecimalFormat df = new DecimalFormat("0");
+
     public enum BadgeType {
-        TEXT("Text Safety", "Checks if the report description contains inappropriate content"),
-        IMAGE("Image Safety", "Checks if the uploaded image contains inappropriate content (NSFW, violence, etc.)"),
-        REVERSE_SEARCH("Originality", "Checks if the image exists elsewhere online (prevents fake reports)"),
-        CATEGORY("Category Match", "Checks if the image content matches the selected category"),
-        AI_DETECTION("AI Detection", "Checks if the image was AI-generated (not allowed in reports)");
+        TEXT("Text", "📝", "Checks if the report description contains inappropriate content"),
+        IMAGE("Image", "🖼️", "Checks if the uploaded image contains inappropriate content"),
+        REVERSE_SEARCH("Originality", "🔍", "Checks if the image exists elsewhere online"),
+        AI_DETECTION("AI", "🤖", "Checks if the image was AI-generated");
 
-        private final String title;
-        private final String description;
-
-        BadgeType(String title, String description) {
-            this.title = title;
-            this.description = description;
-        }
-
-        public String getTitle() { return title; }
-        public String getDescription() { return description; }
-    }
-
-    public enum ConfidenceLevel {
-        HIGH(R.color.badge_high, "✓", "Good - High confidence"),
-        MEDIUM(R.color.badge_medium, "!", "Medium - Needs attention"),
-        LOW(R.color.badge_low, "⚠", "Poor - Failed verification");
-
-        private final int colorRes;
+        private final String shortTitle;
         private final String icon;
         private final String description;
 
-        ConfidenceLevel(int colorRes, String icon, String description) {
-            this.colorRes = colorRes;
+        BadgeType(String shortTitle, String icon, String description) {
+            this.shortTitle = shortTitle;
             this.icon = icon;
             this.description = description;
         }
 
-        public int getColorRes() { return colorRes; }
+        public String getShortTitle() { return shortTitle; }
         public String getIcon() { return icon; }
         public String getDescription() { return description; }
     }
 
     public static class BadgeData {
         public final BadgeType type;
-        public final ConfidenceLevel level;
-        public final String scoreText;
+        public final int percentage;
+        public final String statusText;
+        public final int colorRes;
 
-        public BadgeData(BadgeType type, ConfidenceLevel level, String scoreText) {
+        public BadgeData(BadgeType type, int percentage, String statusText, int colorRes) {
             this.type = type;
-            this.level = level;
-            this.scoreText = scoreText;
+            this.percentage = percentage;
+            this.statusText = statusText;
+            this.colorRes = colorRes;
         }
     }
 
-    /**
-     * Parse scanResults and generate badge data
-     */
     public static List<BadgeData> parseBadges(Map<String, Object> scanResults) {
         List<BadgeData> badges = new ArrayList<>();
 
@@ -81,99 +64,160 @@ public class VerificationBadgeHelper {
             return badges;
         }
 
-        // Text Analysis Badge
-        if (scanResults.containsKey("textScan")) {
-            boolean isSafe = !scanResults.containsKey("textScanError") &&
-                    !(scanResults.get("textScan") instanceof String &&
-                            ((String) scanResults.get("textScan")).contains("inappropriate"));
-            badges.add(new BadgeData(
-                    BadgeType.TEXT,
-                    isSafe ? ConfidenceLevel.HIGH : ConfidenceLevel.LOW,
-                    isSafe ? "Safe" : "Violation detected"
-            ));
-        } else {
-            badges.add(new BadgeData(BadgeType.TEXT, ConfidenceLevel.MEDIUM, "Not checked"));
-        }
+        int textPercentage = 100;
+        String textStatus = "Clean";
+        int textColor = R.color.badge_high;
 
-        // Image Analysis Badge
-        if (scanResults.containsKey("imageScan")) {
-            boolean isSafe = !scanResults.containsKey("imageScanError") &&
-                    !(Boolean.TRUE.equals(scanResults.get("imageScan_racy")) ||
-                            (scanResults.get("imageScan") instanceof String &&
-                                    ((String) scanResults.get("imageScan")).contains("racy")));
-            badges.add(new BadgeData(
-                    BadgeType.IMAGE,
-                    isSafe ? ConfidenceLevel.HIGH : ConfidenceLevel.LOW,
-                    isSafe ? "Safe" : "Inappropriate content"
-            ));
+        if (scanResults.containsKey("textScanError")) {
+            textPercentage = 0;
+            textStatus = "Error";
+            textColor = R.color.badge_low;
+        } else if (scanResults.containsKey("textScan") && scanResults.get("textScan") != null) {
+            String textScan = scanResults.get("textScan").toString();
+            if (textScan.contains("inappropriate") || textScan.contains("violation")) {
+                textPercentage = 20;
+                textStatus = "Violation";
+                textColor = R.color.badge_low;
+            } else {
+                textPercentage = 95;
+                textStatus = "Clean";
+                textColor = R.color.badge_high;
+            }
         } else {
-            badges.add(new BadgeData(BadgeType.IMAGE, ConfidenceLevel.MEDIUM, "Not checked"));
+            textPercentage = 50;
+            textStatus = "Not checked";
+            textColor = R.color.badge_neutral;
         }
+        badges.add(new BadgeData(BadgeType.TEXT, textPercentage, textStatus, textColor));
 
-        // Reverse Image Search Badge
+        int imagePercentage = 100;
+        String imageStatus = "Clean";
+        int imageColor = R.color.badge_high;
+
+        if (scanResults.containsKey("imageScanError")) {
+            imagePercentage = 0;
+            imageStatus = "Error";
+            imageColor = R.color.badge_low;
+        } else if (scanResults.containsKey("imageScan") && scanResults.get("imageScan") != null) {
+            String imageScan = scanResults.get("imageScan").toString();
+            if (imageScan.contains("racy") || imageScan.contains("inappropriate")) {
+                imagePercentage = 15;
+                imageStatus = "Inappropriate";
+                imageColor = R.color.badge_low;
+            } else {
+                imagePercentage = 95;
+                imageStatus = "Clean";
+                imageColor = R.color.badge_high;
+            }
+        } else {
+            imagePercentage = 50;
+            imageStatus = "Not checked";
+            imageColor = R.color.badge_neutral;
+        }
+        badges.add(new BadgeData(BadgeType.IMAGE, imagePercentage, imageStatus, imageColor));
+
+        int originalityPercentage = 100;
+        String originalityStatus = "Original";
+        int originalityColor = R.color.badge_high;
+
         if (scanResults.containsKey("reverseImageSearch_resultType")) {
             String resultType = (String) scanResults.get("reverseImageSearch_resultType");
+            int matches = 0;
+            Object matchCountObj = scanResults.get("reverseImageSearch_matchCount");
+            if (matchCountObj instanceof Integer) {
+                matches = (Integer) matchCountObj;
+            } else if (matchCountObj instanceof Long) {
+                matches = ((Long) matchCountObj).intValue();
+            } else if (matchCountObj instanceof String) {
+                try {
+                    matches = Integer.parseInt((String) matchCountObj);
+                } catch (NumberFormatException e) {
+                    matches = 0;
+                }
+            }
+
             switch (resultType) {
                 case "NO_MATCHES":
-                    badges.add(new BadgeData(BadgeType.REVERSE_SEARCH, ConfidenceLevel.HIGH, "Original photo"));
+                    originalityPercentage = 95;
+                    originalityStatus = "Original";
+                    originalityColor = R.color.badge_high;
                     break;
                 case "FEW_MATCHES":
-                    badges.add(new BadgeData(BadgeType.REVERSE_SEARCH, ConfidenceLevel.MEDIUM, "Found online (1-3 matches)"));
+                    originalityPercentage = Math.max(30, 80 - (matches * 15));
+                    originalityStatus = matches + " match" + (matches > 1 ? "es" : "") + " found";
+                    originalityColor = R.color.badge_medium;
                     break;
                 case "MANY_MATCHES":
-                    badges.add(new BadgeData(BadgeType.REVERSE_SEARCH, ConfidenceLevel.LOW, "Widely available online"));
+                    originalityPercentage = Math.max(5, 80 - (matches * 10));
+                    originalityStatus = matches + " matches found";
+                    originalityColor = R.color.badge_low;
+                    break;
+                case "EXACT_MATCH":
+                    originalityPercentage = 5;
+                    originalityStatus = "Exact match online";
+                    originalityColor = R.color.badge_low;
                     break;
                 default:
-                    badges.add(new BadgeData(BadgeType.REVERSE_SEARCH, ConfidenceLevel.MEDIUM, "Unknown"));
+                    originalityPercentage = 50;
+                    originalityStatus = "Unknown";
+                    originalityColor = R.color.badge_neutral;
             }
+        } else if (scanResults.containsKey("reverseImageSearchError")) {
+            originalityPercentage = 30;
+            originalityStatus = "Check failed";
+            originalityColor = R.color.badge_medium;
         } else {
-            badges.add(new BadgeData(BadgeType.REVERSE_SEARCH, ConfidenceLevel.MEDIUM, "Not checked"));
+            originalityPercentage = 50;
+            originalityStatus = "Not checked";
+            originalityColor = R.color.badge_neutral;
         }
+        badges.add(new BadgeData(BadgeType.REVERSE_SEARCH, originalityPercentage, originalityStatus, originalityColor));
 
-        // Category Verification Badge
-        if (scanResults.containsKey("categoryVerification")) {
-            Object catObj = scanResults.get("categoryVerification");
-            boolean matches = false;
-            if (catObj instanceof Map) {
-                Map<?, ?> catMap = (Map<?, ?>) catObj;
-                Object matchesObj = catMap.get("matchesCategory");
-                matches = matchesObj instanceof Boolean && (Boolean) matchesObj;
-            }
-            badges.add(new BadgeData(
-                    BadgeType.CATEGORY,
-                    matches ? ConfidenceLevel.HIGH : ConfidenceLevel.LOW,
-                    matches ? "Matches category" : "Category mismatch"
-            ));
-        } else if (scanResults.containsKey("categoryVerificationError")) {
-            badges.add(new BadgeData(BadgeType.CATEGORY, ConfidenceLevel.MEDIUM, "Verification failed"));
-        } else {
-            badges.add(new BadgeData(BadgeType.CATEGORY, ConfidenceLevel.MEDIUM, "Not checked"));
-        }
+        int aiPercentage = 100;
+        String aiStatus = "Real";
+        int aiColor = R.color.badge_high;
 
-        // AI Detection Badge
         if (scanResults.containsKey("aiDetection")) {
             Object aiObj = scanResults.get("aiDetection");
-            boolean isAI = false;
-            if (aiObj instanceof String && ((String) aiObj).contains("AI-generated")) {
-                isAI = true;
+
+            String aiResponse = aiObj != null ? aiObj.toString() : "";
+
+            if (aiResponse.contains("AI-generated") || aiResponse.toLowerCase().contains("ai generated")) {
+                int confidence = 85;
+                if (aiResponse.contains("Confidence:")) {
+                    try {
+                        int startIdx = aiResponse.indexOf("Confidence:") + 11;
+                        int endIdx = aiResponse.indexOf("%", startIdx);
+                        if (endIdx > startIdx) {
+                            confidence = Integer.parseInt(aiResponse.substring(startIdx, endIdx).trim());
+                        }
+                    } catch (Exception e) {
+                        confidence = 85;
+                    }
+                }
+                aiPercentage = 100 - confidence;
+                aiStatus = (100 - confidence) + "% Real";
+                aiColor = aiPercentage > 60 ? R.color.badge_high :
+                        (aiPercentage > 30 ? R.color.badge_medium : R.color.badge_low);
+            } else {
+                aiPercentage = 95;
+                aiStatus = "Real";
+                aiColor = R.color.badge_high;
             }
-            badges.add(new BadgeData(
-                    BadgeType.AI_DETECTION,
-                    isAI ? ConfidenceLevel.LOW : ConfidenceLevel.HIGH,
-                    isAI ? "AI-generated detected" : "Real image"
-            ));
         } else if (scanResults.containsKey("aiDetectionError")) {
-            badges.add(new BadgeData(BadgeType.AI_DETECTION, ConfidenceLevel.MEDIUM, "Check failed"));
+            aiPercentage = 40;
+            aiStatus = "Check failed";
+            aiColor = R.color.badge_medium;
         } else {
-            badges.add(new BadgeData(BadgeType.AI_DETECTION, ConfidenceLevel.MEDIUM, "Not checked"));
+            aiPercentage = 50;
+            aiStatus = "Not checked";
+            aiColor = R.color.badge_neutral;
         }
+        badges.add(new BadgeData(BadgeType.AI_DETECTION, aiPercentage, aiStatus, aiColor));
 
         return badges;
     }
 
-    /**
-     * Create badge views and add them to a container
-     */
     public static void addBadgesToContainer(Context context, ViewGroup container, Map<String, Object> scanResults) {
         if (container == null) return;
 
@@ -186,41 +230,57 @@ public class VerificationBadgeHelper {
         }
     }
 
-    /**
-     * Create a single badge view
-     */
     private static View createBadgeView(Context context, BadgeData badge) {
         View badgeView = LayoutInflater.from(context).inflate(R.layout.item_verification_badge, null);
 
         TextView iconText = badgeView.findViewById(R.id.badge_icon);
         TextView titleText = badgeView.findViewById(R.id.badge_title);
-        TextView scoreText = badgeView.findViewById(R.id.badge_score);
+        TextView percentageText = badgeView.findViewById(R.id.badge_percentage);
+        RelativeLayout circle = badgeView.findViewById(R.id.badge_circle);
 
-        iconText.setText(badge.level.getIcon());
-        titleText.setText(badge.type.getTitle());
-        scoreText.setText(badge.scoreText);
+        iconText.setText(badge.type.getIcon());
+        titleText.setText(badge.type.getShortTitle());
 
-        // Set background color based on confidence level
+        percentageText.setText(badge.percentage + "%");
+
         GradientDrawable background = new GradientDrawable();
-        background.setCornerRadius(16f);
-        background.setColor(ContextCompat.getColor(context, badge.level.getColorRes()));
-        badgeView.setBackground(background);
+        background.setShape(GradientDrawable.OVAL);
+        background.setColor(ContextCompat.getColor(context, badge.colorRes));
+        circle.setBackground(background);
 
-        // Make badge clickable to show explanation
         badgeView.setOnClickListener(v -> showBadgeExplanationDialog(context, badge));
 
         return badgeView;
     }
 
-    /**
-     * Show explanation dialog when badge is clicked
-     */
     private static void showBadgeExplanationDialog(Context context, BadgeData badge) {
+        String statusMessage;
+        switch (badge.type) {
+            case TEXT:
+                statusMessage = "Text content analysis shows " + badge.percentage + "% confidence that the description is appropriate.\n\nStatus: " + badge.statusText;
+                break;
+            case IMAGE:
+                statusMessage = "Image content analysis shows " + badge.percentage + "% confidence that the image is appropriate.\n\nStatus: " + badge.statusText;
+                break;
+            case REVERSE_SEARCH:
+                statusMessage = "Reverse image search shows " + badge.percentage + "% confidence this is an original photo.\n\n" +
+                        (badge.percentage > 70 ? "This appears to be an original photo." :
+                                badge.percentage > 40 ? "This image may exist elsewhere online." :
+                                        "This image appears widely available online.");
+                break;
+            case AI_DETECTION:
+                statusMessage = "AI detection shows " + badge.percentage + "% confidence this is a real photo.\n\n" +
+                        (badge.percentage > 70 ? "This appears to be a real photograph." :
+                                badge.percentage > 40 ? "This may be AI-generated." :
+                                        "This is likely AI-generated.");
+                break;
+            default:
+                statusMessage = badge.type.getDescription();
+        }
+
         new AlertDialog.Builder(context)
-                .setTitle(badge.type.getTitle())
-                .setMessage(badge.type.getDescription() + "\n\n" +
-                        "Status: " + badge.level.getDescription() + "\n" +
-                        "Details: " + badge.scoreText)
+                .setTitle(badge.type.getShortTitle() + " Verification (" + badge.percentage + "%)")
+                .setMessage(badge.type.getDescription() + "\n\n" + statusMessage)
                 .setPositiveButton("Got it", null)
                 .show();
     }
