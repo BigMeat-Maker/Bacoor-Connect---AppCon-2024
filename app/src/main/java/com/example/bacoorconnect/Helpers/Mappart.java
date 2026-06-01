@@ -23,19 +23,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.pm.PackageManager;
-import android.app.AlertDialog;
 import android.Manifest;
 
 // Android Permissions & Activity Compatibility
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 // osmdroid Imports
 import org.osmdroid.config.Configuration;
-import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
@@ -53,6 +50,8 @@ import com.example.bacoorconnect.General.MapDash;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.Report;
 import com.example.bacoorconnect.Report.ReportDetailsFrag;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -78,37 +77,29 @@ public class Mappart extends Fragment {
 
     private MapView mapView;
     private MyLocationNewOverlay locationOverlay;
-    private Marker userMarker;
     private Button recenterButton;
 
     // Radius in meters for report visibility and reporting (2 km = 2000 meters)
     private static final double VISIBILITY_RADIUS_METERS = 2000.0;
 
-    // Polygon overlay for the radius circle
     private Polygon radiusCircle;
     private ValueAnimator circleAnimator;
     private int circleAlpha = 255;
 
-    // Track if circle is currently displayed
     private boolean isRadiusCircleVisible = false;
 
-    // Variables to store lat and lon
     private double currentLat;
     private double currentLon;
     private double getterLat;
     private double getterLon;
 
-    // Declare a list to store reports
     private List<Report> reportList = new ArrayList<>();
     private Toast currentToast;
 
-    // Keep track of the marker for removal
     private Marker currentMarker;
 
-    // All markers on map
     private List<Marker> allMarkers = new ArrayList<>();
 
-    // Filter UI elements
     private ImageView btnFilterToggle;
     private ImageView btnFilterAll, btnFilterAccident, btnFilterFire, btnFilterTraffic, btnFilterNatural;
     private String currentFilterCategory = "all";
@@ -184,8 +175,6 @@ public class Mappart extends Fragment {
                 locationOverlay.enableMyLocation();
             }
         } else {
-            // we have a target name, which means this map was opened to view a hospital
-            // we setup my location but don't force follow it
             locationOverlay.enableMyLocation();
             locationOverlay.disableFollowLocation();
         }
@@ -682,32 +671,27 @@ public class Mappart extends Fragment {
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationOverlay.enableMyLocation();
 
+            locationOverlay.enableFollowLocation();
+
+            if (getActivity() instanceof MapDash) {
+                FusedLocationProviderClient fusedClient = LocationServices.getFusedLocationProviderClient(requireContext());
+                fusedClient.getLastLocation()
+                        .addOnSuccessListener(location -> {
+                            if (location != null) {
+                                updateUserLocation(location);
+                                centerMapOnUserLocation(location);
+                            }
+                        });
+            }
+
             locationManager = (LocationManager) requireContext().getSystemService(Context.LOCATION_SERVICE);
 
             if (locationManager != null) {
                 Location lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
                 if (lastLocation != null) {
                     setLocation(lastLocation.getLatitude(), lastLocation.getLongitude());
                     updateUserLocation(lastLocation);
                     centerMapOnUserLocation(lastLocation);
-                } else {
-                    locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, new LocationListener() {
-                        @Override
-                        public void onLocationChanged(Location location) {
-                            centerMapOnUserLocation(location);
-                            updateUserLocation(location);
-                        }
-
-                        @Override
-                        public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-                        @Override
-                        public void onProviderEnabled(String provider) {}
-
-                        @Override
-                        public void onProviderDisabled(String provider) {}
-                    }, null);
                 }
 
                 locationListener = new LocationListener() {
@@ -727,6 +711,10 @@ public class Mappart extends Fragment {
                 };
 
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1500, 3, locationListener);
+
+                if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1500, 3, locationListener);
+                }
             }
         }
     }
@@ -773,23 +761,14 @@ public class Mappart extends Fragment {
             mapdash.updateLocation(location.getLatitude(), location.getLongitude());
         }
 
-        // Update or create user marker
-        if (userMarker == null) {
-            userMarker = new Marker(mapView);
-            userMarker.setPosition(userLocation);
-            userMarker.setTitle("Your Location");
-            mapView.getOverlays().add(userMarker);
-        } else {
-            userMarker.setPosition(userLocation);
-            if (!mapView.getOverlays().contains(userMarker)) {
-                mapView.getOverlays().add(userMarker);
-            }
+        locationOverlay.onLocationChanged(location, null);
+
+        if (!locationOverlay.isMyLocationEnabled()) {
+            locationOverlay.enableMyLocation();
         }
 
-        // Update the radius circle to follow user
         updateRadiusCircle();
 
-        // Update which reports are visible based on new location
         updateVisibleReportsByRadius();
 
         mapView.postInvalidate();
