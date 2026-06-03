@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Why are you reporting this?"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="16dp" />
+
+    <RadioGroup
+        android:id="@+id/report_reason_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <RadioButton
+            android:id="@+id/reason_fake"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fake / Misleading information"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reason_inappropriate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Inappropriate content"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reason_spam"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Spam / Repetitive"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reason_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Wrong location"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/reason_other"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Other"
+            android:padding="8dp" />
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/reason_custom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Please specify (optional)"
+        android:visibility="gone"
+        android:minLines="2"
+        android:maxLines="4"
+        android:padding="12dp"
+        android:background="@android:drawable/editbox_background" />
+
+</LinearLayout>

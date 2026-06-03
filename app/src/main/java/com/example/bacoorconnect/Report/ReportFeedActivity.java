@@ -20,7 +20,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import com.example.bacoorconnect.Helpers.ReportFlag;
 import com.example.bacoorconnect.Helpers.TrustScoreHelper;
 import com.example.bacoorconnect.R;
 import com.google.firebase.database.DataSnapshot;
@@ -31,12 +33,14 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ReportFeedActivity extends Fragment {
     private RecyclerView recyclerView;
     private TextView emptyStateText;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private ReportAdapter adapter;
     private List<Report> reportList = new ArrayList<>();
     private DatabaseReference reportRef = FirebaseDatabase.getInstance().getReference("Report");
@@ -44,7 +48,13 @@ public class ReportFeedActivity extends Fragment {
     private double currentLongitude = 120.9333;
     private String focusReportId;
     private Handler handler = new Handler(Looper.getMainLooper());
+    private Handler autoRefreshHandler = new Handler(Looper.getMainLooper());
+    private Runnable autoRefreshRunnable;
     private boolean isFragmentAttached = false;
+
+    private ValueEventListener reportListener;
+    private boolean isRefreshing = false;
+    private static final long AUTO_REFRESH_INTERVAL = 30000; // 30 secs
 
     public ReportFeedActivity() {
     }
@@ -64,6 +74,10 @@ public class ReportFeedActivity extends Fragment {
         super.onDetach();
         isFragmentAttached = false;
         handler.removeCallbacksAndMessages(null);
+        stopAutoRefresh();
+        if (reportListener != null && reportRef != null) {
+            reportRef.removeEventListener(reportListener);
+        }
     }
 
     @Override
@@ -77,6 +91,8 @@ public class ReportFeedActivity extends Fragment {
 
         recyclerView = view.findViewById(R.id.reportRecyclerView);
         emptyStateText = view.findViewById(R.id.reportEmptyState);
+        swipeRefreshLayout = view.findViewById(R.id.swipeRefreshLayout);
+
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         getCurrentLocation();
@@ -110,15 +126,70 @@ public class ReportFeedActivity extends Fragment {
                 });
         recyclerView.setAdapter(adapter);
 
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(this::manualRefresh);
+            swipeRefreshLayout.setColorSchemeColors(
+                    getResources().getColor(R.color.baconnect_blue),
+                    getResources().getColor(R.color.baconnect_dark_blue)
+            );
+        }
+
         loadReports();
+
+        startAutoRefresh();
 
         return view;
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        handler.removeCallbacksAndMessages(null);
+    private void startAutoRefresh() {
+        if (autoRefreshRunnable == null) {
+            autoRefreshRunnable = () -> {
+                if (isFragmentAttached && !isRefreshing) {
+                    Log.d("ReportFeed", "Auto-refreshing reports...");
+                    refreshDataQuietly();
+                }
+                autoRefreshHandler.postDelayed(autoRefreshRunnable, AUTO_REFRESH_INTERVAL);
+            };
+            autoRefreshHandler.postDelayed(autoRefreshRunnable, AUTO_REFRESH_INTERVAL);
+        }
+    }
+
+    private void stopAutoRefresh() {
+        if (autoRefreshRunnable != null) {
+            autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
+            autoRefreshRunnable = null;
+        }
+    }
+
+    private void refreshDataQuietly() {
+
+        if (reportListener != null) {
+            reportRef.removeEventListener(reportListener);
+        }
+        loadReports();
+    }
+
+    private void manualRefresh() {
+        if (isRefreshing) return;
+
+        isRefreshing = true;
+
+
+        if (reportListener != null) {
+            reportRef.removeEventListener(reportListener);
+        }
+        loadReports();
+
+
+        getCurrentLocation();
+
+
+        handler.postDelayed(() -> {
+            if (isRefreshing && swipeRefreshLayout != null) {
+                swipeRefreshLayout.setRefreshing(false);
+                isRefreshing = false;
+            }
+        }, 5000);
     }
 
     private void getCurrentLocation() {
@@ -134,49 +205,75 @@ public class ReportFeedActivity extends Fragment {
                 currentLatitude = location.getLatitude();
                 currentLongitude = location.getLongitude();
                 if (adapter != null) {
-                    adapter.notifyDataSetChanged();
+                    adapter.updateLocation(currentLatitude, currentLongitude);
                 }
             }
         }
     }
 
     private void loadReports() {
-        reportRef.addValueEventListener(new ValueEventListener() {
+        if (reportListener != null) {
+            reportRef.removeEventListener(reportListener);
+        }
+
+        reportListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!isFragmentAttached) return;
 
                 Log.d("ReportFeed", "Fetched report snapshot count: " + snapshot.getChildrenCount());
 
-                reportList.clear();
+                List<Report> newReportList = new ArrayList<>();
                 int focusPosition = -1;
 
                 for (DataSnapshot reportSnap : snapshot.getChildren()) {
                     try {
                         Report report = mapSnapshotToReport(reportSnap);
                         if (report != null) {
-                            reportList.add(report);
+                            newReportList.add(report);
 
                             if (focusReportId != null && focusReportId.equals(reportSnap.getKey())) {
-                                focusPosition = reportList.size() - 1;
+                                focusPosition = newReportList.size() - 1;
                             }
                         }
                     } catch (Exception parseError) {
                         Log.e("ReportFeed", "Skipped malformed report node: " + reportSnap.getKey(), parseError);
                     }
                 }
-                Collections.reverse(reportList);
+                Collections.reverse(newReportList);
 
                 if (focusPosition != -1) {
-                    focusPosition = reportList.size() - 1 - focusPosition;
+                    focusPosition = newReportList.size() - 1 - focusPosition;
                 }
 
-                adapter.notifyDataSetChanged();
+
+                boolean hasChanges = reportList.size() != newReportList.size();
+                if (!hasChanges) {
+                    for (int i = 0; i < reportList.size(); i++) {
+                        if (!reportList.get(i).getReportId().equals(newReportList.get(i).getReportId())) {
+                            hasChanges = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (hasChanges) {
+                    reportList.clear();
+                    reportList.addAll(newReportList);
+                    adapter.notifyDataSetChanged();
+                }
+
                 updateEmptyState();
 
                 if (focusPosition != -1) {
                     adapter.highlightPosition(focusPosition);
                 }
+
+
+                if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+                isRefreshing = false;
             }
 
             @Override
@@ -191,9 +288,16 @@ public class ReportFeedActivity extends Fragment {
                         recyclerView.setVisibility(View.GONE);
                     }
                     Toast.makeText(getContext(), "Failed to load reports.", Toast.LENGTH_SHORT).show();
+
+                    if (swipeRefreshLayout != null && swipeRefreshLayout.isRefreshing()) {
+                        swipeRefreshLayout.setRefreshing(false);
+                    }
+                    isRefreshing = false;
                 }
             }
-        });
+        };
+
+        reportRef.addValueEventListener(reportListener);
     }
 
     private Report mapSnapshotToReport(DataSnapshot reportSnap) {
@@ -225,6 +329,32 @@ public class ReportFeedActivity extends Fragment {
                 readDouble(reportSnap, "lng")
         );
 
+        Integer flagCount = reportSnap.child("flagCount").getValue(Integer.class);
+        if (flagCount != null) {
+            report.setFlagCount(flagCount);
+        }
+
+
+        Object flagsObj = reportSnap.child("flags").getValue();
+        if (flagsObj instanceof Map) {
+            Map<String, Map<String, Object>> rawFlags = (Map<String, Map<String, Object>>) flagsObj;
+            Map<String, ReportFlag> convertedFlags = new HashMap<>();
+            for (Map.Entry<String, Map<String, Object>> entry : rawFlags.entrySet()) {
+                ReportFlag flag = new ReportFlag();
+                Object userId = entry.getValue().get("userId");
+                Object reason = entry.getValue().get("reason");
+                Object timestamp = entry.getValue().get("timestamp");
+
+                if (userId instanceof String) flag.setUserId((String) userId);
+                if (reason instanceof String) flag.setReason((String) reason);
+                if (timestamp instanceof Long) flag.setTimestamp((Long) timestamp);
+                else if (timestamp instanceof Integer) flag.setTimestamp(((Integer) timestamp).longValue());
+
+                convertedFlags.put(entry.getKey(), flag);
+            }
+            report.setFlags(convertedFlags);
+        }
+
         report.setLatitude(latitude != null ? latitude : 0d);
         report.setLongitude(longitude != null ? longitude : 0d);
 
@@ -237,7 +367,7 @@ public class ReportFeedActivity extends Fragment {
             report.setScanResults((Map<String, Object>) scanResultsObj);
         }
 
-        // Load user stats from the Users node
+
         loadUserStatsForReport(report, reportSnap.child("userId").getValue(String.class));
 
         return report;
@@ -356,5 +486,14 @@ public class ReportFeedActivity extends Fragment {
             emptyStateText.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (reportListener != null && reportRef != null) {
+            reportRef.removeEventListener(reportListener);
+        }
+        stopAutoRefresh();
     }
 }

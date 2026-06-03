@@ -8,16 +8,21 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.bacoorconnect.Helpers.ReportFlag;
 import com.example.bacoorconnect.Helpers.VerificationBadgeHelper;
 import com.example.bacoorconnect.R;
 import com.google.android.flexbox.FlexboxLayout;
@@ -42,7 +47,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
 
     private List<Report> reportList;
     private Context context;
-    private DatabaseReference reportRef, usersRef;
+    private DatabaseReference reportRef, usersRef, reportFlagsRef;
     private String currentUserId;
     private double currentLatitude = 14.4597;
     private double currentLongitude = 120.9333;
@@ -58,6 +63,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         this.currentUserId = user != null ? user.getUid() : null;
         this.reportRef = FirebaseDatabase.getInstance().getReference("Report");
         this.usersRef = FirebaseDatabase.getInstance().getReference("Users");
+        this.reportFlagsRef = FirebaseDatabase.getInstance().getReference("ReportFlags");
         this.currentLatitude = currentLatitude;
         this.currentLongitude = currentLongitude;
     }
@@ -178,6 +184,8 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         holder.upvoteButton.setOnClickListener(v -> modifyVote(report, true, holder));
         holder.downvoteButton.setOnClickListener(v -> modifyVote(report, false, holder));
 
+        setupReportFlagButton(holder, report);
+
         if (currentUserId != null && currentUserId.equals(report.getUserId())) {
             holder.optionsButton.setVisibility(View.VISIBLE);
             holder.optionsButton.setOnClickListener(v -> {
@@ -203,24 +211,131 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         } else {
             holder.optionsButton.setVisibility(View.GONE);
         }
-        /* i hate this damn clickable son of a bitch im removing it
-        holder.itemView.setOnClickListener(v -> {
-            Intent detailIntent = new Intent(context, ReportDetailActivity.class);
-            detailIntent.putExtra("title", "Report Details");
-            detailIntent.putExtra("report_type", report.getCategory());
-            detailIntent.putExtra("report_location", report.getLocation());
-            detailIntent.putExtra("report_date", report.getFormattedTime());
-            detailIntent.putExtra("report_status", resolveStatus(report));
-            detailIntent.putExtra("report_description", report.getDescription());
-            detailIntent.putExtra("report_upvotes", report.getUpvotes());
-            detailIntent.putExtra("report_downvotes", report.getDownvotes());
-            detailIntent.putExtra("report_latitude", report.getLatitude());
-            detailIntent.putExtra("report_longitude", report.getLongitude());
-            detailIntent.putExtra("report_timestamp", report.getTimestamp());
-            detailIntent.putExtra("report_userId", report.getUserId());
-            detailIntent.putExtra("report_image_url", report.getImageUrl());
-            context.startActivity(detailIntent);
-        }); */
+    }
+
+    private void setupReportFlagButton(ReportViewHolder holder, Report report) {
+        if (holder.reportFlagIcon == null) return;
+
+        if (currentUserId != null && currentUserId.equals(report.getUserId())) {
+            holder.reportFlagIcon.setVisibility(View.GONE);
+            return;
+        }
+
+        holder.reportFlagIcon.setVisibility(View.VISIBLE);
+
+        boolean hasUserReported = false;
+        Map<String, ReportFlag> flags = report.getFlags();
+        if (flags != null && currentUserId != null) {
+            for (ReportFlag flag : flags.values()) {
+                if (flag != null && currentUserId.equals(flag.getUserId())) {
+                    hasUserReported = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasUserReported) {
+            holder.reportFlagIcon.setImageResource(R.drawable.ic_flag_filled);
+            holder.reportFlagIcon.setEnabled(false);
+            holder.reportFlagIcon.setAlpha(0.5f);
+            holder.reportFlagIcon.setOnClickListener(null);
+        } else {
+            holder.reportFlagIcon.setImageResource(R.drawable.ic_flag_outline);
+            holder.reportFlagIcon.setEnabled(true);
+            holder.reportFlagIcon.setAlpha(1.0f);
+            holder.reportFlagIcon.setOnClickListener(v -> showReportReasonDialog(report, holder.getAdapterPosition()));
+        }
+    }
+
+    private void showReportReasonDialog(Report report, int position) {
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_report_reason, null);
+
+        RadioGroup reasonGroup = dialogView.findViewById(R.id.report_reason_group);
+        RadioButton reasonOther = dialogView.findViewById(R.id.reason_other);
+        EditText customReasonInput = dialogView.findViewById(R.id.reason_custom);
+
+        reasonGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.reason_other) {
+                customReasonInput.setVisibility(View.VISIBLE);
+            } else {
+                customReasonInput.setVisibility(View.GONE);
+                customReasonInput.setText("");
+            }
+        });
+
+        new AlertDialog.Builder(context)
+                .setView(dialogView)
+                .setTitle("Report Content")
+                .setMessage("Why are you reporting this content?")
+                .setPositiveButton("Submit Report", (dialog, which) -> {
+                    String selectedReason = "";
+                    int selectedId = reasonGroup.getCheckedRadioButtonId();
+
+                    if (selectedId == R.id.reason_fake) {
+                        selectedReason = "Fake / Misleading information";
+                    } else if (selectedId == R.id.reason_inappropriate) {
+                        selectedReason = "Inappropriate content";
+                    } else if (selectedId == R.id.reason_spam) {
+                        selectedReason = "Spam / Repetitive";
+                    } else if (selectedId == R.id.reason_location) {
+                        selectedReason = "Wrong location";
+                    } else if (selectedId == R.id.reason_other) {
+                        String customText = customReasonInput.getText().toString().trim();
+                        selectedReason = !customText.isEmpty() ? customText : "Other";
+                    } else {
+                        selectedReason = "Not specified";
+                    }
+
+                    submitReportFlag(report, selectedReason, position);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void submitReportFlag(Report report, String reason, int position) {
+        if (currentUserId == null) {
+            Toast.makeText(context, "Please login to report content", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Don't allow reporting own report
+        if (currentUserId.equals(report.getUserId())) {
+            Toast.makeText(context, "You cannot report your own report", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String flagId = reportFlagsRef.child(report.getReportId()).push().getKey();
+        long timestamp = System.currentTimeMillis();
+
+        Map<String, Object> flagData = new HashMap<>();
+        flagData.put("userId", currentUserId);
+        flagData.put("reason", reason);
+        flagData.put("timestamp", timestamp);
+
+        DatabaseReference reportFlagsNode = reportRef.child(report.getReportId()).child("flags").child(flagId);
+
+        reportFlagsNode.setValue(flagData)
+                .addOnSuccessListener(aVoid -> {
+                    reportRef.child(report.getReportId()).child("flagCount").get().addOnSuccessListener(snapshot -> {
+                        int currentCount = snapshot.getValue(Integer.class) != null ? snapshot.getValue(Integer.class) : 0;
+                        int newFlagCount = currentCount + 1;
+                        reportRef.child(report.getReportId()).child("flagCount").setValue(newFlagCount);
+
+                        report.setFlagCount(newFlagCount);
+                        if (report.getFlags() == null) {
+                            report.setFlags(new HashMap<>());
+                        }
+                        ReportFlag newFlag = new ReportFlag(currentUserId, reason, timestamp);
+                        report.getFlags().put(flagId, newFlag);
+
+                        notifyItemChanged(position);
+
+                        Toast.makeText(context, "Report has been flagged for review", Toast.LENGTH_SHORT).show();
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(context, "Failed to submit report: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 
     private String resolveStatus(Report report) {
@@ -285,7 +400,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                             badgeBg.setColor(getTrustBadgeColor(trustScore));
                             holder.trustBadge.setBackground(badgeBg);
 
-                            // FIXED: Pass both report AND holder
                             holder.trustBadge.setOnClickListener(v -> showUserStatsDialog(report, holder));
                         } else {
                             holder.trustBadge.setVisibility(View.GONE);
@@ -551,6 +665,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         ImageView upvoteButton;
         ImageView downvoteButton;
         ImageView optionsButton;
+        ImageView reportFlagIcon;
 
         FlexboxLayout badgesContainer;
 
@@ -571,6 +686,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             upvoteButton = itemView.findViewById(R.id.upvote);
             downvoteButton = itemView.findViewById(R.id.downvote);
             optionsButton = itemView.findViewById(R.id.threedots);
+            reportFlagIcon = itemView.findViewById(R.id.reportFlagIcon);
 
             badgesContainer = itemView.findViewById(R.id.badges_container);
         }

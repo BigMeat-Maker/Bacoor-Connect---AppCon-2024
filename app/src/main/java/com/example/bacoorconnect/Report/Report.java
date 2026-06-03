@@ -1,5 +1,7 @@
 package com.example.bacoorconnect.Report;
 
+import com.example.bacoorconnect.Helpers.ReportFlag;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -7,7 +9,6 @@ import java.util.Locale;
 import java.util.Map;
 
 public class Report {
-    // Firebase fields
     private String reportId;
     private String userId;
     private String description;
@@ -29,6 +30,9 @@ public class Report {
     private long joinDate;
     private Map<String, Object> scanResults;
 
+    private int flagCount = 0;
+    private Map<String, ReportFlag> flags = new HashMap<>();
+
     public Report() {
     }
 
@@ -45,6 +49,8 @@ public class Report {
         this.timestamp = System.currentTimeMillis();
         this.upvotes = 0;
         this.downvotes = 0;
+        this.flagCount = 0;
+        this.flags = new HashMap<>();
     }
 
     public double getTrustScore() { return trustScore; }
@@ -97,6 +103,12 @@ public class Report {
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    public int getFlagCount() { return flagCount; }
+    public void setFlagCount(int flagCount) { this.flagCount = flagCount; }
+
+    public Map<String, ReportFlag> getFlags() { return flags; }
+    public void setFlags(Map<String, ReportFlag> flags) { this.flags = flags != null ? flags : new HashMap<>(); }
 
     public String getAddressPrecision() { return addressPrecision; }
     public void setAddressPrecision(String addressPrecision) { this.addressPrecision = addressPrecision; }
