@@ -645,6 +645,7 @@ public class ReportActivity extends AppCompatActivity {
         strikeData.put("time", System.currentTimeMillis());
         strikeData.put("reason", reason);
         strikeData.put("textInQuestion", textInQuestion);
+        strikeData.put("strikeCount", strikeCount);
 
         if (imageInQuestion != null) {
             ImageUploader.uploadImage(ReportActivity.this, imageInQuestion, new ImageUploader.UploadCallback() {
@@ -679,7 +680,7 @@ public class ReportActivity extends AppCompatActivity {
         }
     }
 
-    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails) {
+    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails, String type) {
         String userId = getCurrentUserID();
         String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
 
@@ -689,6 +690,7 @@ public class ReportActivity extends AppCompatActivity {
         log.put("timestamp", System.currentTimeMillis());
         log.put("status", status);
         log.put("verdict", verdict);
+        log.put("type", type);
         log.put("scanResults", currentScanResults);
         log.put("errorDetails", errorDetails != null ? errorDetails : "");
 
@@ -708,6 +710,11 @@ public class ReportActivity extends AppCompatActivity {
                     .addOnSuccessListener(aVoid -> Log.d("ScanLogs", "Scan log saved for report: " + reportId))
                     .addOnFailureListener(e -> Log.e("ScanLogs", "Failed to save scan log", e));
         }
+    }
+
+    // Keep the old method for backward compatibility (calls the new one with default type)
+    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails) {
+        uploadScanResultToFirebase(reportId, status, verdict, errorDetails, "submission");
     }
 
     private void submitReport(String reportId, String imageUrl) {

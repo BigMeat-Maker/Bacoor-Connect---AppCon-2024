@@ -9,30 +9,45 @@ import java.util.Locale;
 import java.util.Map;
 
 public class Report {
+
+    // ==================== CORE REPORT FIELDS ====================
     private String reportId;
     private String userId;
     private String description;
     private String category;
     private String imageUrl;
-    private int upvotes = 0;
-    private int downvotes = 0;
-    private long timestamp;
-
-    private double latitude;
-    private double longitude;
     private String location;
     private String addressPrecision;
+    private long timestamp;
 
+    // ==================== LOCATION FIELDS ====================
+    private double latitude;
+    private double longitude;
+
+    // ==================== VOTING FIELDS ====================
+    private int upvotes = 0;
+    private int downvotes = 0;
+
+    // ==================== TRUST & REPUTATION FIELDS ====================
     private double trustScore;
     private String trustLevel;
     private int totalReports;
     private int approvedReports;
     private long joinDate;
+
+    // ==================== VERIFICATION FIELDS ====================
     private Map<String, Object> scanResults;
 
+    // ==================== EDIT HISTORY FIELDS ====================
+    private int editCount;
+    private long lastEdited;
+    private Map<String, Object> editHistory;
+
+    // ==================== REPORT FLAG FIELDS ====================
     private int flagCount = 0;
     private Map<String, ReportFlag> flags = new HashMap<>();
 
+    // ==================== CONSTRUCTORS ====================
     public Report() {
     }
 
@@ -53,26 +68,11 @@ public class Report {
         this.flags = new HashMap<>();
     }
 
-    public double getTrustScore() { return trustScore; }
-    public void setTrustScore(double trustScore) { this.trustScore = trustScore; }
+    // ==================== GETTERS & SETTERS ====================
 
-    public int getTotalReports() { return totalReports; }
-    public void setTotalReports(int totalReports) { this.totalReports = totalReports; }
-
-    public long getJoinDate() { return joinDate; }
-    public void setJoinDate(long joinDate) { this.joinDate = joinDate; }
-    public String getTrustLevel() { return trustLevel; }
-    public void setTrustLevel(String trustLevel) { this.trustLevel = trustLevel; }
-    public double getSuccessRate() {
-        return totalReports > 0 ? (double) approvedReports / totalReports * 100 : 0;}
-    public int getApprovedReports() { return approvedReports; }
-    public void setApprovedReports(int approvedReports) { this.approvedReports = approvedReports; }
-
+    // --- Core Report ---
     public String getReportId() { return reportId; }
     public void setReportId(String reportId) { this.reportId = reportId; }
-
-    public Map<String, Object> getScanResults() { return scanResults; }
-    public void setScanResults(Map<String, Object> scanResults) { this.scanResults = scanResults; }
 
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
@@ -86,36 +86,77 @@ public class Report {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public int getUpvotes() { return upvotes; }
-    public void setUpvotes(int upvotes) { this.upvotes = upvotes; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 
-    public int getDownvotes() { return downvotes; }
-    public void setDownvotes(int downvotes) { this.downvotes = downvotes; }
+    public String getAddressPrecision() { return addressPrecision; }
+    public void setAddressPrecision(String addressPrecision) { this.addressPrecision = addressPrecision; }
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 
+    // --- Location ---
     public double getLatitude() { return latitude; }
     public void setLatitude(double latitude) { this.latitude = latitude; }
 
     public double getLongitude() { return longitude; }
     public void setLongitude(double longitude) { this.longitude = longitude; }
 
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
+    public double getLat() { return latitude; }
+    public double getLon() { return longitude; }
 
+    // --- Voting ---
+    public int getUpvotes() { return upvotes; }
+    public void setUpvotes(int upvotes) { this.upvotes = upvotes; }
+
+    public int getDownvotes() { return downvotes; }
+    public void setDownvotes(int downvotes) { this.downvotes = downvotes; }
+
+    // --- Trust & Reputation ---
+    public double getTrustScore() { return trustScore; }
+    public void setTrustScore(double trustScore) { this.trustScore = trustScore; }
+
+    public String getTrustLevel() { return trustLevel; }
+    public void setTrustLevel(String trustLevel) { this.trustLevel = trustLevel; }
+
+    public int getTotalReports() { return totalReports; }
+    public void setTotalReports(int totalReports) { this.totalReports = totalReports; }
+
+    public int getApprovedReports() { return approvedReports; }
+    public void setApprovedReports(int approvedReports) { this.approvedReports = approvedReports; }
+
+    public long getJoinDate() { return joinDate; }
+    public void setJoinDate(long joinDate) { this.joinDate = joinDate; }
+
+    public double getSuccessRate() {
+        return totalReports > 0 ? (double) approvedReports / totalReports * 100 : 0;
+    }
+
+    // --- Verification ---
+    public Map<String, Object> getScanResults() { return scanResults; }
+    public void setScanResults(Map<String, Object> scanResults) { this.scanResults = scanResults; }
+
+    // --- Edit History ---
+    public int getEditCount() { return editCount; }
+    public void setEditCount(int editCount) { this.editCount = editCount; }
+
+    public long getLastEdited() { return lastEdited; }
+    public void setLastEdited(long lastEdited) { this.lastEdited = lastEdited; }
+
+    public Map<String, Object> getEditHistory() { return editHistory; }
+    public void setEditHistory(Map<String, Object> editHistory) { this.editHistory = editHistory; }
+
+    // --- Report Flags ---
     public int getFlagCount() { return flagCount; }
     public void setFlagCount(int flagCount) { this.flagCount = flagCount; }
 
     public Map<String, ReportFlag> getFlags() { return flags; }
     public void setFlags(Map<String, ReportFlag> flags) { this.flags = flags != null ? flags : new HashMap<>(); }
 
-    public String getAddressPrecision() { return addressPrecision; }
-    public void setAddressPrecision(String addressPrecision) { this.addressPrecision = addressPrecision; }
-
-    public double getLat() { return latitude; }
-    public double getLon() { return longitude; }
+    // --- Compatibility / Legacy ---
     public String getReportMessage() { return description; }
+
+    // ==================== UTILITY METHODS ====================
 
     public String getFormattedTime() {
         if (timestamp == 0) return "";

@@ -57,11 +57,18 @@ public class TrustScoreHelper {
                             String verdict = logSnapshot.child("verdict").getValue(String.class);
                             String errorDetails = logSnapshot.child("errorDetails").getValue(String.class);
                             String reportId = logSnapshot.child("reportId").getValue(String.class);
+                            String type = logSnapshot.child("type").getValue(String.class);
 
                             Log.d(TAG, "Processing log - ReportId: " + reportId +
                                     ", Status: " + status +
                                     ", Verdict: " + verdict +
+                                    ", Type: " + type +
                                     ", HasErrorDetails: " + (errorDetails != null));
+
+                            if ("edit".equals(type)) {
+                                Log.d(TAG, "  -> Skipping edit log (trust score not affected)");
+                                continue;
+                            }
 
                             if (status != null || errorDetails != null) {
                                 totalReports++;

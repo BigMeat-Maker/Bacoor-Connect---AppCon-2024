@@ -334,6 +334,20 @@ public class ReportFeedActivity extends Fragment {
             report.setFlagCount(flagCount);
         }
 
+        Integer editCount = reportSnap.child("editCount").getValue(Integer.class);
+        if (editCount != null && editCount > 0) {
+            report.setEditCount(editCount);
+        }
+
+        Long lastEdited = reportSnap.child("lastEdited").getValue(Long.class);
+        if (lastEdited != null) {
+            report.setLastEdited(lastEdited);
+        }
+
+        Object editHistoryObj = reportSnap.child("editHistory").getValue();
+        if (editHistoryObj instanceof Map) {
+            report.setEditHistory((Map<String, Object>) editHistoryObj);
+        }
 
         Object flagsObj = reportSnap.child("flags").getValue();
         if (flagsObj instanceof Map) {

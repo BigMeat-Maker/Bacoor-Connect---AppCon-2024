@@ -34,6 +34,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -120,6 +122,45 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
         }
     }
 
+    private void showEditHistoryDialog(Report report) {
+        if (report.getEditCount() == 0) return;
+
+        String lastEditTime = formatEditTime(report.getLastEdited());
+        String editText = report.getEditCount() == 1 ? "time" : "times";
+
+        String message = "✏️ This report has been edited\n\n" +
+                "📝 Edit count: " + report.getEditCount() + " " + editText + "\n" +
+                "🕐 Last edited: " + lastEditTime;
+
+        new AlertDialog.Builder(context)
+                .setTitle("Edit Information")
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show();
+    }
+
+    private String formatEditTime(long timestamp) {
+        long now = System.currentTimeMillis();
+        long diff = now - timestamp;
+
+        long minutes = diff / (1000 * 60);
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        if (minutes < 1) {
+            return "Just now";
+        } else if (minutes < 60) {
+            return minutes + " minute" + (minutes > 1 ? "s" : "") + " ago";
+        } else if (hours < 24) {
+            return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+        } else if (days < 7) {
+            return days + " day" + (days > 1 ? "s" : "") + " ago";
+        } else {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+            return sdf.format(new Date(timestamp));
+        }
+    }
+
     @NonNull
     @Override
     public ReportViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -177,6 +218,13 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             } else {
                 holder.badgesContainer.setVisibility(View.GONE);
             }
+        }
+
+        if (report.getEditCount() > 0) {
+            holder.editedBadge.setVisibility(View.VISIBLE);
+            holder.editedBadge.setOnClickListener(v -> showEditHistoryDialog(report));
+        } else {
+            holder.editedBadge.setVisibility(View.GONE);
         }
 
         loadUserVote(report.getReportId(), holder.upvoteButton, holder.downvoteButton);
@@ -298,7 +346,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             return;
         }
 
-        // Don't allow reporting own report
         if (currentUserId.equals(report.getUserId())) {
             Toast.makeText(context, "You cannot report your own report", Toast.LENGTH_SHORT).show();
             return;
@@ -364,7 +411,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    // Load name
                     String firstName = snapshot.child("firstName").getValue(String.class);
                     String lastName = snapshot.child("lastName").getValue(String.class);
                     if (firstName != null && lastName != null) {
@@ -375,7 +421,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                         holder.usernameView.setText("Unknown User");
                     }
 
-                    // Load stats
                     Double trustScore = snapshot.child("trustScore").getValue(Double.class);
                     Integer totalReports = snapshot.child("totalReports").getValue(Integer.class);
                     Integer approvedReports = snapshot.child("approvedReports").getValue(Integer.class);
@@ -388,7 +433,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                         if (joinDate != null) report.setJoinDate(joinDate);
                     }
 
-                    // Display trust badge
                     if (holder.trustBadge != null && trustScore != null && trustScore > 0) {
                         String trustText = getTrustLevelText(trustScore);
                         if (trustText != null) {
@@ -408,7 +452,6 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
                         holder.trustBadge.setVisibility(View.GONE);
                     }
 
-                    // Load profile image
                     String profileImageUrl = snapshot.child("profileImage").getValue(String.class);
                     if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
                         Glide.with(context)
@@ -653,6 +696,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
     public static class ReportViewHolder extends RecyclerView.ViewHolder {
         TextView usernameView;
         TextView trustBadge;
+        TextView editedBadge;
         TextView distanceView;
         TextView locationTextView;
         TextView descriptionView;
@@ -674,6 +718,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.ReportView
 
             usernameView = itemView.findViewById(R.id.reportUsername);
             trustBadge = itemView.findViewById(R.id.trustBadge);
+            editedBadge = itemView.findViewById(R.id.editedBadge);
             distanceView = itemView.findViewById(R.id.distanceToUser);
             locationTextView = itemView.findViewById(R.id.locationtext);
             descriptionView = itemView.findViewById(R.id.reportDescription);

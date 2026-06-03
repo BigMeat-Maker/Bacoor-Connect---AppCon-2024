@@ -356,6 +356,42 @@ public class ReportIncident extends AppCompatActivity {
         }
     }
 
+    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails) {
+        uploadScanResultToFirebase(reportId, status, verdict, errorDetails, "submission");
+    }
+
+    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails, String type) {
+        String userId = getCurrentUserID();
+        String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
+
+        HashMap<String, Object> log = new HashMap<>();
+        log.put("userId", userId);
+        log.put("reportId", reportId);
+        log.put("timestamp", System.currentTimeMillis());
+        log.put("status", status);
+        log.put("verdict", verdict);
+        log.put("type", type);
+        log.put("scanResults", currentScanResults);
+        log.put("errorDetails", errorDetails != null ? errorDetails : "");
+
+        StringBuilder summary = new StringBuilder();
+        summary.append("Text: ").append(currentScanResults.containsKey("textScan") ? "✓" : "✗");
+        summary.append(" | Image: ").append(currentScanResults.containsKey("imageScan") ? "✓" : "✗");
+        summary.append(" | Reverse: ").append(currentScanResults.containsKey("reverseImageSearch_resultType") ?
+                currentScanResults.get("reverseImageSearch_resultType") : "✗");
+        summary.append(" | Category: ").append(currentScanResults.containsKey("categoryVerification") ?
+                (currentScanResults.get("categoryVerification") instanceof Map ?
+                        ((Map<?, ?>) currentScanResults.get("categoryVerification")).get("matchesCategory") : "✓") : "✗");
+        summary.append(" | AI: ").append(currentScanResults.containsKey("aiDetection") ? "✓" : "✗");
+        log.put("summary", summary.toString());
+
+        if (logId != null) {
+            FirebaseDatabase.getInstance().getReference("ScanLogs").child(logId).setValue(log)
+                    .addOnSuccessListener(aVoid -> Log.d("ScanLogs", "Scan log saved for report: " + reportId))
+                    .addOnFailureListener(e -> Log.e("ScanLogs", "Failed to save scan log", e));
+        }
+    }
+
     private void uploadImageAndSubmitReport(String reportId) {
         String description = descriptionEditText.getText().toString();
         currentScanResults.clear();
@@ -669,6 +705,8 @@ public class ReportIncident extends AppCompatActivity {
 
     private void addStrikeToUser(int strikeCount, String reason, Uri imageInQuestion, String textInQuestion) {
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (userId == null) return;
+
         DatabaseReference userStrikesRef = FirebaseDatabase.getInstance()
                 .getReference("Users")
                 .child(userId)
@@ -680,68 +718,32 @@ public class ReportIncident extends AppCompatActivity {
         strikeData.put("time", System.currentTimeMillis());
         strikeData.put("reason", reason);
         strikeData.put("textInQuestion", textInQuestion);
+        strikeData.put("strikeCount", strikeCount);
 
         if (imageInQuestion != null) {
             ImageUploader.uploadImage(ReportIncident.this, imageInQuestion, new ImageUploader.UploadCallback() {
                 @Override
                 public void onUploadSuccess(String imageUrl) {
                     strikeData.put("imageInQuestion", imageUrl);
-                    saveStrikeToDatabase(userStrikesRef, strikeId, strikeData, reason);
+                    if (strikeId != null) {
+                        userStrikesRef.child(strikeId).setValue(strikeData);
+                    }
                 }
 
                 @Override
                 public void onUploadFailed(String error) {
                     Log.e("ImageUpload", "Image upload failed: " + error);
                     strikeData.put("imageInQuestion", null);
-                    saveStrikeToDatabase(userStrikesRef, strikeId, strikeData, reason);
+                    if (strikeId != null) {
+                        userStrikesRef.child(strikeId).setValue(strikeData);
+                    }
                 }
             });
         } else {
             strikeData.put("imageInQuestion", null);
-            saveStrikeToDatabase(userStrikesRef, strikeId, strikeData, reason);
-        }
-    }
-
-    private void saveStrikeToDatabase(DatabaseReference userStrikesRef, String strikeId, Map<String, Object> strikeData, String reason) {
-        if (strikeId != null) {
-            userStrikesRef.child(strikeId).setValue(strikeData).addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    Log.d("StrikeSystem", "Strike added: " + reason);
-                } else {
-                    Log.e("StrikeSystem", "Failed to add strike", task.getException());
-                }
-            });
-        }
-    }
-
-    private void uploadScanResultToFirebase(String reportId, String status, String verdict, String errorDetails) {
-        String userId = getCurrentUserID();
-        String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
-
-        HashMap<String, Object> log = new HashMap<>();
-        log.put("userId", userId);
-        log.put("reportId", reportId);
-        log.put("timestamp", System.currentTimeMillis());
-        log.put("status", status);
-        log.put("verdict", verdict);
-        log.put("scanResults", currentScanResults);
-        log.put("errorDetails", errorDetails != null ? errorDetails : "");
-
-        StringBuilder summary = new StringBuilder();
-        summary.append("Text: ").append(currentScanResults.containsKey("textScan") ? "✓" : "✗");
-        summary.append(" | Image: ").append(currentScanResults.containsKey("imageScan") ? "✓" : "✗");
-        summary.append(" | Reverse: ").append(currentScanResults.containsKey("reverseImageSearch_resultType") ?
-                currentScanResults.get("reverseImageSearch_resultType") : "✗");
-        summary.append(" | Category: ").append(currentScanResults.containsKey("categoryVerification") ?
-                (currentScanResults.get("categoryVerification") instanceof Map ?
-                        ((Map<?, ?>) currentScanResults.get("categoryVerification")).get("matchesCategory") : "✓") : "✗");
-        summary.append(" | AI: ").append(currentScanResults.containsKey("aiDetection") ? "✓" : "✗");
-        log.put("summary", summary.toString());
-
-        if (logId != null) {
-            FirebaseDatabase.getInstance().getReference("ScanLogs").child(logId).setValue(log)
-                    .addOnSuccessListener(aVoid -> Log.d("ScanLogs", "Scan log saved for report: " + reportId))
-                    .addOnFailureListener(e -> Log.e("ScanLogs", "Failed to save scan log", e));
+            if (strikeId != null) {
+                userStrikesRef.child(strikeId).setValue(strikeData);
+            }
         }
     }
 

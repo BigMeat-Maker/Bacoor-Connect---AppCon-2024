@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +48,6 @@ import java.util.Locale;
 import java.util.Map;
 
 public class EditReport extends AppCompatActivity {
-
-    //  THIS IS NOT UPLOADING TO SCANLOGS SHOULD FIX IT AS WELL AS TRUSTSCORE HELPER TO HAVE ANOTHER TYPE LIKE SUBMISSION AND EDIT IT WILL NOT COUNT IT FOR REPORT COUNT AND TRUST RATING IF SUCCESS BUT WILL COUNT FAILURES
 
     private static final int PICK_IMAGE_REQUEST = 1;
     private static final int CAPTURE_IMAGE_REQUEST = 2;
@@ -74,11 +73,17 @@ public class EditReport extends AppCompatActivity {
     private boolean contentChecksPassed = false;
     private Map<String, Object> currentScanResults = new HashMap<>();
     private SightengineAIDetector aiDetector;
-
-    // Single ProgressDialog for all operations
     private ProgressDialog mainProgressDialog;
     private boolean isFinishing = false;
     private boolean updateSuccessful = false;
+
+    private String originalDescription;
+    private String originalCategory;
+    private String originalImageUrlBeforeEdit;
+    private double originalLat;
+    private double originalLon;
+    private String originalLocation;
+    private Map<String, Object> originalScanResults;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +104,6 @@ public class EditReport extends AppCompatActivity {
 
         selectedCategory = "";
 
-        // Initialize main progress dialog
         mainProgressDialog = new ProgressDialog(this);
         mainProgressDialog.setCancelable(false);
         mainProgressDialog.setCanceledOnTouchOutside(false);
@@ -287,6 +291,18 @@ public class EditReport extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
+                    originalDescription = snapshot.child("description").getValue(String.class);
+                    originalCategory = snapshot.child("category").getValue(String.class);
+                    originalImageUrlBeforeEdit = snapshot.child("imageUrl").getValue(String.class);
+                    originalLat = lat;
+                    originalLon = lon;
+                    originalLocation = snapshot.child("location").getValue(String.class);
+
+                    Object originalScanObj = snapshot.child("scanResults").getValue();
+                    if (originalScanObj instanceof Map) {
+                        originalScanResults = new HashMap<>((Map<String, Object>) originalScanObj);
+                    }
+
                     String location = snapshot.child("location").getValue(String.class);
                     String description = snapshot.child("description").getValue(String.class);
                     String category = snapshot.child("category").getValue(String.class);
@@ -372,10 +388,6 @@ public class EditReport extends AppCompatActivity {
         }
     }
 
-    /**
-     * Update trust score - ONLY for failures (abuse prevention)
-     * Successful edits should NOT affect trust score
-     */
     private void updateTrustScoreForFailure(String reportId, String status, String verdict) {
         String currentUserId = getCurrentUserID();
         if (currentUserId != null) {
@@ -394,9 +406,6 @@ public class EditReport extends AppCompatActivity {
         }
     }
 
-    /**
-     * Upload scan result for failures only (type = "edit")
-     */
     private void uploadFailureScanResult(String reportId, String status, String verdict, String errorDetails) {
         String userId = getCurrentUserID();
         String logId = FirebaseDatabase.getInstance().getReference("ScanLogs").push().getKey();
@@ -407,7 +416,7 @@ public class EditReport extends AppCompatActivity {
         log.put("timestamp", System.currentTimeMillis());
         log.put("status", status);
         log.put("verdict", verdict);
-        log.put("type", "edit");  // Mark as edit attempt
+        log.put("type", "edit");
         log.put("scanResults", currentScanResults);
         log.put("errorDetails", errorDetails != null ? errorDetails : "");
 
@@ -726,35 +735,149 @@ public class EditReport extends AppCompatActivity {
 
         showLoading("Updating report...");
 
-        HashMap<String, Object> updates = new HashMap<>();
-        updates.put("description", description);
-        updates.put("category", category);
-        updates.put("latitude", lat);
-        updates.put("longitude", lon);
-        updates.put("location", locationText.getText().toString());
-        updates.put("scanResults", currentScanResults);
-
-        if (isImageChanged) {
-            updates.put("imageUrl", imageUrl != null ? imageUrl : "");
-        }
-
-        reportRef.updateChildren(updates)
-                .addOnSuccessListener(aVoid -> {
-                    logActivity("Report Updated", reportId);
-                    // ✅ SUCCESSFUL EDIT - NO SCAN LOG, NO TRUST SCORE UPDATE
-                    Log.d("EditReport", "✅ Report updated successfully - Trust score NOT affected (edit only)");
-
-                    updateSuccessful = true;
-                    Toast.makeText(EditReport.this, "Report updated successfully.", Toast.LENGTH_SHORT).show();
+        reportRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
                     finishToFrontpage();
-                })
-                .addOnFailureListener(e -> {
-                    logActivity("Failed to update report: " + e.getMessage(), reportId);
-                    uploadFailureScanResult(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
-                    updateTrustScoreForFailure(reportId, "FAILED", "DATABASE_ERROR");
-                    Toast.makeText(EditReport.this, "Failed to update report.", Toast.LENGTH_SHORT).show();
-                    finishToFrontpage();
-                });
+                    return;
+                }
+
+                Map<String, Object> existingScanResults = new HashMap<>();
+                Object existingScanObj = snapshot.child("scanResults").getValue();
+                if (existingScanObj instanceof Map) {
+                    existingScanResults.putAll((Map<String, Object>) existingScanObj);
+                }
+
+                int currentEditCount = snapshot.child("editCount").getValue(Integer.class) != null ?
+                        snapshot.child("editCount").getValue(Integer.class) : 0;
+
+                boolean descriptionChanged = !description.equals(originalDescription);
+                boolean categoryChanged = !category.equals(originalCategory);
+                boolean locationChanged = !locationText.getText().toString().equals(originalLocation);
+                boolean imageChanged = isImageChanged && (imageUrl != null ? !imageUrl.equals(originalImageUrlBeforeEdit) : originalImageUrlBeforeEdit != null);
+
+                Map<String, Object> scanResultsChanges = new HashMap<>();
+                if (currentScanResults.containsKey("textScan") && originalScanResults != null) {
+                    String newTextScan = currentScanResults.get("textScan") != null ? currentScanResults.get("textScan").toString() : "";
+                    String oldTextScan = originalScanResults.get("textScan") != null ? originalScanResults.get("textScan").toString() : "";
+                    if (!newTextScan.equals(oldTextScan)) {
+                        scanResultsChanges.put("textScan", Map.of("old", oldTextScan, "new", newTextScan));
+                    }
+                }
+                if (currentScanResults.containsKey("imageScan") && originalScanResults != null) {
+                    String newImageScan = currentScanResults.get("imageScan") != null ? currentScanResults.get("imageScan").toString() : "";
+                    String oldImageScan = originalScanResults.get("imageScan") != null ? originalScanResults.get("imageScan").toString() : "";
+                    if (!newImageScan.equals(oldImageScan)) {
+                        scanResultsChanges.put("imageScan", Map.of("old", oldImageScan, "new", newImageScan));
+                    }
+                }
+                if (currentScanResults.containsKey("reverseImageSearch_resultType") && originalScanResults != null) {
+                    String newReverseType = currentScanResults.get("reverseImageSearch_resultType") != null ? currentScanResults.get("reverseImageSearch_resultType").toString() : "";
+                    String oldReverseType = originalScanResults.get("reverseImageSearch_resultType") != null ? originalScanResults.get("reverseImageSearch_resultType").toString() : "";
+                    if (!newReverseType.equals(oldReverseType)) {
+                        scanResultsChanges.put("reverseImageSearch_resultType", Map.of("old", oldReverseType, "new", newReverseType));
+                    }
+                }
+                if (currentScanResults.containsKey("aiDetection") && originalScanResults != null) {
+                    String newAiDetection = currentScanResults.get("aiDetection") != null ? currentScanResults.get("aiDetection").toString() : "";
+                    String oldAiDetection = originalScanResults.get("aiDetection") != null ? originalScanResults.get("aiDetection").toString() : "";
+                    if (!newAiDetection.equals(oldAiDetection)) {
+                        scanResultsChanges.put("aiDetection", Map.of("old", oldAiDetection, "new", newAiDetection));
+                    }
+                }
+
+                Map<String, Object> editEntry = new HashMap<>();
+                String editId = "edit_" + System.currentTimeMillis();
+                editEntry.put("timestamp", System.currentTimeMillis());
+
+                List<String> changedFields = new ArrayList<>();
+
+                if (descriptionChanged) {
+                    editEntry.put("previousDescription", originalDescription);
+                    editEntry.put("newDescription", description);
+                    changedFields.add("description");
+                }
+                if (categoryChanged) {
+                    editEntry.put("previousCategory", originalCategory);
+                    editEntry.put("newCategory", category);
+                    changedFields.add("category");
+                }
+                if (locationChanged) {
+                    editEntry.put("previousLocation", originalLocation);
+                    editEntry.put("previousLatitude", originalLat);
+                    editEntry.put("previousLongitude", originalLon);
+                    editEntry.put("newLocation", locationText.getText().toString());
+                    editEntry.put("newLatitude", lat);
+                    editEntry.put("newLongitude", lon);
+                    changedFields.add("location");
+                }
+                if (imageChanged) {
+                    editEntry.put("previousImageUrl", originalImageUrlBeforeEdit);
+                    editEntry.put("newImageUrl", imageUrl);
+                    changedFields.add("image");
+                }
+                if (!scanResultsChanges.isEmpty()) {
+                    editEntry.put("scanResultsChanges", scanResultsChanges);
+                    changedFields.add("scanResults");
+                }
+
+                editEntry.put("changedFields", changedFields);
+
+                Map<String, Object> mergedScanResults = new HashMap<>();
+                if (originalScanResults != null) {
+                    mergedScanResults.putAll(originalScanResults);
+                }
+                mergedScanResults.putAll(currentScanResults);
+
+                int newEditCount = currentEditCount + 1;
+
+                HashMap<String, Object> updates = new HashMap<>();
+                updates.put("description", description);
+                updates.put("category", category);
+                updates.put("latitude", lat);
+                updates.put("longitude", lon);
+                updates.put("location", locationText.getText().toString());
+                updates.put("scanResults", mergedScanResults);
+                updates.put("editCount", newEditCount);
+                updates.put("lastEdited", System.currentTimeMillis());
+
+                if (!changedFields.isEmpty()) {
+                    updates.put("editHistory/" + editId, editEntry);
+                    Log.d("EditReport", "Edit #" + newEditCount + " - Changed fields: " + changedFields);
+                } else {
+                    Log.d("EditReport", "No changes detected, skipping edit history");
+                }
+
+                if (imageChanged) {
+                    updates.put("imageUrl", imageUrl != null ? imageUrl : "");
+                }
+
+                reportRef.updateChildren(updates)
+                        .addOnSuccessListener(aVoid -> {
+                            logActivity("Report Updated", reportId);
+                            Log.d("EditReport", "✅ Report updated successfully - Edit #" + newEditCount);
+
+                            updateSuccessful = true;
+                            Toast.makeText(EditReport.this, "Report updated successfully.", Toast.LENGTH_SHORT).show();
+                            finishToFrontpage();
+                        })
+                        .addOnFailureListener(e -> {
+                            Log.e("EditReport", "Failed to update report", e);
+                            logActivity("Failed to update report: " + e.getMessage(), reportId);
+                            uploadFailureScanResult(reportId, "FAILED", "DATABASE_ERROR", e.getMessage());
+                            updateTrustScoreForFailure(reportId, "FAILED", "DATABASE_ERROR");
+                            Toast.makeText(EditReport.this, "Failed to update report: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            finishToFrontpage();
+                        });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("EditReport", "Failed to load existing report data", error.toException());
+                finishToFrontpage();
+            }
+        });
     }
 
     private void logFailedVerification(String type, String error) {
