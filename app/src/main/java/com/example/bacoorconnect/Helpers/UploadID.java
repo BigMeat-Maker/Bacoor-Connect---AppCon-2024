@@ -279,7 +279,7 @@ public class UploadID extends AppCompatActivity {
         try {
             formRecognizerClient = new DocumentAnalysisClientBuilder()
                     .credential(new AzureKeyCredential(azureKey))
-                    .endpoint("https://bacconformrecognizer.cognitiveservices.azure.com/")
+                    .endpoint(AzureConfig.getAzureEndpoint(this))
                     .buildClient();
             Log.d(TAG, "Azure client initialized successfully");
         } catch (Exception e) {
@@ -530,7 +530,7 @@ public class UploadID extends AppCompatActivity {
     }
 
     private SecretKey getImageEncryptionKey() throws Exception {
-        // God forbid do not delete this shit i did this shit at 4am full of coffee, somehow thhis works so dont change it!
+        // Simple key derivation from user ID for image encryption.
         String keyMaterial = tempUserId + "_image_key_2024";
 
         java.security.MessageDigest sha = java.security.MessageDigest.getInstance("SHA-256");

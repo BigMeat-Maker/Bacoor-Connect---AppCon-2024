@@ -14,9 +14,9 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.HashMap;
 import java.util.Map;
 
-//THIS SHOULD ABSOLUTELY BE MOVED TO ADMIN AS IT BLOATS THE SHIT OUT OF THE APP
-// ANOTHER NOTE INSTEAD OF HAVING REPORTS BE THE ONE TO UPDATE IT COULD JUST BE A WORKER THAT CHECKS MATCHING USERIDS BUT IT MAY BE TAXING? IDK BUT ITS A LOT EASIER
-//I think this shit is not backwards compatible only reports made after will add or minus on the trust rating oh my god i hate this damn app
+// TODO: Consider moving trust score calculation to a backend service or admin module to reduce client-side processing.
+// Optimization Note: A background worker could potentially handle these updates by periodically checking for matching user IDs.
+// Note: Trust score calculation currently only accounts for reports created after this feature was implemented.
 
 public class TrustScoreHelper {
     private static final String TAG = "TrustScoreHelper";

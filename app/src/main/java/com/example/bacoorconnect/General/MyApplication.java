@@ -39,6 +39,28 @@ public class MyApplication extends Application implements Configuration.Provider
         setupAzureVisionFromRemoteConfig();
         setupSightengineFromRemoteConfig();
         setupSerpApiFromRemoteConfig();
+        setupGooglePlacesFromRemoteConfig();
+    }
+
+    private void setupGooglePlacesFromRemoteConfig() {
+        FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+
+        java.util.Map<String, Object> defaults = new java.util.HashMap<>();
+        defaults.put("google_places_api_key", "");
+        remoteConfig.setDefaultsAsync(defaults);
+
+        remoteConfig.fetchAndActivate()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String apiKey = remoteConfig.getString("google_places_api_key");
+                        if (!apiKey.isEmpty()) {
+                            com.example.bacoorconnect.Helpers.GooglePlacesConfig.setCredentials(this, apiKey);
+                            Log.d(TAG, "Google Places credentials saved");
+                        } else {
+                            Log.e(TAG, "Google Places API key not found in Remote Config");
+                        }
+                    }
+                });
     }
 
     private void setupAzureVisionFromRemoteConfig() {

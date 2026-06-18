@@ -20,6 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.bacoorconnect.General.MapDash;
+import com.example.bacoorconnect.Helpers.GooglePlacesConfig;
 import com.example.bacoorconnect.R;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -31,9 +33,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -63,7 +62,6 @@ public class EmergencyHospitals extends Fragment implements HospitalAdapter.OnHo
     private boolean hasFetchedLocation = false;
     private boolean hasFetchedHospitals = false;
 
-    private static final String GOOGLE_PLACES_API_KEY = "AIzaSyAh_s1ran_97S3SWQ63z5zZLMfi_e25cRE"; // Replace with actual API key
     private final OkHttpClient client = new OkHttpClient();
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
@@ -124,121 +122,6 @@ public class EmergencyHospitals extends Fragment implements HospitalAdapter.OnHo
         }
 
         return view;
-    }
-
-    private void fetchHospitalsFromGooglePlaces(Location location) {
-        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
-                "?location=" + location.getLatitude() + "," + location.getLongitude() +
-                "&radius=5000" + // 5 km radius
-                "&type=hospital" +
-                "&key=" + GOOGLE_PLACES_API_KEY;
-
-        Request request = new Request.Builder().url(url).build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                requireActivity().runOnUiThread(() -> {
-                    // Fallback to Firebase or hardcoded list if API fails
-                    fetchHospitalsFromFirebase();
-                });
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseData = response.body().string();
-                    requireActivity().runOnUiThread(() -> parseGooglePlacesResponse(responseData));
-                } else {
-                    requireActivity().runOnUiThread(() -> fetchHospitalsFromFirebase());
-                }
-            }
-        });
-    }
-
-    private void parseGooglePlacesResponse(String jsonData) {
-        try {
-            JSONObject jsonObject = new JSONObject(jsonData);
-            JSONArray results = jsonObject.getJSONArray("results");
-
-            hospitalList.clear();
-
-            for (int i = 0; i < results.length(); i++) {
-                JSONObject place = results.getJSONObject(i);
-                String name = place.getString("name");
-                
-                String vicinity = place.optString("vicinity", "No address available");
-                
-                JSONObject locationObj = place.getJSONObject("geometry").getJSONObject("location");
-                double lat = locationObj.getDouble("lat");
-                double lng = locationObj.getDouble("lng");
-                
-                String placeId = place.optString("place_id");
-                
-                // Note: Phone numbers aren't included in Nearby Search. Making a separate detail request.
-                Hospital hospital = new Hospital(name, vicinity, "Fetching contact...", lat, lng, "");
-                hospitalList.add(hospital);
-
-                if (placeId != null && !placeId.isEmpty()) {
-                    fetchPlaceDetails(placeId, hospital);
-                } else {
-                    hospital.setPhoneNumber("Phone not available");
-                }
-            }
-
-            if (hospitalList.isEmpty()) {
-                fetchHospitalsFromFirebase();
-            } else {
-                hasFetchedHospitals = true;
-                attemptSyncAndRender();
-            }
-
-        } catch (Exception e) {
-            fetchHospitalsFromFirebase();
-        }
-    }
-
-    private void fetchPlaceDetails(String placeId, Hospital hospital) {
-        String url = "https://maps.googleapis.com/maps/api/place/details/json" +
-                "?place_id=" + placeId +
-                "&fields=formatted_phone_number" +
-                "&key=" + GOOGLE_PLACES_API_KEY;
-
-        Request request = new Request.Builder().url(url).build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                hospital.setPhoneNumber("Phone not available");
-                requireActivity().runOnUiThread(() -> {
-                     if (adapter != null) adapter.notifyDataSetChanged();
-                });
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful() && response.body() != null) {
-                    try {
-                        String responseData = response.body().string();
-                        JSONObject jsonObject = new JSONObject(responseData);
-                        JSONObject result = jsonObject.optJSONObject("result");
-                        if (result != null && result.has("formatted_phone_number")) {
-                            String phone = result.getString("formatted_phone_number");
-                            hospital.setPhoneNumber(phone);
-                        } else {
-                            hospital.setPhoneNumber("Phone not available");
-                        }
-                    } catch (Exception e) {
-                        hospital.setPhoneNumber("Phone not available");
-                    }
-                } else {
-                    hospital.setPhoneNumber("Phone not available");
-                }
-                requireActivity().runOnUiThread(() -> {
-                     if (adapter != null) adapter.notifyDataSetChanged();
-                });
-            }
-        });
     }
 
     private void fetchHospitalsFromFirebase() {
@@ -329,7 +212,148 @@ public class EmergencyHospitals extends Fragment implements HospitalAdapter.OnHo
         hasFetchedLocation = true;
         fetchHospitalsFromGooglePlaces(location);
     }
-    
+
+    private void fetchHospitalsFromGooglePlaces(Location location) {
+        String apiKey = GooglePlacesConfig.getApiKey(getContext());
+        if (apiKey == null || apiKey.isEmpty()) {
+            android.util.Log.e("EmergencyHospitals", "Google Places API key is missing");
+            fetchHospitalsFromFirebase();
+            return;
+        }
+        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                "?location=" + location.getLatitude() + "," + location.getLongitude() +
+                "&radius=5000" + // 5 km radius
+                "&type=hospital" +
+                "&key=" + apiKey;
+
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                        // Fallback to Firebase or hardcoded list if API fails
+                        fetchHospitalsFromFirebase();
+                    });
+                }
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> parseGooglePlacesResponse(responseData));
+                    }
+                } else {
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> fetchHospitalsFromFirebase());
+                    }
+                }
+            }
+        });
+    }
+
+    private void parseGooglePlacesResponse(String jsonData) {
+        try {
+            org.json.JSONObject jsonObject = new org.json.JSONObject(jsonData);
+            org.json.JSONArray results = jsonObject.getJSONArray("results");
+
+            hospitalList.clear();
+
+            for (int i = 0; i < results.length(); i++) {
+                org.json.JSONObject place = results.getJSONObject(i);
+                String name = place.getString("name");
+                
+                String vicinity = place.optString("vicinity", "No address available");
+                
+                org.json.JSONObject locationObj = place.getJSONObject("geometry").getJSONObject("location");
+                double lat = locationObj.getDouble("lat");
+                double lng = locationObj.getDouble("lng");
+                
+                String placeId = place.optString("place_id");
+                
+                // Note: Phone numbers aren't included in Nearby Search. Making a separate detail request.
+                Hospital hospital = new Hospital(name, vicinity, "Fetching contact...", lat, lng, "");
+                hospitalList.add(hospital);
+
+                if (placeId != null && !placeId.isEmpty()) {
+                    fetchPlaceDetails(placeId, hospital);
+                } else {
+                    hospital.setPhoneNumber("Phone not available");
+                }
+            }
+
+            if (hospitalList.isEmpty()) {
+                fetchHospitalsFromFirebase();
+            } else {
+                hasFetchedHospitals = true;
+                attemptSyncAndRender();
+            }
+
+        } catch (Exception e) {
+            fetchHospitalsFromFirebase();
+        }
+    }
+
+    private void fetchPlaceDetails(String placeId, Hospital hospital) {
+        String apiKey = GooglePlacesConfig.getApiKey(getContext());
+        if (apiKey == null || apiKey.isEmpty()) {
+            hospital.setPhoneNumber("Phone not available");
+            if (isAdded()) {
+                requireActivity().runOnUiThread(() -> {
+                     if (adapter != null) adapter.notifyDataSetChanged();
+                });
+            }
+            return;
+        }
+        String url = "https://maps.googleapis.com/maps/api/place/details/json" +
+                "?place_id=" + placeId +
+                "&fields=formatted_phone_number" +
+                "&key=" + apiKey;
+
+        Request request = new Request.Builder().url(url).build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                hospital.setPhoneNumber("Phone not available");
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                         if (adapter != null) adapter.notifyDataSetChanged();
+                    });
+                }
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
+                    try {
+                        String responseData = response.body().string();
+                        org.json.JSONObject jsonObject = new org.json.JSONObject(responseData);
+                        org.json.JSONObject result = jsonObject.optJSONObject("result");
+                        if (result != null && result.has("formatted_phone_number")) {
+                            String phone = result.getString("formatted_phone_number");
+                            hospital.setPhoneNumber(phone);
+                        } else {
+                            hospital.setPhoneNumber("Phone not available");
+                        }
+                    } catch (Exception e) {
+                        hospital.setPhoneNumber("Phone not available");
+                    }
+                } else {
+                    hospital.setPhoneNumber("Phone not available");
+                }
+                if (isAdded()) {
+                    requireActivity().runOnUiThread(() -> {
+                         if (adapter != null) adapter.notifyDataSetChanged();
+                    });
+                }
+            }
+        });
+    }
+
     private void attemptSyncAndRender() {
         // Only render the list if BOTH loc and firebase syncs are done (or failed gracefully)
         if (!hasFetchedLocation || !hasFetchedHospitals) return;
@@ -373,14 +397,13 @@ public class EmergencyHospitals extends Fragment implements HospitalAdapter.OnHo
 
     @Override
     public void onLocationClicked(Hospital hospital) {
-        Intent intent = new Intent(getContext(), com.example.bacoorconnect.General.MapDash.class);
+        Intent intent = new Intent(getContext(), MapDash.class);
         intent.putExtra("targetLat", hospital.getLatitude());
         intent.putExtra("targetLon", hospital.getLongitude());
         intent.putExtra("targetName", hospital.getName());
         startActivity(intent);
         logActivity("Location", "Map Open", "Viewed", hospital.getAddress(), "Success", "user opened location internally", "N/A");
     }
-
 
     private void logActivity(String userId, String type, String action, String target, String status, String notes, String changes) {
         if (userId == null) return;

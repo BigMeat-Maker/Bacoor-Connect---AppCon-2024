@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import com.example.bacoorconnect.Emergency.EmergencyGuides;
 import com.example.bacoorconnect.Emergency.EmergencyHospitals;
 import com.example.bacoorconnect.Emergency.Hotline;
+import com.example.bacoorconnect.Helpers.GooglePlacesConfig;
 import com.example.bacoorconnect.R;
 import com.example.bacoorconnect.Report.ReportHistoryActivity;
 import com.example.bacoorconnect.UserProfile;
@@ -69,7 +70,6 @@ public class Dashboard extends Fragment {
     private boolean hasFetchedLocation = false;
     private boolean hasFetchedHotlines = false;
 
-    private static final String GOOGLE_PLACES_API_KEY = "AIzaSyAh_s1ran_97S3SWQ63z5zZLMfi_e25cRE"; // Replace with actual API key
     private final OkHttpClient client = new OkHttpClient();
 
     private final ActivityResultLauncher<String[]> locationPermissionLauncher =
@@ -144,112 +144,120 @@ public class Dashboard extends Fragment {
     private void processLocation(Location location) {
         currentUserLocation = location;
         hasFetchedLocation = true;
-        fetchHotlinesFromGooglePlaces(location);
+        fetchEmergencyPlacesFromGoogle(location);
     }
 
-    private void fetchHotlinesFromGooglePlaces(Location location) {
-        String url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
-                "?location=" + location.getLatitude() + "," + location.getLongitude() +
-                "&radius=5000" +
-                "&type=police|fire_station|local_government_office" +
-                "&key=" + GOOGLE_PLACES_API_KEY;
-
-        Request request = new Request.Builder().url(url).build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                requireActivity().runOnUiThread(() -> fetchHotlinesFromFirebase());
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseData = response.body().string();
-                    requireActivity().runOnUiThread(() -> parseGooglePlacesResponse(responseData));
-                } else {
-                    requireActivity().runOnUiThread(() -> fetchHotlinesFromFirebase());
-                }
-            }
-        });
-    }
-
-    private void parseGooglePlacesResponse(String jsonData) {
-        try {
-            JSONObject jsonObject = new JSONObject(jsonData);
-            JSONArray results = jsonObject.getJSONArray("results");
-
-            hotlineList.clear();
-
-            for (int i = 0; i < results.length(); i++) {
-                JSONObject place = results.getJSONObject(i);
-                String name = place.getString("name");
-
-                String vicinity = place.optString("vicinity", "No address available");
-
-                JSONObject locationObj = place.getJSONObject("geometry").getJSONObject("location");
-                double lat = locationObj.getDouble("lat");
-                double lng = locationObj.getDouble("lng");
-
-                String placeId = place.optString("place_id");
-
-                Hotline hotline = new Hotline(name, vicinity, "Fetching contact...", lat, lng, "");
-                hotlineList.add(hotline);
-
-                if (placeId != null && !placeId.isEmpty()) {
-                    fetchPlaceDetails(placeId, hotline);
-                } else {
-                    hotline.setPhoneNumber("Phone not available");
-                }
-            }
-
-            if (hotlineList.isEmpty()) {
-                fetchHotlinesFromFirebase();
-            } else {
-                hasFetchedHotlines = true;
-                attemptSyncAndRender();
-            }
-
-        } catch (Exception e) {
+    private void fetchEmergencyPlacesFromGoogle(Location location) {
+        String apiKey = GooglePlacesConfig.getApiKey(getContext());
+        if (apiKey == null || apiKey.isEmpty()) {
             fetchHotlinesFromFirebase();
+            return;
         }
-    }
 
-    private void fetchPlaceDetails(String placeId, Hotline hotline) {
-        String url = "https://maps.googleapis.com/maps/api/place/details/json" +
-                "?place_id=" + placeId +
-                "&fields=formatted_phone_number" +
-                "&key=" + GOOGLE_PLACES_API_KEY;
+        // We'll fetch police and fire stations for the dashboard
+        String policeUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                "?location=" + location.getLatitude() + "," + location.getLongitude() +
+                "&radius=5000&type=police&key=" + apiKey;
+        
+        String fireUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                "?location=" + location.getLatitude() + "," + location.getLongitude() +
+                "&radius=5000&type=fire_station&key=" + apiKey;
 
-        Request request = new Request.Builder().url(url).build();
+        hotlineList.clear();
+        final int[] requestsCompleted = {0};
 
-        client.newCall(request).enqueue(new Callback() {
+        Callback placesCallback = new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                hotline.setPhoneNumber("Phone not available");
-                requireActivity().runOnUiThread(() -> renderDashboardHotlines());
+                checkCompletion();
             }
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 if (response.isSuccessful() && response.body() != null) {
+                    parsePlacesResponse(response.body().string());
+                }
+                checkCompletion();
+            }
+
+            private void checkCompletion() {
+                requestsCompleted[0]++;
+                if (requestsCompleted[0] >= 2) {
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            if (hotlineList.isEmpty()) {
+                                fetchHotlinesFromFirebase();
+                            } else {
+                                hasFetchedHotlines = true;
+                                attemptSyncAndRender();
+                            }
+                        });
+                    }
+                }
+            }
+        };
+
+        client.newCall(new Request.Builder().url(policeUrl).build()).enqueue(placesCallback);
+        client.newCall(new Request.Builder().url(fireUrl).build()).enqueue(placesCallback);
+    }
+
+    private void parsePlacesResponse(String jsonData) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonData);
+            JSONArray results = jsonObject.getJSONArray("results");
+
+            for (int i = 0; i < results.length(); i++) {
+                JSONObject place = results.getJSONObject(i);
+                String name = place.getString("name");
+                String vicinity = place.optString("vicinity", "");
+                
+                JSONObject locationObj = place.getJSONObject("geometry").getJSONObject("location");
+                double lat = locationObj.getDouble("lat");
+                double lng = locationObj.getDouble("lng");
+                
+                String placeId = place.optString("place_id");
+                
+                Hotline hotline = new Hotline(name, vicinity, "Fetching...", lat, lng, "");
+                synchronized (hotlineList) {
+                    hotlineList.add(hotline);
+                }
+
+                if (placeId != null && !placeId.isEmpty()) {
+                    fetchPlaceDetails(placeId, hotline);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void fetchPlaceDetails(String placeId, Hotline hotline) {
+        String apiKey = GooglePlacesConfig.getApiKey(getContext());
+        if (apiKey == null || apiKey.isEmpty()) return;
+
+        String url = "https://maps.googleapis.com/maps/api/place/details/json" +
+                "?place_id=" + placeId +
+                "&fields=formatted_phone_number" +
+                "&key=" + apiKey;
+
+        client.newCall(new Request.Builder().url(url).build()).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {}
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful() && response.body() != null) {
                     try {
-                        String responseData = response.body().string();
-                        JSONObject jsonObject = new JSONObject(responseData);
+                        JSONObject jsonObject = new JSONObject(response.body().string());
                         JSONObject result = jsonObject.optJSONObject("result");
                         if (result != null && result.has("formatted_phone_number")) {
-                            String phone = result.getString("formatted_phone_number");
-                            hotline.setPhoneNumber(phone);
-                        } else {
-                            hotline.setPhoneNumber("Phone not available");
+                            hotline.setPhoneNumber(result.getString("formatted_phone_number"));
+                            if (isAdded()) {
+                                requireActivity().runOnUiThread(() -> renderDashboardHotlines());
+                            }
                         }
-                    } catch (Exception e) {
-                        hotline.setPhoneNumber("Phone not available");
-                    }
-                } else {
-                    hotline.setPhoneNumber("Phone not available");
+                    } catch (Exception ignored) {}
                 }
-                requireActivity().runOnUiThread(() -> renderDashboardHotlines());
             }
         });
     }
